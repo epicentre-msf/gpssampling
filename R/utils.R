@@ -450,18 +450,23 @@ sysWhich <- function(name) {
   }
 
   if (.Platform$OS.type == 'windows') {
-
-    r <- try(utils::readRegistry(key = glue::glue('SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\{name}.exe'), hive = 'HLM'), silent = TRUE)
+    r <- try(
+      utils::readRegistry(
+        key = glue::glue(
+          'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\{name}.exe'
+        ),
+        hive = 'HLM'
+      ),
+      silent = TRUE
+    )
 
     if (!is.error(r) && names(r)[1L] == '(Default)') {
-
       path <- r[[1L]]
 
       if (fs::file_exists(path)) {
         return(path)
       }
     }
-
   }
 
   NULL
@@ -499,15 +504,21 @@ cleanDirCache <- function() {
 }
 
 compareDataframe <- function(base, compare, keys = NULL, preview = TRUE) {
-
   base <- base |>
     dplyr::select(names(base)[names(base) %in% names(compare)]) |>
-    dplyr::mutate_if(.predicate = ~ methods::is(.x, 'glue'), .funs = as.character)
+    dplyr::mutate_if(
+      .predicate = ~ methods::is(.x, 'glue'),
+      .funs = as.character
+    )
 
   compare <- compare |>
     dplyr::select(names(base)) |>
-    dplyr::mutate_if(.predicate = ~ methods::is(.x, 'glue'), .funs = as.character)
+    dplyr::mutate_if(
+      .predicate = ~ methods::is(.x, 'glue'),
+      .funs = as.character
+    )
 
+  rlang::check_installed('diffdf', reason = 'to compare data frames')
   diffs <- diffdf::diffdf(
     base = base,
     compare = compare,
@@ -543,15 +554,10 @@ compareDataframe <- function(base, compare, keys = NULL, preview = TRUE) {
 #' @keywords internal
 #'
 console.out <- function(msg, ...) {
-  toc <- tictoc::toc(quiet = TRUE)
-
-  # Uncomment the following line to print time elapsed
-  # cat(sprintf(' (%s seconds elapsed)\n', round(toc$toc - toc$tic, 4)))
-
-  # Uncomment the following line to log messages with log4r
-  # log4r::debug(.logger, sprintf(msg, ...))
-
-  tictoc::tic()
+  if (requireNamespace('tictoc', quietly = TRUE)) {
+    tictoc::toc(quiet = TRUE)
+    tictoc::tic()
+  }
 }
 
 #' @describeIn utils_dir Create Directory
@@ -600,10 +606,18 @@ deleteDirCache <- function() {
 #'
 #' # Download a file and save it to a specific directory with a custom file name
 #' download('http://example.com/file.txt', 'data.txt', '/path/to/directory')
-download <- function(url, destfile = fs::path_file(url), destdir = fs::path_temp()) {
+download <- function(
+  url,
+  destfile = fs::path_file(url),
+  destdir = fs::path_temp()
+) {
   destfile <- fs::path(destdir, destfile)
   if (!fs::file_exists(destfile)) {
-    destfile <- curl::curl_download(url = url, destfile = destfile, quiet = FALSE)
+    destfile <- curl::curl_download(
+      url = url,
+      destfile = destfile,
+      quiet = FALSE
+    )
   }
   invisible(destfile)
 }
@@ -657,7 +671,12 @@ exploreDirCache <- function() {
 #' df <- data.frame(var1 = c('A', 'B', 'C'), var2 = c(1L, 2L, 3L))
 #' choices <- getChoices(df, 'var1', 'var2', overall = 'Overall')
 #' print(choices)
-getChoices <- function(df_values, var_name = 'label', var_code = NULL, overall = NULL) {
+getChoices <- function(
+  df_values,
+  var_name = 'label',
+  var_code = NULL,
+  overall = NULL
+) {
   if (is.null(var_code)) {
     choices <- row.names(df_values)
   } else {
@@ -687,7 +706,11 @@ getChoices <- function(df_values, var_name = 'label', var_code = NULL, overall =
 #' getCodeFactors(codes, values, short = TRUE)
 getCodeFactors <- function(codes, values, short = FALSE) {
   if (short) {
-    values <- factor(values, levels = codes$cde_code, labels = codes$cde_label_short)
+    values <- factor(
+      values,
+      levels = codes$cde_code,
+      labels = codes$cde_label_short
+    )
   } else {
     values <- factor(values, levels = codes$cde_code, labels = codes$cde_label)
   }
@@ -808,7 +831,13 @@ getCodeValues <- function(codes, labels, short = FALSE) {
 #'
 #' @keywords internal
 #'
-getGroupedChoices <- function(df_values, var_name = 'label', var_code = NULL, var_group = NULL, overall = NULL) {
+getGroupedChoices <- function(
+  df_values,
+  var_name = 'label',
+  var_code = NULL,
+  var_group = NULL,
+  overall = NULL
+) {
   if (is.null(var_code)) {
     choice_values <- row.names(df_values)
   } else {
@@ -1113,9 +1142,7 @@ is.x64 <- function() identical(.Platform$r_arch, 'x64')
 
 isColors <- function(x) {
   sapply(x, function(X) {
-    tryCatch(is.matrix(grDevices::col2rgb(X)),
-      error = function(e) FALSE
-    )
+    tryCatch(is.matrix(grDevices::col2rgb(X)), error = function(e) FALSE)
   })
 }
 
@@ -1284,7 +1311,8 @@ progress <- function(begin = FALSE, value = 1L, increment = 1L) {
     assign(
       'progress.value',
       get('progress.value') +
-        get('progress.increment'), .globals
+        get('progress.increment'),
+      .globals
     )
   }
   cat(as.character(get('progress.value')), ' ')
@@ -1413,7 +1441,10 @@ saveRDSToCache <- function(rds, name = 'config') {
 #' splitMsg('INFO [2022-03-15 13:25:30] This is a sample log message.| Detail: Sample detail.|12345')
 #'
 splitMsg <- function(msg) {
-  msg <- unlist(stringr::str_match_all(msg, '([A-Z]+) \\[(.*)\\] (.*)\\|(.*)\\|([0-9]*)'))
+  msg <- unlist(stringr::str_match_all(
+    msg,
+    '([A-Z]+) \\[(.*)\\] (.*)\\|(.*)\\|([0-9]*)'
+  ))
   list(
     log_type = msg[2L],
     log_time = msg[3L],
@@ -1452,9 +1483,13 @@ stopf <- function(msg, ...) {
 #' @keywords internal
 #'
 tctoc <- function(expr) {
-  tictoc::tic('Expression')
-  eval(expr)
-  tictoc::toc(func.toc = tctoc_msg)
+  if (requireNamespace('tictoc', quietly = TRUE)) {
+    tictoc::tic('Expression')
+    eval(expr)
+    tictoc::toc(func.toc = tctoc_msg)
+  } else {
+    eval(expr)
+  }
 }
 
 #' Tic-Toc Message
@@ -1589,7 +1624,10 @@ addClass <- function(x, what) {
 angle <- function(x0, y0, x1, y1, x2, y2) {
   ab <- c(x1, y1) - c(x0, y0)
   ac <- c(x2, y2) - c(x0, y0)
-  a <- acos((ab[1L] * ac[1L] + ab[2L] * ac[2L]) / (sqrt(ab[1L]^2L + ab[2L]^2L) * sqrt(ac[1L]^2L + ac[2L]^2L)))
+  a <- acos(
+    (ab[1L] * ac[1L] + ab[2L] * ac[2L]) /
+      (sqrt(ab[1L]^2L + ab[2L]^2L) * sqrt(ac[1L]^2L + ac[2L]^2L))
+  )
   a <- a * 180.0 / pi
   a
 }
@@ -1611,7 +1649,13 @@ ask <- function(prompt) {
   cat(prompt)
 
   con <- if (interactive()) stdin() else file('stdin')
-  out <- scan(file = con, what = character(), sep = ',', nlines = 1L, quiet = TRUE)
+  out <- scan(
+    file = con,
+    what = character(),
+    sep = ',',
+    nlines = 1L,
+    quiet = TRUE
+  )
   out <- stringr::str_trim(tolower(out))
   if (length(out) == 0L) {
     out <- ''
@@ -2096,7 +2140,11 @@ promptChoice <- function(prompt = 'Choose between: ', choice = c('Yes', 'No')) {
     )
   }
   prompt <- paste0(prompt, '\n\n')
-  prompt <- paste0(prompt, paste0(' ', seq_along(choice), ': ', choice, collapse = '\n'), '\n')
+  prompt <- paste0(
+    prompt,
+    paste0(' ', seq_along(choice), ': ', choice, collapse = '\n'),
+    '\n'
+  )
 
   cli::cli_alert(prompt)
 
@@ -2136,7 +2184,10 @@ promptIdentifier <- function(prompt = 'Enter an identifier', default = 'epi') {
     id <- default
   }
 
-  id_valid <- checkmate::testString(x = id, pattern = sprintf('[0-9a-z\\.]{%s}', nchar(id)))
+  id_valid <- checkmate::testString(
+    x = id,
+    pattern = sprintf('[0-9a-z\\.]{%s}', nchar(id))
+  )
 
   if (!id_valid) {
     promptIdentifier(prompt = prompt)
@@ -2159,7 +2210,11 @@ promptIdentifier <- function(prompt = 'Enter an identifier', default = 'epi') {
 #' @examples
 #' promptInteger()
 #' promptInteger('Please enter a positive integer', 1L)
-promptInteger <- function(prompt = 'Enter an integer', range = NULL, default = 0L) {
+promptInteger <- function(
+  prompt = 'Enter an integer',
+  range = NULL,
+  default = 0L
+) {
   checkmate::assertString(prompt)
 
   if (!is.null(range)) {
@@ -2195,7 +2250,13 @@ promptInteger <- function(prompt = 'Enter an integer', range = NULL, default = 0
 #'
 replace <- function(path, new_path, replacements) {
   checkmate::assertFile(path, access = 'rw')
-  checkmate::assertCharacter(replacements, min.len = 1L, any.missing = FALSE, names = 'named', unique = TRUE)
+  checkmate::assertCharacter(
+    replacements,
+    min.len = 1L,
+    any.missing = FALSE,
+    names = 'named',
+    unique = TRUE
+  )
 
   rl <- readLines(con = path)
 
@@ -2261,7 +2322,8 @@ score_unique <- function(x) {
   if (is.character(x)) {
     x_sx <- stringdist::phonetic(x, method = 'soundex')
     x_scr <-
-      (length(unique(x)) / length(x) / 4L) * 3L +
+      (length(unique(x)) / length(x) / 4L) *
+      3L +
       (length(unique(x_sx)) / length(x_sx) / 4L)
   } else {
     x_scr <- 0L
@@ -2366,7 +2428,7 @@ unzip <- function(zipfile, pattern = '.*', exdir = NULL) {
   zip::unzip(zipfile = zipfile, exdir = exdir)
   zipfiles <- fs::dir_ls(exdir, pattern = pattern, full.names = TRUE)
   list(
-    files       = zipfiles,
+    files = zipfiles,
     files_count = length(zipfiles)
   )
 }
@@ -2389,7 +2451,13 @@ ask <- function(prompt) {
   cat(prompt)
 
   con <- if (interactive()) stdin() else file('stdin')
-  out <- scan(file = con, what = character(), sep = ',', nlines = 1L, quiet = TRUE)
+  out <- scan(
+    file = con,
+    what = character(),
+    sep = ',',
+    nlines = 1L,
+    quiet = TRUE
+  )
   out <- stringr::str_trim(out)
   if (length(out) == 0L) {
     out <- ''

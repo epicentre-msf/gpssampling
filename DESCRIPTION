@@ -19,19 +19,19 @@ URL:
 BugReports: https://github.com/epicentre-field-epidemiology-training/epi.geosampler/issues
 Depends: R (>= 4.3.1)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
-        dbplyr, devEMF, devtools, diffdf, dplyr, epi.icons, flextable,
-        fs, geojsonio, geos, glue, grDevices, htmltools, htmlwidgets,
-        httr, ipc, jsonlite, keys, leafem, leaflet, leaflet.extras,
-        leafpm, log4r, lwgeom, maptiles, methods, nominatimlite,
-        officer, osmdata, pingr, png, pool, profvis, purrr, qrcode, R6,
-        rappdirs, readr, rhandsontable, rintrojs, rlang, rmapshaper,
-        RSQLite, sass, scales, sessioninfo, sf, shiny, shiny.i18n,
-        shinybusy, shinyFeedback, shinyjs, shinytest2, shinyWidgets,
-        slippymath, sp, stars, stats, stringdist, stringr, terra,
-        tibble, tictoc, tidyr, tippy, tools, units, utils, uuid,
-        waiter, withr, zip
-Suggests: covr, here, kableExtra, knitr, magick, RSelenium, spatstat,
-        testthat (>= 3.0.0), yaml
+        dbplyr, devEMF, dplyr, epi.icons, flextable, fs, geojsonio,
+        geos, glue, grDevices, htmltools, htmlwidgets, httr, ipc,
+        jsonlite, keys, leafem, leaflet, leaflet.extras, leafpm, log4r,
+        lwgeom, maptiles, methods, nominatimlite, officer, osmdata,
+        pingr, png, pool, purrr, qrcode, R6, rappdirs, readr,
+        rhandsontable, rintrojs, rlang, rmapshaper, RSQLite, sass,
+        scales, sessioninfo, sf, shiny, shiny.i18n, shinybusy,
+        shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
+        stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
+        units, utils, uuid, waiter, withr, zip
+Suggests: covr, devtools, diffdf, here, kableExtra, knitr, magick,
+        profvis, RSelenium, shinytest2, spatstat, testthat (>= 3.0.0),
+        tictoc, yaml
 VignetteBuilder: knitr
 Remotes: github::r-spatial/leafem, github::s-balandine/epi.icons,
         github::s-balandine/leafpm, github::s-balandine/rhandsontable

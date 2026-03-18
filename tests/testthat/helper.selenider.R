@@ -92,11 +92,13 @@ clickElement <- function(selector, modal = FALSE) {
 
 }
 
-s <- selenider::s
-is_present <- selenider::is_present
-is_visible <- selenider::is_visible
-is_displayed <- selenider::is_displayed
-is_enabled <- selenider::is_enabled
+if (requireNamespace('selenider', quietly = TRUE)) {
+  s <- selenider::s
+  is_present <- selenider::is_present
+  is_visible <- selenider::is_visible
+  is_displayed <- selenider::is_displayed
+  is_enabled <- selenider::is_enabled
+}
 
 #' findElement function
 #'

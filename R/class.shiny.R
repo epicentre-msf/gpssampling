@@ -36,12 +36,13 @@ AppShinyBase <- R6::R6Class(
     }
   ),
   public = list(
-    initialize = function(debug = TRUE,
-                          debug_trace = FALSE,
-                          debug_trace_full = FALSE,
-                          max_request_zize = 500L * 1024L^2L, ## limit upload filesize on server (10MB)
-                          ...) {
-
+    initialize = function(
+      debug = TRUE,
+      debug_trace = FALSE,
+      debug_trace_full = FALSE,
+      max_request_zize = 500L * 1024L^2L, ## limit upload filesize on server (10MB)
+      ...
+    ) {
       private$.url_params <- ''
       private$.url_params_trigger <- reactiveTrigger()
 
@@ -72,14 +73,21 @@ AppShinyBase <- R6::R6Class(
     },
     #' @description
     #' Launch the shiny app
-    launch = function(open = TRUE, port = NULL, options = list(), test = FALSE, test_record = FALSE) {
+    launch = function(
+      open = TRUE,
+      port = NULL,
+      options = list(),
+      test = FALSE,
+      test_record = FALSE
+    ) {
       app <- shiny::shinyApp(
-        ui                = private$getUI,
-        server            = private$getServer,
-        onStart           = private$onStart,
-        options           = getShinyOptions(open = open, port = port, options = options)
+        ui = private$getUI,
+        server = private$getServer,
+        onStart = private$onStart,
+        options = getShinyOptions(open = open, port = port, options = options)
       )
       if (test_record) {
+        rlang::check_installed('shinytest2', reason = 'to record Shiny tests')
         app <- shinytest2::record_test(app = app, name = 'azerty')
       }
       if (test) {
@@ -121,11 +129,10 @@ AppShinyBase <- R6::R6Class(
         waiter::useWaiter(),
         waiter::useWaitress(),
         waiter::waiterShowOnLoad(
-          html =
-            shiny::tagList(
-              waiter::spin_loaders(7L, color = col_spin_waiter),
-              shiny::h3('Please wait...')
-            ),
+          html = shiny::tagList(
+            waiter::spin_loaders(7L, color = col_spin_waiter),
+            shiny::h3('Please wait...')
+          ),
           color = 'white'
         ),
         shinyjs::useShinyjs()
@@ -134,7 +141,13 @@ AppShinyBase <- R6::R6Class(
     getUIFooter = function() {
     },
     getUISidebarPanel = function(request) {
-      shiny::sliderInput(inputId = 'bins', label = 'Number of bins:', min = 1L, max = 50L, value = 30L)
+      shiny::sliderInput(
+        inputId = 'bins',
+        label = 'Number of bins:',
+        min = 1L,
+        max = 50L,
+        value = 30L
+      )
     },
     getUIMainPanel = function(request) {
       shiny::plotOutput(outputId = 'distPlot')
@@ -144,7 +157,9 @@ AppShinyBase <- R6::R6Class(
     },
     getServer = function(input, output, session) {
       self$session <- session
-      self$url_params <- isolate(shiny::parseQueryString(session$clientData$url_search))
+      self$url_params <- isolate(shiny::parseQueryString(
+        session$clientData$url_search
+      ))
 
       # Session
       # .................................................
@@ -176,7 +191,9 @@ AppShinyBase <- R6::R6Class(
       })
 
       shiny::observe({
-        self$url_params <- shiny::parseQueryString(session$clientData$url_search)
+        self$url_params <- shiny::parseQueryString(
+          session$clientData$url_search
+        )
       })
 
       getServerInternal(input, output, session)
@@ -186,8 +203,11 @@ AppShinyBase <- R6::R6Class(
       output$distPlot <- shiny::renderPlot({
         x <- faithful$waiting
         bins <- seq(min(x), max(x), length.out = input$bins + 1L)
-        hist(x,
-          breaks = bins, col = '#75AADB', border = 'white',
+        hist(
+          x,
+          breaks = bins,
+          col = '#75AADB',
+          border = 'white',
           xlab = 'Waiting time to next eruption (in mins)',
           main = 'Histogram of waiting times'
         )
@@ -206,15 +226,22 @@ AppShinyBase <- R6::R6Class(
       options
     },
     onSessionStart = function(session) {
-      logDebug('Session started (%s users connected)', shiny::isolate(self$user_count) + 1L)
+      logDebug(
+        'Session started (%s users connected)',
+        shiny::isolate(self$user_count) + 1L
+      )
       self$user_count <- shiny::isolate(self$user_count) + 1L
     },
     onSessionEnded = function(session) {
-      logDebug('Session ended (%s  users connected)', shiny::isolate(self$user_count) - 1L)
+      logDebug(
+        'Session ended (%s  users connected)',
+        shiny::isolate(self$user_count) - 1L
+      )
       self$user_count <- shiny::isolate(self$user_count) - 1L
       if (
         shiny::isolate(session$clientData$url_hostname) == '127.0.0.1' &
-          shiny::isolate(self$user_count) == 0L) {
+          shiny::isolate(self$user_count) == 0L
+      ) {
         shiny::stopApp()
         cat('\n')
       }
@@ -266,10 +293,15 @@ AppShinyWithAuthentification <- R6::R6Class(
     initialize = function(...) {
       super$initialize(...)
     },
-    launch = function(open = TRUE, port = NULL, options = list(), test = FALSE, test_record = FALSE, authentification = FALSE) {
-
+    launch = function(
+      open = TRUE,
+      port = NULL,
+      options = list(),
+      test = FALSE,
+      test_record = FALSE,
+      authentification = FALSE
+    ) {
       if (authentification) {
-
         private$.auth <- ShinyAuth$new(
           client_id = Sys.getenv('KEYCLOAK_CLIENT_ID'),
           client_secret = Sys.getenv('KEYCLOAK_CLIENT_SECRET'),
@@ -278,12 +310,11 @@ AppShinyWithAuthentification <- R6::R6Class(
         )
 
         app <- shiny::shinyApp(
-          ui                = auth$ui(private$getUI),
-          server            = auth$server(private$getServer),
-          onStart           = private$onStart,
-          options           = getShinyOptions(open = open, port = port, options = options)
+          ui = auth$ui(private$getUI),
+          server = auth$server(private$getServer),
+          onStart = private$onStart,
+          options = getShinyOptions(open = open, port = port, options = options)
         )
-
       } else {
         app <- super$launch(open, port, options, test, test_record)
       }
@@ -324,7 +355,6 @@ AppShinyWithTranslation <- R6::R6Class(
           private$.language_trigger$trigger()
 
           onChangeLanguage()
-
         }
       }
       private$.language
@@ -349,12 +379,10 @@ AppShinyWithTranslation <- R6::R6Class(
     .language = NULL,
     .language_trigger = NULL,
     getChoicesLanguage = function() {
-
       c_named(
         c('en', 'fr'),
         c('EN', 'FR')
       )
-
     },
     getUIHeader = function(request) {
       shiny::tagList(
@@ -365,7 +393,13 @@ AppShinyWithTranslation <- R6::R6Class(
     getUISidebarPanel = function(request) {
       shiny::tagList(
         getUILanguage(),
-        shiny::sliderInput(inputId = 'bins', label = .('Delimit'), min = 1L, max = 50L, value = 30L)
+        shiny::sliderInput(
+          inputId = 'bins',
+          label = .('Delimit'),
+          min = 1L,
+          max = 50L,
+          value = 30L
+        )
       )
     },
     getUILanguage = function(request) {
@@ -432,7 +466,8 @@ AppShinyNav <- R6::R6Class(
     },
     getUINavs = function() {
       list(
-        nav('a',
+        nav(
+          'a',
           icon = icon('github'),
           navs_tab_card(
             nav('a1', shiny::wellPanel('tab a1 content')),
@@ -441,7 +476,12 @@ AppShinyNav <- R6::R6Class(
         ),
         nav('b', shiny::wellPanel('tab b content')),
         bslib::nav_item(
-          tags$a(icon('github'), 'Shiny', href = 'https://github.com/rstudio/shiny', target = '_blank')
+          tags$a(
+            icon('github'),
+            'Shiny',
+            href = 'https://github.com/rstudio/shiny',
+            target = '_blank'
+          )
         ),
         bslib::nav_spacer(),
         bslib::nav_menu(
@@ -449,7 +489,12 @@ AppShinyNav <- R6::R6Class(
           align = 'right',
           bslib::nav('c', 'tab c content'),
           bslib::nav_item(
-            tags$a(icon('r-project'), 'RStudio', href = 'https://rstudio.com', target = '_blank')
+            tags$a(
+              icon('r-project'),
+              'RStudio',
+              href = 'https://rstudio.com',
+              target = '_blank'
+            )
           )
         )
       )
@@ -494,11 +539,13 @@ AppShinyFillPage <- R6::R6Class(
           '#two { float: right; background-color: #ccffcc; }'
         ),
         shiny::div(
-          id = 'one', class = 'half-fill',
+          id = 'one',
+          class = 'half-fill',
           'Left half'
         ),
         shiny::div(
-          id = 'two', class = 'half-fill',
+          id = 'two',
+          class = 'half-fill',
           'Right half'
         )
       )
@@ -525,18 +572,19 @@ AppShiny <- R6::R6Class(
     }
   ),
   public = list(
-
     #' @description
     #' Initialize Application class for shiny app
     #'
     #' @return A new Application object
-    initialize = function(about = FALSE,
-                          reactlog = FALSE,
-                          launch_browser = TRUE,
-                          profiler = FALSE,
-                          profile = FALSE,
-                          project = 'default',
-                          ...) {
+    initialize = function(
+      about = FALSE,
+      reactlog = FALSE,
+      launch_browser = TRUE,
+      profiler = FALSE,
+      profile = FALSE,
+      project = 'default',
+      ...
+    ) {
       super$initialize(...)
 
       private$.about <- About$new(application = self)
@@ -575,19 +623,34 @@ AppShiny <- R6::R6Class(
         shiny::tags$head(
           shiny::singleton(
             shiny::tagList(
-              shiny::HTML('
+              shiny::HTML(
+                '
                 <script src="https://cdn.jsdelivr.net/npm/intro.js@3.2.1/minified/intro.min.js"></script>
                 <script src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
-                <link  href="https://cdn.jsdelivr.net/npm/intro.js@3.2.1/minified/introjs.min.css" rel="stylesheet"/>'),
-              shiny::includeScript(system.file(fs::path('javascript', 'rintro.js'), package = 'rintrojs'))
+                <link  href="https://cdn.jsdelivr.net/npm/intro.js@3.2.1/minified/introjs.min.css" rel="stylesheet"/>'
+              ),
+              shiny::includeScript(system.file(
+                fs::path('javascript', 'rintro.js'),
+                package = 'rintrojs'
+              ))
             )
           )
         ),
-        htmltools::includeCSS(path = fs::path(getDirAssets(), fs::path('css', 'handsontable.css'))),
-        htmltools::includeCSS(path = fs::path(getDirAssets(), fs::path('css', 'leaflet.css'))),
-        htmltools::includeCSS(path = fs::path(getDirAssets(), fs::path('css', 'layers.css'))),
-        htmltools::includeCSS(path = fs::path(getDirAssets(), fs::path('css', 'shiny.css'))),
-        htmltools::includeCSS(path = fs::path(getDirAssets(), fs::path('css', 'shiny-custom.css'))),
+        htmltools::includeCSS(
+          path = fs::path(getDirAssets(), fs::path('css', 'handsontable.css'))
+        ),
+        htmltools::includeCSS(
+          path = fs::path(getDirAssets(), fs::path('css', 'leaflet.css'))
+        ),
+        htmltools::includeCSS(
+          path = fs::path(getDirAssets(), fs::path('css', 'layers.css'))
+        ),
+        htmltools::includeCSS(
+          path = fs::path(getDirAssets(), fs::path('css', 'shiny.css'))
+        ),
+        htmltools::includeCSS(
+          path = fs::path(getDirAssets(), fs::path('css', 'shiny-custom.css'))
+        ),
 
         epi.icons::html_dependency_mdi(),
         useGoogle()
@@ -595,7 +658,7 @@ AppShiny <- R6::R6Class(
     },
     getUIFooter = function() {
       shiny::tagList(
-        if (profiler) {
+        if (profiler && requireNamespace('profvis', quietly = TRUE)) {
           profvis::profvis_ui('profiler')
         },
         super$getUIFooter()
@@ -608,28 +671,64 @@ AppShiny <- R6::R6Class(
     getUIOutput = function() {
       shiny::tagList(
         shiny::absolutePanel(
-          top = 47L, right = 5L, style = 'z-index: 10000',
+          top = 47L,
+          right = 5L,
+          style = 'z-index: 10000',
           # divInline(pickerInputEx(inputId = 'opt_project_current', label = NULL, choices = NULL, size = 'sm', width = 100)),
           divInline(getUILanguage()),
           if (profile) {
-            divInline(shiny::actionButton(inputId = 'act_profvis_stop', label = NULL, icon = icon('stop'), class = 'btn-xs'))
+            divInline(shiny::actionButton(
+              inputId = 'act_profvis_stop',
+              label = NULL,
+              icon = icon('stop'),
+              class = 'btn-xs'
+            ))
           },
-          divInline(shiny::actionButton(inputId = 'act_help', label = NULL, icon = icon('help'), class = 'btn-xs')),
+          divInline(shiny::actionButton(
+            inputId = 'act_help',
+            label = NULL,
+            icon = icon('help'),
+            class = 'btn-xs'
+          )),
           if (logged) {
-            divInline(shiny::actionButton(inputId = 'act_logout', label = NULL, icon = icon('logout'), class = 'btn-xs'))
+            divInline(shiny::actionButton(
+              inputId = 'act_logout',
+              label = NULL,
+              icon = icon('logout'),
+              class = 'btn-xs'
+            ))
           }
         ),
         shiny::navbarPage(
-          title = getTitle(), id = 'navbar', collapsible = TRUE, position = 'fixed-top',
+          title = getTitle(),
+          id = 'navbar',
+          collapsible = TRUE,
+          position = 'fixed-top',
           # theme = bslib::bs_theme(version = 4),
           getUIMenu(),
           getUIMenuSecond(),
           shiny::navbarMenu(
-            title = '', icon = icon('help-circle-outline'),
-            shiny::tabPanel(shiny::tags$a('', href = private$getURLSite(page = 'articles/learn.html'), target = '_blank', list(icon('help-circle-outline'), .('Help')))),
-            shiny::tabPanel(shiny::tags$a('', href = private$getURLSite(), target = '_blank', list(icon('help-circle-outline', color = 'white'), .('Reference')))),
+            title = '',
+            icon = icon('help-circle-outline'),
+            shiny::tabPanel(shiny::tags$a(
+              '',
+              href = private$getURLSite(page = 'articles/learn.html'),
+              target = '_blank',
+              list(icon('help-circle-outline'), .('Help'))
+            )),
+            shiny::tabPanel(shiny::tags$a(
+              '',
+              href = private$getURLSite(),
+              target = '_blank',
+              list(icon('help-circle-outline', color = 'white'), .('Reference'))
+            )),
             '----',
-            shiny::tabPanel(shiny::tags$a('', href = getPackageDescription()$BugReports, target = '_blank', list(icon('github'), .('Report issue')))),
+            shiny::tabPanel(shiny::tags$a(
+              '',
+              href = getPackageDescription()$BugReports,
+              target = '_blank',
+              list(icon('github'), .('Report issue'))
+            )),
             '----',
             private$.about$getUI()
           )
@@ -650,27 +749,35 @@ AppShiny <- R6::R6Class(
           uri <- sprintf(
             '%s//127.0.0.1:%s/docs%s/%s',
             session$clientData$url_protocol,
-            session$clientData$url_port, ifelse(isDevPackage(), '/dev', ''), page
+            session$clientData$url_port,
+            ifelse(isDevPackage(), '/dev', ''),
+            page
           )
         } else {
           # offline capsule mode
           uri <- sprintf(
             '%s//127.0.0.1:%s/site/%s',
             session$clientData$url_protocol,
-            session$clientData$url_port, page
+            session$clientData$url_port,
+            page
           )
         }
       } else {
         # app is online
-        uri <- sprintf('https://apps.msf.net/%s/site%s/%s', tolower(getPackageDescription()$Title), ifelse(isDevPackage(), '-dev', ''), page)
+        uri <- sprintf(
+          'https://apps.msf.net/%s/site%s/%s',
+          tolower(getPackageDescription()$Title),
+          ifelse(isDevPackage(), '-dev', ''),
+          page
+        )
       }
       uri
     },
     getServerInternal = function(input, output, session) {
-
-      rintrojs::hintjs(session,
+      rintrojs::hintjs(
+        session,
         options = list(hintButtonLabel = 'Hope this hint was helpful'),
-        events  = list(onhintclose = I('alert("Wasn\'t that hint helpful")'))
+        events = list(onhintclose = I('alert("Wasn\'t that hint helpful")'))
       )
 
       # Binding
@@ -678,8 +785,12 @@ AppShiny <- R6::R6Class(
 
       private$.about$bind()
 
-      if (profiler) {
-        shiny::callModule(module = profvis::profvis_server, id = 'profiler', dir = getDirApp())
+      if (profiler && requireNamespace('profvis', quietly = TRUE)) {
+        shiny::callModule(
+          module = profvis::profvis_server,
+          id = 'profiler',
+          dir = getDirApp()
+        )
       }
 
       # Shiny events
@@ -697,19 +808,34 @@ AppShiny <- R6::R6Class(
       })
 
       shiny::observeEvent(input$act_new, {
-        dlg <- ModalDialogTabProject$new(id = 'new', add = TRUE, edit = FALSE, parent = self)
+        dlg <- ModalDialogTabProject$new(
+          id = 'new',
+          add = TRUE,
+          edit = FALSE,
+          parent = self
+        )
         dlg$bind()
         dlg$show()
       })
 
       shiny::observeEvent(input$act_save_as, {
-        dlg <- ModalDialogTabProject$new(id = 'save', add = FALSE, edit = FALSE, parent = self)
+        dlg <- ModalDialogTabProject$new(
+          id = 'save',
+          add = FALSE,
+          edit = FALSE,
+          parent = self
+        )
         dlg$bind()
         dlg$show()
       })
 
       shiny::observeEvent(input$act_edit, {
-        dlg <- ModalDialogTabProject$new(id = 'edit', add = FALSE, edit = TRUE, parent = self)
+        dlg <- ModalDialogTabProject$new(
+          id = 'edit',
+          add = FALSE,
+          edit = TRUE,
+          parent = self
+        )
         dlg$bind()
         dlg$show()
       })
@@ -719,11 +845,21 @@ AppShiny <- R6::R6Class(
       })
 
       if (isEdge(session)) {
-        shiny::showModal(shiny::modalDialog(title = 'Warning', 'Sorry! Please open this application in Safari, Mozilla Firefox, or Google Chrome. Microsoft Edge does not work well.', footer = NULL))
+        shiny::showModal(shiny::modalDialog(
+          title = 'Warning',
+          'Sorry! Please open this application in Safari, Mozilla Firefox, or Google Chrome. Microsoft Edge does not work well.',
+          footer = NULL
+        ))
       }
 
       if (profile) {
-        utils::Rprof(profvis_file, interval = 0.001, line.profiling = TRUE, gc.profiling = TRUE, memory.profiling = TRUE)
+        utils::Rprof(
+          profvis_file,
+          interval = 0.001,
+          line.profiling = TRUE,
+          gc.profiling = TRUE,
+          memory.profiling = TRUE
+        )
       }
     },
     onStart = function() {
@@ -835,21 +971,40 @@ ModDatabase <- R6::R6Class(
       pool::poolClose(private$.pool)
     },
     dbAppendTable = function(name, value, ..., row.names = NULL) {
-      pool::dbAppendTable(conn = self$pool, name = name, value = value, ..., row.names = row.names)
+      pool::dbAppendTable(
+        conn = self$pool,
+        name = name,
+        value = value,
+        ...,
+        row.names = row.names
+      )
     },
-    dbCreateTable = function(name, fields, ..., row.names = NULL, temporary = FALSE) {
-      pool::dbCreateTable(conn = self$pool, name = name, fields = fields, ..., row.names = row.names, temporary = temporary)
+    dbCreateTable = function(
+      name,
+      fields,
+      ...,
+      row.names = NULL,
+      temporary = FALSE
+    ) {
+      pool::dbCreateTable(
+        conn = self$pool,
+        name = name,
+        fields = fields,
+        ...,
+        row.names = row.names,
+        temporary = temporary
+      )
     },
-    dbExecute = function(sql) {
-      out <- pool::dbExecute(self$pool, pool::sqlInterpolate(DBI::ANSI(), sql))
+    dbExecute = function(sql, params = NULL) {
+      out <- pool::dbExecute(self$pool, sql, params = params)
       invalidate(pool_changed)
       out
     },
     dbExistsTable = function(name) {
       pool::dbExistsTable(self$pool, name = name)
     },
-    dbGetQuery = function(sql) {
-      pool::dbGetQuery(self$pool, pool::sqlInterpolate(DBI::ANSI(), sql))
+    dbGetQuery = function(sql, params = NULL) {
+      pool::dbGetQuery(self$pool, sql, params = params)
     },
     dbWriteTable = function(name, value, ...) {
       pool::dbWriteTable(self$pool, name = name, value = value, ...)
@@ -878,7 +1033,13 @@ ModalDialog <- R6::R6Class(
     }
   ),
   public = list(
-    initialize = function(id, lbl_title = '', lbl_ok = .('OK'), lbl_cancel = .('Cancel'), parent = NULL) {
+    initialize = function(
+      id,
+      lbl_title = '',
+      lbl_ok = .('OK'),
+      lbl_cancel = .('Cancel'),
+      parent = NULL
+    ) {
       super$initialize(id = id, parent = parent)
       private$.lbl_title <- lbl_title
       private$.lbl_cancel <- lbl_cancel
@@ -905,7 +1066,12 @@ ModalDialog <- R6::R6Class(
       shiny::tagList(
         button(inputId = ns('act_cancel'), label = private$.lbl_cancel),
         shinyjs::disabled(
-          buttonLoading(inputId = ns('act_ok'), label = private$.lbl_ok, loadingLabel = 'OK', semantic = 'primary')
+          buttonLoading(
+            inputId = ns('act_ok'),
+            label = private$.lbl_ok,
+            loadingLabel = 'OK',
+            semantic = 'primary'
+          )
         )
       )
     }

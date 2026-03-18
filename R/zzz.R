@@ -14,7 +14,11 @@
   #   windowsFonts <- grDevices::windowsFonts
   # }
 
-  packageStartupMessage(sprintf('%s (v%s)', getPackageName(), getPackageVersion()))
+  packageStartupMessage(sprintf(
+    '%s (v%s)',
+    getPackageName(),
+    getPackageVersion()
+  ))
 }
 
 .onLoad <- function(libname, pkgname) {
@@ -29,17 +33,8 @@
 
   # suppress scientific notation
   options(scipen = 999L)
-  options(stringsAsFactors = FALSE)
   options(digits = 12L)
   options(digits.secs = 4L)
-
-  set.seed(1025L)
-
-  # rlang::env_unlock(env = asNamespace('terra'))
-  # rlang::env_binding_unlock(env = asNamespace('terra'))
-  # assign('new_rast', new_rast, envir = asNamespace('terra'))
-  # rlang::env_binding_lock(env = asNamespace('terra'))
-  # rlang::env_lock(asNamespace('terra'))
 }
 
 .onUnload <- function(libpath) {
@@ -51,9 +46,14 @@
 if (getRversion() >= '2.15.1') {
   # bindings for global variables
   utils::globalVariables(c(
-    '.globals', 'pt',
-    'x', 'xmin', 'xmax',
-    'y', 'ymin', 'ymax'
+    '.globals',
+    'pt',
+    'x',
+    'xmin',
+    'xmax',
+    'y',
+    'ymin',
+    'ymax'
   ))
 }
 if (getRversion() >= '3.1.0') {

@@ -9,7 +9,10 @@ debug <- function(...) {
 decorate <- function(self) {
   funcs_active <- names(self$.__active__)
   funcs <- names(self)[-(1:2)]
-  funcs <- funcs[!(funcs %in% c('clone', 'finalize', 'initialize', 'self', 'super', 'private'))]
+  funcs <- funcs[
+    !(funcs %in%
+      c('clone', 'finalize', 'initialize', 'self', 'super', 'private'))
+  ]
   funcs <- funcs[!(funcs %in% funcs_active)]
   for (func in funcs) {
     if (class(self[[func]])[1L] == 'function') {
@@ -22,7 +25,6 @@ decorate <- function(self) {
 }
 
 decorateR6 <- function(object) {
-
   if (getOption('epi.log', FALSE)) {
     return()
   }
@@ -30,7 +32,19 @@ decorateR6 <- function(object) {
   funcs_active <- names(object$.__active__)
 
   funcs <- names(object)[-(1:2)]
-  funcs <- funcs[!(funcs %in% c('ui', 'server', 'clone', 'finalize', 'initialize', 'object', 'super', 'private'))]
+  funcs <- funcs[
+    !(funcs %in%
+      c(
+        'ui',
+        'server',
+        'clone',
+        'finalize',
+        'initialize',
+        'object',
+        'super',
+        'private'
+      ))
+  ]
   funcs <- funcs[!(funcs %in% funcs_active)]
 
   for (func in funcs) {
@@ -49,7 +63,11 @@ decorateR6 <- function(object) {
     if (class(object$private[[func]])[1L] == 'function') {
       logDebug('Decorate %s', func)
       unlockBinding(func, object$private)
-      object$private[[func]] <- logDecorate(class(object)[1L], func, object$private[[func]])
+      object$private[[func]] <- logDecorate(
+        class(object)[1L],
+        func,
+        object$private[[func]]
+      )
       lockBinding(func, object$private)
     }
   }
@@ -85,13 +103,21 @@ logDecorate <- function(classname, funcname, func) {
     if (is.null(.logs$indent)) {
       .logs$indent <- 0L
     }
-    logDebug('%s%s / %s (%s seconds elapsed)', strrep('  ', .logs$indent), funcname, classname, .logs$tictoc)
-    # logDebug('%s%s / %s (%s seconds elapsed / %s)', strrep('  ', .logs$indent), funcname, classname, .logs$tictoc, shiny::getDefaultReactiveDomain()$token)
+    logDebug(
+      '%s%s / %s (%s seconds elapsed)',
+      strrep('  ', .logs$indent),
+      funcname,
+      classname,
+      .logs$tictoc
+    )
     assign('indent', .logs$indent + 1L, .logs)
-    tictoc::tic()
+    has_tictoc <- requireNamespace('tictoc', quietly = TRUE)
+    if (has_tictoc) tictoc::tic()
     out <- func(...)
-    toc <- tictoc::toc(quiet = TRUE)
-    assign('tictoc', round(toc$toc - toc$tic, 4L), .logs)
+    if (has_tictoc) {
+      toc <- tictoc::toc(quiet = TRUE)
+      assign('tictoc', round(toc$toc - toc$tic, 4L), .logs)
+    }
     assign('indent', .logs$indent - 1L, .logs)
     out
   }
