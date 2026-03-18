@@ -10,18 +10,22 @@ addPolygon <- function(map, sf, ...) {
   )
 }
 
-addPolygons <- function(map, sf, group = 'polygons',
-                        color = 'yellow',
-                        dash_array = NULL,
-                        fill = TRUE,
-                        fill_opacity = 0.01,
-                        fit = TRUE,
-                        highlight = TRUE,
-                        highlight_color = color,
-                        highlight_weight = 2L,
-                        label = FALSE,
-                        pane = NULL,
-                        weight = 2L) {
+addPolygons <- function(
+  map,
+  sf,
+  group = 'polygons',
+  color = 'yellow',
+  dash_array = NULL,
+  fill = TRUE,
+  fill_opacity = 0.01,
+  fit = TRUE,
+  highlight = TRUE,
+  highlight_color = color,
+  highlight_weight = 2L,
+  label = FALSE,
+  pane = NULL,
+  weight = 2L
+) {
   if (highlight) {
     highlight_options <-
       leaflet::highlightOptions(
@@ -103,7 +107,11 @@ addPolygons <- function(map, sf, group = 'polygons',
 #'   addRoofsGoogle(polygons = polygon)
 #' }
 #'
-addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) {
+addRoofsGoogle <- function(
+  polygons,
+  dir = getDirAppTemp(),
+  async_queue = NULL
+) {
   if (methods::is(polygons, 'sfc')) {
     polygons <- sf::st_as_sf(polygons)
   }
@@ -125,7 +133,11 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
 
     tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L)
     tile_grid_sf <- tile_grid_to_sf(tile_grid)
-    tile_grid_intersect <- sf::st_intersects(tile_grid_sf, polygon, sparse = FALSE)
+    tile_grid_intersect <- sf::st_intersects(
+      tile_grid_sf,
+      polygon,
+      sparse = FALSE
+    )
 
     tile_polygons <- tibble::tibble(sf_polygon_roofs = list())
 
@@ -150,7 +162,8 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
     imgs <- list()
 
     for (t in seq_len(tiles_n)) {
-      progress_value <- 100L * ((i - 1L) / length(polygons) + t / tiles_n / length(polygons))
+      progress_value <- 100L *
+        ((i - 1L) / length(polygons) + t / tiles_n / length(polygons))
 
       print(round(progress_value, 2L))
 
@@ -177,14 +190,23 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
           '&z=%s',
           '&s=Gal',
           '&apistyle=s.t%%3A0|s.e%%3Al|p.v%%3Aoff,s.t%%3A3|s.e%%3Ag|p.v%%3Aoff,s.t%%3A1297|s.e%%3Ag.s|p.c%%3A%%23ffffff00|p.w%%3A2,s.t%%3A1297|s.e%%3Ag.f|p.c%%3A%%23ffff0000'
-        ), round(stats::runif(1L, 0L, 3L)), tile$x, tile$y, 18L
+        ),
+        round(stats::runif(1L, 0L, 3L)),
+        tile$x,
+        tile$y,
+        18L
       )
       query_png <- sprintf('%s/18_%s_%s.png', tiles_dir, tile$x, tile$y)
 
       if (tile_grid_intersect[t]) {
-
         if (!fs::file_exists(query_png)) {
-          curl::curl_download(url = query, destfile = query_png, quiet = TRUE)
+          result <- safe_download(
+            url = query,
+            destfile = query_png,
+            quiet = TRUE,
+            msg = "addRoofsGoogle"
+          )
+          if (is.null(result)) next
         }
 
         tile_bbox <- slippymath::tile_bbox(tile$x, tile$y, 18L)
@@ -229,9 +251,20 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
           sf_tile_roof$polygon <- i
           # sf_tile_roof$area <- as.double(sf::st_area(sf_tile_roof))
 
-          sf_tile_roof_cell_x <- floor(((sf_tile_roof$centroid_lon - tile_bbox$xmin) / (tile_bbox$xmax - tile_bbox$xmin)) * 3L)
-          sf_tile_roof_cell_y <- floor(((sf_tile_roof$centroid_lat - tile_bbox$ymin) / (tile_bbox$ymax - tile_bbox$ymin)) * 3L)
-          sf_tile_roof_cell_xy <- sf_tile_roof_cell_y * 3L + sf_tile_roof_cell_x + 1L
+          sf_tile_roof_cell_x <- floor(
+            ((sf_tile_roof$centroid_lon - tile_bbox$xmin) /
+              (tile_bbox$xmax - tile_bbox$xmin)) *
+              3L
+          )
+          sf_tile_roof_cell_y <- floor(
+            ((sf_tile_roof$centroid_lat - tile_bbox$ymin) /
+              (tile_bbox$ymax - tile_bbox$ymin)) *
+              3L
+          )
+          sf_tile_roof_cell_xy <- sf_tile_roof_cell_y *
+            3L +
+            sf_tile_roof_cell_x +
+            1L
 
           cells <- rep('0', 9L)
           cells[sort(unique(sf_tile_roof_cell_xy))] <- '1'
@@ -242,7 +275,11 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
             st_bbox_polygon(tile_bbox) |>
             sf::st_cast('MULTILINESTRING')
 
-          sf_tile_roof$within <- !sf::st_intersects(sf_tile_roof, sf_tile_roof_border, sparse = FALSE)
+          sf_tile_roof$within <- !sf::st_intersects(
+            sf_tile_roof,
+            sf_tile_roof_border,
+            sparse = FALSE
+          )
 
           if (t == 1L) {
             sf_polygon_roofs <- sf_tile_roof
@@ -291,12 +328,10 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
 
           # tiles[t, 'cells'] <- paste0(as.integer(sapply(sf::st_intersects(tile_sf, sf_tile_roof), length) > 0), collapse = '')
         }
-
       }
     }
 
     if (!is.null(sf_polygon_roofs)) {
-
       polygon_roofs_geos_1 <- sf_polygon_roofs[sf_polygon_roofs$within, ] |>
         geos::as_geos_geometry() |>
         geos::geos_make_collection() |>
@@ -313,11 +348,16 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
         polygon_roofs_geos_2
       )
 
-      polygon_roofs_geos <- geos::geos_unnest(polygon_roofs_geos, keep_multi = FALSE)
+      polygon_roofs_geos <- geos::geos_unnest(
+        polygon_roofs_geos,
+        keep_multi = FALSE
+      )
       polygon_roofs_geos_inside <-
         polygon_roofs_geos |>
         geos::geos_centroid() |>
-        geos::geos_intersects(sf::st_transform(polygon, 3857L) |> geos::as_geos_geometry())
+        geos::geos_intersects(
+          sf::st_transform(polygon, 3857L) |> geos::as_geos_geometry()
+        )
 
       polygon_roofs_geos <- polygon_roofs_geos[polygon_roofs_geos_inside]
 
@@ -342,15 +382,17 @@ addRoofsGoogle <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) 
     sf::st_centroid() |>
     sf::st_transform(4326L)
 
-
   list(
     tiles = tiles,
     roofs = roofs_sf
   )
 }
 
-addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = NULL) {
-
+addRoofsOpenBuilding <- function(
+  polygons,
+  dir = getDirAppTemp(),
+  async_queue = NULL
+) {
   if (methods::is(polygons, 'sfc')) {
     polygons <- sf::st_as_sf(polygons)
   }
@@ -365,7 +407,7 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
 
   s2_intersect <- sf::st_intersects(s2$layer, polygons, sparse = FALSE)
 
-  s2_tile_urls <- s2$layer[s2_intersect,]$tile_url
+  s2_tile_urls <- s2$layer[s2_intersect, ]$tile_url
 
   roofs_sf <- NULL
 
@@ -375,8 +417,7 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
     bbox <- sf::st_bbox(polygon)
 
     s2_intersect <- sf::st_intersects(s2$layer, polygon, sparse = FALSE)
-    s2_intersect_tile_urls <- s2$layer[s2_intersect,]$tile_url
-
+    s2_intersect_tile_urls <- s2$layer[s2_intersect, ]$tile_url
 
     tile_polygons <- tibble::tibble(sf_polygon_roofs = list())
 
@@ -406,12 +447,21 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
       s2_intersect_tile_url <- s2_intersect_tile_urls[t]
       s2_intersect_tile_dir <- getDirAppTemp()
       s2_intersect_tile_filename <- fs::path_file(s2_intersect_tile_url)
-      s2_intersect_tile_path <- fs::path(getDirAppTemp(), fs::path_file(s2_intersect_tile_url))
+      s2_intersect_tile_path <- fs::path(
+        getDirAppTemp(),
+        fs::path_file(s2_intersect_tile_url)
+      )
 
-      download(url = s2_intersect_tile_url, destfile = s2_intersect_tile_filename, destdir = s2_intersect_tile_dir)
+      download(
+        url = s2_intersect_tile_url,
+        destfile = s2_intersect_tile_filename,
+        destdir = s2_intersect_tile_dir
+      )
 
       s2_intersect_tile <- readSpatialLayer(file = s2_intersect_tile_path)
-      s2_intersect_tile <- arrow::open_csv_dataset(sources = s2_intersect_tile_path)
+      s2_intersect_tile <- arrow::open_csv_dataset(
+        sources = s2_intersect_tile_path
+      )
 
       sf_polygon_roofs <- s2_intersect_tile |>
         dplyr::filter(
@@ -421,11 +471,9 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
           longitude <= bbox$xmax
         ) |>
         dplyr::collect()
-
     }
 
     if (!is.null(sf_polygon_roofs)) {
-
       polygon_roofs_geos_1 <- sf_polygon_roofs |>
         geos::as_geos_geometry('geometry)') |>
         geos::geos_make_collection() |>
@@ -448,11 +496,16 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
         polygon_roofs_geos_2
       )
 
-      polygon_roofs_geos <- geos::geos_unnest(polygon_roofs_geos, keep_multi = FALSE)
+      polygon_roofs_geos <- geos::geos_unnest(
+        polygon_roofs_geos,
+        keep_multi = FALSE
+      )
       polygon_roofs_geos_inside <-
         polygon_roofs_geos |>
         geos::geos_centroid() |>
-        geos::geos_intersects(sf::st_transform(polygon, 3857L) |> geos::as_geos_geometry())
+        geos::geos_intersects(
+          sf::st_transform(polygon, 3857L) |> geos::as_geos_geometry()
+        )
 
       polygon_roofs_geos <- polygon_roofs_geos[polygon_roofs_geos_inside]
 
@@ -483,10 +536,12 @@ addRoofsOpenBuilding <- function(polygons, dir = getDirAppTemp(), async_queue = 
   )
 }
 
-calculatePolygonat <- function(qdr_pop,
-                               qdr_area,
-                               area = 10000L,
-                               error_confidence = 95L) {
+calculatePolygonat <- function(
+  qdr_pop,
+  qdr_area,
+  area = 10000L,
+  error_confidence = 95L
+) {
   qdr_pop <- dplyr::coalesce(qdr_pop, 0L)
 
   error <- 1L - error_confidence / 100L
@@ -507,7 +562,6 @@ calculatePolygonat <- function(qdr_pop,
   # spatial dispersion
   spd <- stats::sd(qdr_pop)^2L / mean(qdr_pop)
 
-
   list(
     pop_m2_avg = round(pop_m2_avg, 6L),
     pop_m2_sd = round(pop_m2_sd, 6L),
@@ -520,10 +574,12 @@ calculatePolygonat <- function(qdr_pop,
   )
 }
 
-calculateQuadrat <- function(qdr_pop,
-                             qdr_size = 25L,
-                             area = 10000L,
-                             error_confidence = 95L) {
+calculateQuadrat <- function(
+  qdr_pop,
+  qdr_size = 25L,
+  area = 10000L,
+  error_confidence = 95L
+) {
   qdr_pop <- dplyr::coalesce(qdr_pop, 0L)
 
   error <- 1L - error_confidence / 100L
@@ -543,7 +599,6 @@ calculateQuadrat <- function(qdr_pop,
 
   # spatial dispersion
   spd <- stats::sd(qdr_pop)^2L / mean(qdr_pop)
-
 
   list(
     pop_m2_avg = round(pop_m2_avg, 6L),
@@ -576,11 +631,12 @@ calculateQuadrat <- function(qdr_pop,
 #' data <- c(1L, 2L, 2L, 3L, 3L, 3L, 4L, 4L, 5L, 5L, 5L, 5L, 6L, 6L, 7L, 7L, 7L, 7L, 7L, 7L, 8L, 8L, 8L, 8L, 9L, 9L, 9L, 9L, 10L, 10L)
 #' calculateSampleZeroInflatedDistribution(data)
 #'
-calculateSampleZeroInflatedDistribution <- function(smp_pop,
-                                                    n = 10000L,
-                                                    error_confidence = 95L,
-                                                    progress = NULL) {
-
+calculateSampleZeroInflatedDistribution <- function(
+  smp_pop,
+  n = 10000L,
+  error_confidence = 95L,
+  progress = NULL
+) {
   if (length(smp_pop) == 0L) {
     return()
   }
@@ -594,7 +650,12 @@ calculateSampleZeroInflatedDistribution <- function(smp_pop,
     fn = function(data, parameters) {
       lambda <- parameters[1L]
       prob_0 <- parameters[2L]
-      vector_of_likelihoods <- suppressWarnings(dzipois(data, lambda, prob_0, log = TRUE))
+      vector_of_likelihoods <- suppressWarnings(dzipois(
+        data,
+        lambda,
+        prob_0,
+        log = TRUE
+      ))
       ll <- -1L * sum(vector_of_likelihoods)
       ll
     },
@@ -623,22 +684,23 @@ calculateSampleZeroInflatedDistribution <- function(smp_pop,
   # Limite infereure et superieure de l interval de confiance
   pop_i <- stats::quantile(simusbs, qtile, na.rm = TRUE)
 
-
   list(
-    pop    = as.integer(pop),
-    pop_i  = pop_i,
+    pop = as.integer(pop),
+    pop_i = pop_i,
     lambda = round(lambda, 6L),
-    prob   = round(prob_0, 6L)
+    prob = round(prob_0, 6L)
   )
 }
 
-calculateTSquare <- function(d1,
-                             d2,
-                             p1 = NULL,
-                             p2 = NULL,
-                             p = NULL,
-                             area = 10000L,
-                             error_confidence = 95L) {
+calculateTSquare <- function(
+  d1,
+  d2,
+  p1 = NULL,
+  p2 = NULL,
+  p = NULL,
+  area = 10000L,
+  error_confidence = 95L
+) {
   d1 <- dplyr::coalesce(d1, 0L)
   d2 <- dplyr::coalesce(d2, 0L)
 
@@ -699,7 +761,10 @@ calculateTSquare <- function(d1,
     } else {
       # random >  test 2
 
-      mc <- ((48L * m) / (13L * m + 1L)) * (m * log(sum(d1^2L + (d2^2L / 2L)) / m) - sum(log(d1^2L + (d2^2L / 2L)))) # 42.8331
+      mc <- ((48L * m) / (13L * m + 1L)) *
+        (m *
+          log(sum(d1^2L + (d2^2L / 2L)) / m) -
+          sum(log(d1^2L + (d2^2L / 2L)))) # 42.8331
       mc_p <- 1L - stats::pchisq(mc, m - 1L)
 
       if (mc_p > 0.05) {
@@ -722,7 +787,6 @@ calculateTSquare <- function(d1,
       pop_i <- p_hh * area / (area_hh + area_hh_sde)
     }
   }
-
 
   list(
     t = round(t, 6L),
@@ -773,7 +837,6 @@ cleanOSM <- function(osm) {
 #' @noRd
 #'
 dzipois <- function(x, lambda, pstr0 = 0L, log = FALSE) {
-
   log.arg <- log
 
   if (!is.logical(log.arg) || length(log) != 1L) {
@@ -791,13 +854,18 @@ dzipois <- function(x, lambda, pstr0 = 0L, log = FALSE) {
 
   index0 <- (x == 0L)
   if (log.arg) {
-    ans[index0] <- log(pstr0[index0] + (1L - pstr0[index0]) * stats::dpois(x[index0], lambda[index0]))
-    ans[!index0] <- log1p(-pstr0[!index0]) + stats::dpois(x[!index0], lambda[!index0], log = TRUE)
+    ans[index0] <- log(
+      pstr0[index0] +
+        (1L - pstr0[index0]) * stats::dpois(x[index0], lambda[index0])
+    )
+    ans[!index0] <- log1p(-pstr0[!index0]) +
+      stats::dpois(x[!index0], lambda[!index0], log = TRUE)
   } else {
-    ans[index0] <- pstr0[index0] + (1L - pstr0[index0]) * stats::dpois(x[index0], lambda[index0])
-    ans[!index0] <- (1L - pstr0[!index0]) * stats::dpois(x[!index0], lambda[!index0])
+    ans[index0] <- pstr0[index0] +
+      (1L - pstr0[index0]) * stats::dpois(x[index0], lambda[index0])
+    ans[!index0] <- (1L - pstr0[!index0]) *
+      stats::dpois(x[!index0], lambda[!index0])
   }
-
 
   deflat.limit <- -1L / expm1(lambda)
   ans[pstr0 < deflat.limit] <- NaN
@@ -806,10 +874,12 @@ dzipois <- function(x, lambda, pstr0 = 0L, log = FALSE) {
   ans
 }
 
-getOSMSpatialFeatures <- function(bbox,
-                                  key,
-                                  bbox_crop = FALSE,
-                                  osm_multipolygons = FALSE) {
+getOSMSpatialFeatures <- function(
+  bbox,
+  key,
+  bbox_crop = FALSE,
+  osm_multipolygons = FALSE
+) {
   osm <-
     osmdata::opq(bbox = bbox) |>
     osmdata::add_osm_feature(key = key) |>
@@ -834,19 +904,25 @@ getSampleFilename <- function(polygon, ext) {
   file <- sprintf(
     '%s %s - %s.%s',
     tolower(df_sampling_method[polygon$type, 'label']),
-    tolower(polygon$id), Sys.Date(), ext
+    tolower(polygon$id),
+    Sys.Date(),
+    ext
   )
   file
 }
 
 key <- function(polygon_idx, point, method) {
-
   dplyr::case_when(
-    method == 'SP_QDR' ~ ((point * 100000L) + (polygon_idx * 10000L) + (1L * 1000L)) %% 97L,
-    method == 'SP_TSQ' ~ ((point * 100000L) + (polygon_idx * 10000L) + (2L * 1000L)) %% 97L,
-    method == 'SP_SPV' ~ ((point * 100000L) + (polygon_idx * 10000L) + (3L * 1000L)) %% 97L,
-    method == 'SP_SMP' ~ ((point * 100000L) + (polygon_idx * 10000L) + (4L * 1000L)) %% 97L,
-    method == 'RS_SMP' ~ ((point * 100000L) + (polygon_idx * 10000L) + (5L * 1000L)) %% 97L
+    method == 'SP_QDR' ~
+      ((point * 100000L) + (polygon_idx * 10000L) + (1L * 1000L)) %% 97L,
+    method == 'SP_TSQ' ~
+      ((point * 100000L) + (polygon_idx * 10000L) + (2L * 1000L)) %% 97L,
+    method == 'SP_SPV' ~
+      ((point * 100000L) + (polygon_idx * 10000L) + (3L * 1000L)) %% 97L,
+    method == 'SP_SMP' ~
+      ((point * 100000L) + (polygon_idx * 10000L) + (4L * 1000L)) %% 97L,
+    method == 'RS_SMP' ~
+      ((point * 100000L) + (polygon_idx * 10000L) + (5L * 1000L)) %% 97L
   )
 }
 
@@ -856,7 +932,22 @@ key <- function(polygon_idx, point, method) {
 #'
 #' @noRd
 #'
-new_rast <- function(nrows = 10L, ncols = 10L, nlyrs = 1L, xmin = 0L, xmax = 1L, ymin = 0L, ymax = 1L, crs, extent, resolution, vals, names, time, units) {
+new_rast <- function(
+  nrows = 10L,
+  ncols = 10L,
+  nlyrs = 1L,
+  xmin = 0L,
+  xmax = 1L,
+  ymin = 0L,
+  ymax = 1L,
+  crs,
+  extent,
+  resolution,
+  vals,
+  names,
+  time,
+  units
+) {
   ncols <- round(ncols)
   if (ncols < 1L) error('rast', 'ncols < 1')
   nrows <- round(nrows)
@@ -930,14 +1021,31 @@ plotMap <- function(nc, road = FALSE, force = FALSE) {
   tile_grid <- slippymath::bbox_to_tile_grid(bbox, max_tiles = 100L)
 
   if (road) {
-    provider <- list(src = 'GOOGLE_ROAD', q = 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&ext=jpg')
+    provider <- list(
+      src = 'GOOGLE_ROAD',
+      q = 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&ext=jpg'
+    )
   } else {
-    provider <- list(src = 'GOOGLE_SAT', q = 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&ext=jpg')
+    provider <- list(
+      src = 'GOOGLE_SAT',
+      q = 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&ext=jpg'
+    )
   }
 
-  provider <- utils::modifyList(provider, list(sub = c('0', '1', '2', '3'), cit = '\u00a9 Google.'))
+  provider <- utils::modifyList(
+    provider,
+    list(sub = c('0', '1', '2', '3'), cit = '\u00a9 Google.')
+  )
 
-  r <- maptiles::get_tiles(x = bbox, zoom = tile_grid$zoom, provider = provider, crop = TRUE, cachedir = fs::path_temp(), verbose = TRUE, forceDownload = force)
+  r <- maptiles::get_tiles(
+    x = bbox,
+    zoom = tile_grid$zoom,
+    provider = provider,
+    crop = TRUE,
+    cachedir = fs::path_temp(),
+    verbose = TRUE,
+    forceDownload = force
+  )
 
   # r_df <- data.frame(terra::xyFromCell(r, 1:terra::ncell(r)), terra::getValues(r / 255))
   # r_df <- setNames(r_df, c('x', 'y', 'red', 'green', 'blue'))
@@ -975,15 +1083,14 @@ pointsToTiles <- function(polygon, points) {
       y = (match(df$y, unique(df$y)) - 1L) %/% 3L,
       n = seq_len(dplyr::n()),
       v = ifelse(is.na(builded), 0L, 1L),
-      c =
-        rep(
-          c(
-            rep(1:3, ncol(r) / 3L) + 6L,
-            rep(1:3, ncol(r) / 3L) + 3L,
-            rep(1:3, ncol(r) / 3L) + 0L
-          ),
-          nrow(r) / 3L
-        )
+      c = rep(
+        c(
+          rep(1:3, ncol(r) / 3L) + 6L,
+          rep(1:3, ncol(r) / 3L) + 3L,
+          rep(1:3, ncol(r) / 3L) + 0L
+        ),
+        nrow(r) / 3L
+      )
     ) |>
     dplyr::arrange(y, x, c) |>
     dplyr::group_by(y, x) |>
@@ -991,7 +1098,10 @@ pointsToTiles <- function(polygon, points) {
     dplyr::ungroup()
 
   tiles <-
-    slippymath::bbox_to_tile_grid(bbox = sf::st_bbox(polygon), zoom = 18L)$tiles |>
+    slippymath::bbox_to_tile_grid(
+      bbox = sf::st_bbox(polygon),
+      zoom = 18L
+    )$tiles |>
     tibble::as_tibble() |>
     dplyr::mutate(
       n = seq_len(dplyr::n()),
@@ -1015,8 +1125,16 @@ polygonToRasterCells <- function(polygon) {
   tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L)
   tile_grid_bbox <- tile_grid_bbox(tile_grid)
 
-  tile_grid_xy_min <- slippymath::tilenum_to_lonlat(x = tile_grid$tiles$x[1L], y = tile_grid$tiles$y[1L], zoom = 18L)[1:2]
-  tile_grid_xy_max <- slippymath::tilenum_to_lonlat(x = tile_grid$tiles$x[nrow(tile_grid$tiles)] + 1L, y = tile_grid$tiles$y[nrow(tile_grid$tiles)] + 1L, zoom = 18L)[1:2]
+  tile_grid_xy_min <- slippymath::tilenum_to_lonlat(
+    x = tile_grid$tiles$x[1L],
+    y = tile_grid$tiles$y[1L],
+    zoom = 18L
+  )[1:2]
+  tile_grid_xy_max <- slippymath::tilenum_to_lonlat(
+    x = tile_grid$tiles$x[nrow(tile_grid$tiles)] + 1L,
+    y = tile_grid$tiles$y[nrow(tile_grid$tiles)] + 1L,
+    zoom = 18L
+  )[1:2]
 
   tiles <- tile_grid$tiles
 
@@ -1035,7 +1153,11 @@ polygonToRasterCells <- function(polygon) {
     vals = 1L
   )
 
-  polygon_cells_rst <- terra::mask(polygon_cells_rst, terra::vect(sf::st_geometry(polygon)), overwrite = TRUE)
+  polygon_cells_rst <- terra::mask(
+    polygon_cells_rst,
+    terra::vect(sf::st_geometry(polygon)),
+    overwrite = TRUE
+  )
 
   polygon_cells_rst
 }
@@ -1109,13 +1231,21 @@ progressEnd <- function() {
 }
 
 progressUpdate <- function(vars, text) {
-  vars$progress_value <- vars$progress_steps_value + (vars$progress / vars$progress_steps) * vars$progress_steps_duration
+  vars$progress_value <- vars$progress_steps_value +
+    (vars$progress / vars$progress_steps) * vars$progress_steps_duration
   vars$progress <- vars$progress + 1L
 
   text <- sprintf(
-    '%s (%s %% / %s min)', text,
+    '%s (%s %% / %s min)',
+    text,
     round(100L * vars$progress_value, 2L),
-    round(((proc.time() - vars$progress_ptm)['elapsed'] / 60L / vars$progress_value) * 100L, 2L)
+    round(
+      ((proc.time() - vars$progress_ptm)['elapsed'] /
+        60L /
+        vars$progress_value) *
+        100L,
+      2L
+    )
   )
 
   shinybusy::update_modal_progress(
@@ -1167,14 +1297,23 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
     polygon <- polygons[i]
     tile_grids$polygons[[i]] <- list()
     for (zoom in 20:1) {
-      tile_grid <- slippymath::bbox_to_tile_grid(bbox = sf::st_bbox(polygon), zoom = zoom)
+      tile_grid <- slippymath::bbox_to_tile_grid(
+        bbox = sf::st_bbox(polygon),
+        zoom = zoom
+      )
 
       tile_grid_sf <- tile_grid_to_sf(tile_grid)
-      tile_grid_intersect <- sf::st_intersects(tile_grid_sf, polygon, sparse = FALSE)
+      tile_grid_intersect <- sf::st_intersects(
+        tile_grid_sf,
+        polygon,
+        sparse = FALSE
+      )
       tile_grid$tiles <- tile_grid$tiles[as.vector(tile_grid_intersect), ]
       tile_grids$tiles_count <- tile_grids$tiles_count + nrow(tile_grid$tiles)
 
-      tile_grids$polygons[[i]]$tiles[[zoom]] <- tibble::as_tibble(tile_grid$tiles)
+      tile_grids$polygons[[i]]$tiles[[zoom]] <- tibble::as_tibble(
+        tile_grid$tiles
+      )
     }
   }
 
@@ -1207,7 +1346,10 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
       for (t in seq_len(nrow(tiles))) {
         tile_current <- tile_current + 1L
 
-        progress_value <- round(100L * (tile_current / tile_grids$tiles_count), 2L)
+        progress_value <- round(
+          100L * (tile_current / tile_grids$tiles_count),
+          2L
+        )
 
         print(progress_value)
 
@@ -1220,12 +1362,22 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
             '&y=%s',
             '&z=%s',
             '&s=Gal'
-          ), round(stats::runif(1L, 0L, 3L)), tile$x, tile$y, zoom
+          ),
+          round(stats::runif(1L, 0L, 3L)),
+          tile$x,
+          tile$y,
+          zoom
         )
         query_png <- sprintf('%s/%s_%s_%s.png', tiles_dir, zoom, tile$x, tile$y)
 
         if (!fs::file_exists(query_png)) {
-          curl::curl_download(url = query, destfile = query_png, quiet = TRUE)
+          result <- safe_download(
+            url = query,
+            destfile = query_png,
+            quiet = TRUE,
+            msg = "readBasemapGoogle"
+          )
+          if (is.null(result)) next
         }
 
         if (!is.null(async_queue) && nrow(tiles) > 1L) {
