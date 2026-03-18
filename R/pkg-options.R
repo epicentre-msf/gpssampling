@@ -1,20 +1,11 @@
 # styler: block 
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
+#' Retrieve a package-level option from the global options store.
 #'
-#' @param name PARAM_DESCRIPTION
-#' @param default PARAM_DESCRIPTION, Default: NULL
+#' @param name Character name of the option to retrieve.
+#' @param default Value to return if the option is not set. Default: NULL.
 #'
-#' @return OUTPUT_DESCRIPTION
-#'
-#' @details DETAILS
-#' @examples
-#' \dontrun{
-#' if (interactive()) {
-#'   # EXAMPLE1
-#' }
-#' }
+#' @return The stored option value, or `default` if not found.
 #'
 #' @noRd
 #'

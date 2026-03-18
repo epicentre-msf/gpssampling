@@ -12,7 +12,10 @@ Authors@R: c(
            comment = c(url = "https://epicentre.msf.org/"))
   )
 Maintainer: Serge Balandine <serge.balandine@epicentre.msf.org>
-Description: What the package does (one paragraph).
+Description: A Shiny application for geospatial sampling of building
+    structures within defined polygon areas. Supports quadrat, T-square,
+    and random sampling methods with OpenStreetMap and Google satellite
+    imagery integration for field epidemiology surveys.
 License: MIT + file LICENSE
 URL:
         https://github.com/epicentre-field-epidemiology-training/epi.geosampler

@@ -27,7 +27,7 @@ TileManager <- R6::R6Class(
     #' @param ... Additional arguments.
     #' @return The roof sf object.
     addRoof = function(map, lng, lat, ...) {
-      tilenum <- slippymath::lonlat_to_tilenum(lng, lat, zoom = 18L)
+      tilenum <- slippymath::lonlat_to_tilenum(lng, lat, zoom = ZOOM_TILE)
 
       roof <-
         sf::st_sf(
@@ -119,7 +119,11 @@ TileManager <- R6::R6Class(
 
         tiles_roofs <- pointsToTiles(data$polygons, roofs)
 
-        tiles <- data$db$dbGetQuery('SELECT * from tiles')
+        tiles <- safe_db(
+          data$db$dbGetQuery('SELECT * from tiles'),
+          default = data.frame(),
+          msg = "addRoofs:SELECT tiles"
+        )
         tiles <- tiles |>
           dplyr::left_join(
             dplyr::select(tiles_roofs, x, y, cells),
@@ -132,14 +136,17 @@ TileManager <- R6::R6Class(
           dplyr::select(-cells.x, -cells.y) |>
           tibble::as_tibble()
 
-        data$db$dbWriteTable(name = 'tiles', value = tiles, overwrite = TRUE)
+        safe_db(
+          data$db$dbWriteTable(name = 'tiles', value = tiles, overwrite = TRUE),
+          msg = "addRoofs:dbWriteTable(tiles)"
+        )
 
         roofs_xy <- sf::st_coordinates(roofs)
 
         tilenum <- slippymath::lonlat_to_tilenum(
           roofs_xy[, 1L],
           roofs_xy[, 2L],
-          zoom = 18L
+          zoom = ZOOM_TILE
         )
 
         roofs <-
@@ -151,7 +158,10 @@ TileManager <- R6::R6Class(
             geometry = sf::st_as_text(roofs$geometry)
           )
 
-        data$db$dbWriteTable(name = 'roofs', value = roofs, overwrite = TRUE)
+        safe_db(
+          data$db$dbWriteTable(name = 'roofs', value = roofs, overwrite = TRUE),
+          msg = "addRoofs:dbWriteTable(roofs)"
+        )
 
         data$step_identify$state <- utils::modifyList(
           data$step_identify$state,
@@ -214,19 +224,27 @@ TileManager <- R6::R6Class(
     #' @return Data frame with status counts.
     getTileStatus = function(polygon = NULL) {
       if (is.null(polygon)) {
-        status <- data$db$dbGetQuery(
-          '
-        SELECT status, COUNT(status) AS n FROM tiles WHERE status >=0 GROUP BY status UNION
-        SELECT      3, COUNT()       AS n FROM tiles WHERE locked IS NOT NULL UNION
-        SELECT      4, COUNT()       AS n FROM roofs'
+        status <- safe_db(
+          data$db$dbGetQuery(
+            '
+          SELECT status, COUNT(status) AS n FROM tiles WHERE status >=0 GROUP BY status UNION
+          SELECT      3, COUNT()       AS n FROM tiles WHERE locked IS NOT NULL UNION
+          SELECT      4, COUNT()       AS n FROM roofs'
+          ),
+          default = data.frame(status = integer(0), n = integer(0)),
+          msg = "getTileStatus:SELECT status counts"
         )
       } else {
-        status <- data$db$dbGetQuery(
-          '
-        SELECT status, COUNT(status) AS n FROM tiles WHERE polygon = ? AND status >=0 GROUP BY status UNION
-        SELECT      3, COUNT()       AS n FROM tiles WHERE polygon = ? AND locked IS NOT NULL UNION
-        SELECT      4, COUNT()       AS n FROM roofs WHERE polygon = ?',
-          params = list(polygon, polygon, polygon)
+        status <- safe_db(
+          data$db$dbGetQuery(
+            '
+          SELECT status, COUNT(status) AS n FROM tiles WHERE polygon = ? AND status >=0 GROUP BY status UNION
+          SELECT      3, COUNT()       AS n FROM tiles WHERE polygon = ? AND locked IS NOT NULL UNION
+          SELECT      4, COUNT()       AS n FROM roofs WHERE polygon = ?',
+            params = list(polygon, polygon, polygon)
+          ),
+          default = data.frame(status = integer(0), n = integer(0)),
+          msg = "getTileStatus:SELECT status counts by polygon"
         )
       }
       status <- status |>
@@ -263,8 +281,8 @@ TileManager <- R6::R6Class(
               dplyr::summarize(min = min(y), max = max(y), n = dplyr::n()) |>
               dplyr::collect()
 
-            tilebbox1 <- tile_bbox_ll(tx$min, ty$min, zoom = 18L)
-            tilebbox2 <- tile_bbox_ll(tx$max, ty$max, zoom = 18L)
+            tilebbox1 <- tile_bbox_ll(tx$min, ty$min, zoom = ZOOM_TILE)
+            tilebbox2 <- tile_bbox_ll(tx$max, ty$max, zoom = ZOOM_TILE)
 
             tile_sf <-
               sf::st_union(
@@ -276,9 +294,13 @@ TileManager <- R6::R6Class(
 
             tile_bbox <- sf::st_bbox(tile_sf)
 
-            sql_df <- data$db$dbGetQuery(
-              'SELECT IIF(locked IS NOT NULL AND locked <> ?, -2, status) AS status FROM tiles WHERE polygon = ?',
-              params = list(token, i)
+            sql_df <- safe_db(
+              data$db$dbGetQuery(
+                'SELECT IIF(locked IS NOT NULL AND locked <> ?, -2, status) AS status FROM tiles WHERE polygon = ?',
+                params = list(token, i)
+              ),
+              default = data.frame(status = integer(0)),
+              msg = "displayGridIdentifyStatus:SELECT tile status"
             )
 
             pal <- leaflet::colorNumeric(
@@ -339,9 +361,13 @@ TileManager <- R6::R6Class(
       toggle = TRUE
     ) {
       if (is.defined(private$.tile)) {
-        cells <- data$db$dbGetQuery(
-          'SELECT cells FROM tiles WHERE x = ? AND y = ?',
-          params = list(private$.tile$x, private$.tile$y)
+        cells <- safe_db(
+          data$db$dbGetQuery(
+            'SELECT cells FROM tiles WHERE x = ? AND y = ?',
+            params = list(private$.tile$x, private$.tile$y)
+          ),
+          default = data.frame(cells = character(0)),
+          msg = "addCell:SELECT cells"
         )
         cells_bool <- as.logical(as.integer(stringr::str_split_fixed(
           string = cells,
@@ -466,13 +492,19 @@ TileManager <- R6::R6Class(
           id = st_id(id_n, 'tile')
         )
 
-      data$db$dbExecute(
-        sql = 'UPDATE tiles SET locked = NULL WHERE locked = ?',
-        params = list(token)
+      safe_db(
+        data$db$dbExecute(
+          sql = 'UPDATE tiles SET locked = NULL WHERE locked = ?',
+          params = list(token)
+        ),
+        msg = "searchSwipeTile:unlock tiles"
       )
-      data$db$dbExecute(
-        sql = 'UPDATE tiles SET locked = ? WHERE x = ? AND y = ?',
-        params = list(token, tile_grid_sf$x, tile_grid_sf$y)
+      safe_db(
+        data$db$dbExecute(
+          sql = 'UPDATE tiles SET locked = ? WHERE x = ? AND y = ?',
+          params = list(token, tile_grid_sf$x, tile_grid_sf$y)
+        ),
+        msg = "searchSwipeTile:lock tile"
       )
 
       self$invalidateGrid()
@@ -542,13 +574,17 @@ TileManager <- R6::R6Class(
 
       if (data$project_method == 'RS_SMP') {
         placeholders <- paste(rep('?', length(tiles)), collapse = ', ')
-        roofs_sf <- data$db$dbGetQuery(
-          paste0(
-            'SELECT * FROM roofs WHERE (x || "_" || y) IN (',
-            placeholders,
-            ')'
+        roofs_sf <- safe_db(
+          data$db$dbGetQuery(
+            paste0(
+              'SELECT * FROM roofs WHERE (x || "_" || y) IN (',
+              placeholders,
+              ')'
+            ),
+            params = as.list(tiles)
           ),
-          params = as.list(tiles)
+          default = data.frame(),
+          msg = "searchSwipeTile:SELECT roofs"
         )
 
         if (nrow(roofs_sf)) {
@@ -569,8 +605,11 @@ TileManager <- R6::R6Class(
     #' @description Mark all tiles as valid.
     #' @param map Leaflet map proxy.
     validAll = function(map) {
-      data$db$dbExecute(
-        sql = 'UPDATE tiles SET status = 2, cells = "111111111" WHERE status <> -1 '
+      safe_db(
+        data$db$dbExecute(
+          sql = 'UPDATE tiles SET status = 2, cells = "111111111" WHERE status <> -1 '
+        ),
+        msg = "validAll:UPDATE tiles status"
       )
       data$step_identify$state <- utils::modifyList(
         data$step_identify$state,
@@ -601,12 +640,15 @@ TileManager <- R6::R6Class(
       if (!is.null(new_status)) {
         private$.tile$status <- new_status
         tile_key <- paste(private$.tile$x, private$.tile$y, sep = '_')
-        data$db$dbExecute(
-          sql = sprintf(
-            'UPDATE tiles SET status = %d WHERE (x || "_" || y) = ? AND polygon = ?',
-            new_status
+        safe_db(
+          data$db$dbExecute(
+            sql = sprintf(
+              'UPDATE tiles SET status = %d WHERE (x || "_" || y) = ? AND polygon = ?',
+              new_status
+            ),
+            params = list(tile_key, private$.tile$polygon)
           ),
-          params = list(tile_key, private$.tile$polygon)
+          msg = "update_tile_status:UPDATE tile status"
         )
         invalidate(data$roofs_changed)
         data$grid_status_invalidated <- TRUE
@@ -638,29 +680,33 @@ TileManager <- R6::R6Class(
 
         status_target <- if (valid) 1L else 0L
 
-        data$db$dbGetQuery(
-          paste(
-            'SELECT * FROM tiles',
-            'WHERE locked IS NULL AND',
-            '(((status = ?) AND (polygon = ?) AND (y = ?) AND (x > ?)) OR',
-            ' ((status = ?) AND (polygon = ?) AND (y > ?)) OR',
-            ' ((status = ?) AND (polygon = ?) AND (y < ?)) OR',
-            '  (status = ?))',
-            'ORDER BY ROWID ASC LIMIT 1'
+        safe_db(
+          data$db$dbGetQuery(
+            paste(
+              'SELECT * FROM tiles',
+              'WHERE locked IS NULL AND',
+              '(((status = ?) AND (polygon = ?) AND (y = ?) AND (x > ?)) OR',
+              ' ((status = ?) AND (polygon = ?) AND (y > ?)) OR',
+              ' ((status = ?) AND (polygon = ?) AND (y < ?)) OR',
+              '  (status = ?))',
+              'ORDER BY ROWID ASC LIMIT 1'
+            ),
+            params = list(
+              status_target,
+              current_tile_polygon,
+              current_tile_y,
+              current_tile_x,
+              status_target,
+              current_tile_polygon,
+              current_tile_y,
+              status_target,
+              current_tile_polygon,
+              current_tile_y,
+              status_target
+            )
           ),
-          params = list(
-            status_target,
-            current_tile_polygon,
-            current_tile_y,
-            current_tile_x,
-            status_target,
-            current_tile_polygon,
-            current_tile_y,
-            status_target,
-            current_tile_polygon,
-            current_tile_y,
-            status_target
-          )
+          default = data.frame(),
+          msg = "find_next_tile:SELECT next tile"
         )
       } else if (direction == 'coordinates') {
         tilenum <- slippymath::lonlat_to_tilenum(
@@ -668,9 +714,13 @@ TileManager <- R6::R6Class(
           lat,
           data$settings$getValue('sli_identify_zoom')
         )
-        data$db$dbGetQuery(
-          'SELECT * FROM tiles WHERE locked IS NULL AND x = ? AND y = ? AND status != -1 LIMIT 1',
-          params = list(tilenum$x, tilenum$y)
+        safe_db(
+          data$db$dbGetQuery(
+            'SELECT * FROM tiles WHERE locked IS NULL AND x = ? AND y = ? AND status != -1 LIMIT 1',
+            params = list(tilenum$x, tilenum$y)
+          ),
+          default = data.frame(),
+          msg = "find_next_tile:SELECT tile by coordinates"
         )
       } else if (direction != '') {
         if (is.null(private$.tile)) {
@@ -686,9 +736,13 @@ TileManager <- R6::R6Class(
         } else if (direction == 'bottom') {
           grid_tile_0$y <- grid_tile_0$y + grid_tile_yn
         }
-        data$db$dbGetQuery(
-          'SELECT * FROM tiles WHERE locked IS NULL AND x = ? AND y = ? AND status != -1 LIMIT 1',
-          params = list(grid_tile_0$x, grid_tile_0$y)
+        safe_db(
+          data$db$dbGetQuery(
+            'SELECT * FROM tiles WHERE locked IS NULL AND x = ? AND y = ? AND status != -1 LIMIT 1',
+            params = list(grid_tile_0$x, grid_tile_0$y)
+          ),
+          default = data.frame(),
+          msg = "find_next_tile:SELECT tile by direction"
         )
       } else {
         private$.tile[1L, ]
@@ -734,9 +788,13 @@ TileManager <- R6::R6Class(
 
         grid_sf$id <- sprintf('identify_cell_%s', 1:9)
 
-        cells <- data$db$dbGetQuery(
-          'SELECT cells FROM tiles WHERE (x || "_" || y) = ?',
-          params = list(tiles[5L])
+        cells <- safe_db(
+          data$db$dbGetQuery(
+            'SELECT cells FROM tiles WHERE (x || "_" || y) = ?',
+            params = list(tiles[5L])
+          ),
+          default = data.frame(cells = "000000000"),
+          msg = "build_grid:SELECT cells"
         )
         cells <- as.logical(as.integer(stringr::str_split_fixed(
           string = cells,

@@ -240,7 +240,7 @@ getPackageTitle <- function() {
 #' getPackageTitleL()
 #' ## 'my package'
 #'
-#' @keywords internal truc machin
+#' @keywords internal
 #'
 getPackageTitleL <- function() {
   tolower(getPackageTitle())
@@ -940,7 +940,7 @@ dropNullsOrEmpty <- function(x) {
 #' @examples
 #' compare('sourcefile', 'targetfile')
 #'
-#' @keywords internal truc
+#' @keywords internal
 #'
 compare <- function(source, target, remote = FALSE) {
   checkmate::assert_character(source)

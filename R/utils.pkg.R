@@ -1402,12 +1402,5 @@ sf_empty <- function() {
   sf::st_sf(sf::st_sfc(crs = 'epsg:4326'))
 }
 
-# TODO: #20 Analyse OSM
-# sample.poly <- function(x, n = 10, type = 'random', ...) {
-#   # if(class(x) == 'sf') { x <- as(x, 'Spatial') }
-#   if (!(class(x)[1] == 'SpatialPolygonsDataFrame' || class(x)[1] == 'SpatialPolygons')) {
-#     stop(deparse(substitute(x)), ' MUST BE A sp spatialDataFrame OBJECT')
-#   }
-#   sample.list <- sapply(x@polygons, sp::spsample, n = n, type = type, ...)
-#   return(do.call(rbind, sample.list))
-# }
+
+

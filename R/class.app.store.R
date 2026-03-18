@@ -29,6 +29,19 @@ UserData <- R6::R6Class(
     sample_mgr = function() {
       private$.sample_mgr
     },
+    polygon_mgr = function() {
+      private$.polygon_mgr
+    },
+    persistence = function() {
+      private$.persistence
+    },
+    project_active_raw = function(value) {
+      if (missing(value)) {
+        private$.project_active
+      } else {
+        private$.project_active <- value
+      }
+    },
     polygons_raw = function(value) {
       if (missing(value)) {
         private$.polygons
@@ -170,10 +183,23 @@ UserData <- R6::R6Class(
       }
     },
     roofs = function() {
-      roofs_sf <- db$dbGetQuery('SELECT * FROM roofs')
-      roofs_sf <- roofs_sf |>
-        sf::st_as_sf(wkt = 'geometry') |>
-        sf::st_set_crs(4326L)
+      roofs_sf <- safe_db(
+        db$dbGetQuery('SELECT * FROM roofs'),
+        default = data.frame(
+          id = character(),
+          polygon = integer(),
+          x = integer(),
+          y = integer(),
+          geometry = character(),
+          stringsAsFactors = FALSE
+        ),
+        msg = "roofs:dbGetQuery"
+      )
+      if (nrow(roofs_sf) > 0L && "geometry" %in% names(roofs_sf)) {
+        roofs_sf <- roofs_sf |>
+          sf::st_as_sf(wkt = 'geometry') |>
+          sf::st_set_crs(4326L)
+      }
       roofs_sf
     },
     roofs_changed = function() {
@@ -239,7 +265,6 @@ UserData <- R6::R6Class(
 
       self$ns <- shiny::NS('app')
 
-      # c(13.02915, 11.76533, 13.24897, 11.89713)
       private$.bbox_default <- application$private$.bbox
       private$.guide_polygon_trigger <- reactiveTrigger()
       private$.guide_point_trigger <- reactiveTrigger()
@@ -295,24 +320,36 @@ UserData <- R6::R6Class(
 
       tokens <- .globals$session$tokens
       placeholders <- paste(rep('?', length(tokens)), collapse = ', ')
-      self$db$dbExecute(
-        sql = paste0(
-          'UPDATE tiles SET locked = NULL WHERE locked NOT IN (',
-          placeholders,
-          ')'
+      safe_db(
+        self$db$dbExecute(
+          sql = paste0(
+            'UPDATE tiles SET locked = NULL WHERE locked NOT IN (',
+            placeholders,
+            ')'
+          ),
+          params = as.list(tokens)
         ),
-        params = as.list(tokens)
+        msg = "initialize:unlock stale tiles"
       )
 
       private$.settings <- Settings$new()
 
-      private$.settings$addSetting('csi_circle_color', '#80FF00')
-      private$.settings$addSetting('sli_circle_radius', 2L)
-      private$.settings$addSetting('sli_circle_opacity', 25L)
-      private$.settings$addSetting('sli_identify_zoom', 18L)
+      private$.settings$addSetting('csi_circle_color', DEFAULT_CSI_CIRCLE_COLOR)
+      private$.settings$addSetting(
+        'sli_circle_radius',
+        DEFAULT_SLI_CIRCLE_RADIUS
+      )
+      private$.settings$addSetting(
+        'sli_circle_opacity',
+        DEFAULT_SLI_CIRCLE_OPACITY
+      )
+      private$.settings$addSetting('sli_identify_zoom', ZOOM_TILE)
 
-      private$.settings$addSetting('sli_sample_radius', 25L)
-      private$.settings$addSetting('sli_sample_zoom', 20L)
+      private$.settings$addSetting(
+        'sli_sample_radius',
+        DEFAULT_SLI_SAMPLE_RADIUS
+      )
+      private$.settings$addSetting('sli_sample_zoom', ZOOM_SAMPLE)
 
       private$.step <- 'none'
 
@@ -322,15 +359,8 @@ UserData <- R6::R6Class(
       private$.tiles <- terra::rast()
       private$.tiles_trigger <- reactiveTrigger()
       private$.tiles_pal <- leaflet::colorNumeric(
-        palette = c(
-          scales::alpha('red', 0.5),
-          scales::alpha('black', 0L),
-          scales::alpha('white', 0.5),
-          scales::alpha('yellow', 0.5),
-          scales::alpha('green', 0.5),
-          scales::alpha('red', 0.5)
-        ),
-        domain = -2:3,
+        palette = TILE_PALETTE_COLORS,
+        domain = TILE_PALETTE_DOMAIN,
         na.color = scales::alpha('black', 0L),
         alpha = TRUE
       )
@@ -338,195 +368,18 @@ UserData <- R6::R6Class(
       private$.exporter <- DocumentExporter$new(data = self)
       private$.tile_mgr <- TileManager$new(data = self)
       private$.sample_mgr <- SampleManager$new(data = self)
+      private$.polygon_mgr <- PolygonManager$new(data = self)
+      private$.persistence <- DataPersistence$new(data = self)
 
       if (load) {
         self$load()
       }
     },
-    #' Update Cells
-    #'
-    #' This method updates the cells of a given set of polygons.
-    #'
-    #' @param polygons_sf A sf object containing the polygons to update.
-    #'
-    #' @return The updated polygons_sf object with the cells information added.
-    #'
     updateCells = function(polygons_sf) {
-      polygons_sf$cells_vect <- list(sf_empty())
-      polygons_sf$cells_vect_rev <- list(sf_empty())
-
-      for (i in seq_len(nrow(polygons_sf))) {
-        polygon <- polygons_sf[i, ]
-
-        if (polygon$selected) {
-          tiles <- db$dbGetQuery(
-            'SELECT x, y, cells FROM tiles WHERE polygon = ? AND cells <> "000000000"',
-            params = list(polygon$id_n)
-          )
-
-          if (nrow(tiles)) {
-            cells <- tiles |>
-              dplyr::mutate(key = seq_len(dplyr::n())) |>
-              tidyr::crossing(data.frame(cell = 9:1)) |>
-              dplyr::arrange(key, cell) |>
-              dplyr::mutate(
-                builded = as.integer(stringr::str_split_fixed(
-                  string = paste(tiles$cells, collapse = ''),
-                  pattern = '',
-                  n = Inf
-                ))
-              ) |>
-              dplyr::filter(builded == 1L) |>
-              dplyr::select(-cells)
-
-            rg_x <- range(cells$x)
-            rg_y <- range(cells$y)
-
-            cells_rst <-
-              terra::rast(
-                names = 'builded',
-                nrows = (rg_y[2L] - rg_y[1L] + 1L) * 3L,
-                ncols = (rg_x[2L] - rg_x[1L] + 1L) * 3L,
-                nlyrs = 1L,
-                vals = NA,
-                xmin = rg_x[1L],
-                xmax = rg_x[2L] + 1L,
-                ymin = rg_y[1L],
-                ymax = rg_y[2L] + 1L
-              )
-
-            cells_rst_df <-
-              tibble::as_tibble(as.data.frame(
-                cells_rst,
-                xy = TRUE,
-                na.rm = FALSE
-              )) |>
-              dplyr::transmute(
-                x.cell = floor(abs(x - as.integer(x)) * 3L),
-                y.cell = floor(abs(y - as.integer(y)) * 3L),
-                cell = 6L - y.cell * 3L + x.cell + 1L,
-                x = as.integer(x),
-                y = as.integer(y)
-              )
-
-            cells_rst_df <- dplyr::left_join(
-              cells_rst_df,
-              cells,
-              by = c('cell', 'x', 'y')
-            )
-
-            terra::values(cells_rst) <- cells_rst_df$builded
-
-            cells_rst <- cells_rst |>
-              terra::flip(direction = 'vertical')
-
-            # terra::plot(cells_rst)
-
-            rg_ll_tl <- slippymath::tilenum_to_lonlat(
-              x = rg_x[1L],
-              y = rg_y[2L] + 1L,
-              zoom = 18L
-            )
-            rg_ll_br <- slippymath::tilenum_to_lonlat(
-              x = rg_x[2L] + 1L,
-              y = rg_y[1L],
-              zoom = 18L
-            )
-
-            terra::ext(cells_rst) <- c(
-              rg_ll_tl$lon,
-              rg_ll_br$lon,
-              rg_ll_tl$lat,
-              rg_ll_br$lat
-            )
-
-            terra::crs(cells_rst) <- 'epsg:4326'
-
-            # terra::plot(r)
-
-            # cells_mp <- lapply(
-            #   1:nrow(cells),
-            #   function(r) {
-            #     bbox <- slippymath::tile_bbox(
-            #       x = cells$x[r],
-            #       y = cells$y[r], 18
-            #     )
-            #     # bbox_sfg <- sf::st_polygon(list(matrix(bbox[c(1, 2, 3, 2, 3, 4, 1, 4, 1, 2)], ncol = 2, byrow = TRUE)))
-            #     # plot(bbox_sfg)
-            #     bbox <- as.list(bbox)
-            #     cell_w <- (bbox$xmax - bbox$xmin) / 3
-            #     cell_h <- (bbox$ymax - bbox$ymin) / 3
-            #     cell_xmin <- bbox$xmin + cell_w * (cells$cell[r] - 1) %% 3
-            #     cell_xmax <- bbox$xmin + cell_w * (cells$cell[r] - 1) %% 3 + cell_w
-            #     cell_ymin <- bbox$ymin + cell_h * (cells$cell[r] - 1) %/% 3
-            #     cell_ymax <- bbox$ymin + cell_h * (cells$cell[r] - 1) %/% 3 + cell_h
-            #     cell_bbox <- sf::st_bbox(c(xmin = cell_xmin, xmax = cell_xmax, ymax = cell_ymax, ymin = cell_ymin))
-            #     cell_sfg <- sf::st_polygon(list(matrix(cell_bbox[c(1, 2, 3, 2, 3, 4, 1, 4, 1, 2)], ncol = 2, byrow = TRUE)))
-            #     # plot(cell_sfg, add=TRUE)
-            #     return(cell_sfg)
-            #   }
-            # )
-          } else {
-            cells_rst <- rast_empty()
-          }
-
-          cells_vect <- rasterCellsToPolygon(cells_rst)
-          cells_vect <- terra::crop(
-            cells_vect,
-            sf::st_geometry(polygon) |> terra::vect()
-          ) |>
-            sf::st_as_sf()
-
-          polygons_sf[i, ]$cells_vect[[1L]] <- cells_vect
-          polygons_sf[i, ]$cells_count <- sum(
-            terra::values(cells_rst),
-            na.rm = TRUE
-          )
-
-          cells_rst_rev <- polygonToRasterCells(polygon)
-          cells_rst_rs <- terra::resample(cells_rst, cells_rst_rev)
-          terra::values(cells_rst_rev) <- ifelse(
-            !is.na(terra::values(cells_rst_rev)),
-            0L,
-            1L
-          )
-          terra::values(cells_rst_rs) <- ifelse(
-            !is.na(terra::values(cells_rst_rs)),
-            0L,
-            2L
-          )
-
-          cells_rst_rev <- terra::merge(cells_rst_rs, cells_rst_rev)
-
-          terra::values(cells_rst_rev) <- ifelse(
-            terra::values(cells_rst_rev) == 2L,
-            NA,
-            1L
-          )
-
-          cells_vect_rev <- rasterCellsToPolygon(cells_rst_rev)
-          cells_vect_rev <- terra::crop(
-            cells_vect_rev,
-            sf::st_geometry(polygon) |> terra::vect()
-          ) |>
-            sf::st_as_sf()
-
-          polygons_sf[i, ]$cells_vect_rev[[1L]] <- cells_vect_rev
-        }
-      }
-
-      polygons_sf
+      self$polygon_mgr$updateCells(polygons_sf)
     },
     drawNewFeature = function(map, feature) {
-      feature_sf <-
-        st_as_sf.feature(feature)
-      # sf::st_crop(project$getExtent()$getExtent())
-
-      if (sf::st_is(feature_sf, 'LINESTRING')) {
-        cutPolygons(map, line = feature_sf)
-      } else {
-        addPolygon(map, polygon = feature_sf)
-      }
+      self$polygon_mgr$drawNewFeature(map, feature)
     },
     getChoicesStatus = function() {
       c_named(
@@ -547,83 +400,10 @@ UserData <- R6::R6Class(
       self$tile_mgr$displayGridIdentifyStatus(map, token, force, ...)
     },
     displayGuidePolygon = function(map) {
-      map <- map |>
-        leaflet::clearGroup('guide_polygon')
-
-      if (!is.null(self$guide_polygon)) {
-        map <- map |>
-          leaflet::addPolygons(
-            data = self$guide_polygon,
-            color = 'white',
-            fill = FALSE,
-            group = 'guide_polygon',
-            label = ~lf_name,
-            labelOptions = leaflet::labelOptions(
-              noHide = TRUE,
-              direction = 'center',
-              textOnly = FALSE,
-              textsize = '10px',
-              style = list(
-                `background-color` = '#ffffff22',
-                border = 'none',
-                `box-shadow` = 'none',
-                color = 'white',
-                `font-size` = '10px',
-                `text-align` = 'center',
-                `text-shadow` = '0px 0px 1px #000, 0px 0px 1px #000;'
-              )
-            ),
-            layerId = ~lf_key,
-            options = leaflet::pathOptions(pane = 'polygon_1'),
-            opacity = 1L,
-            stroke = TRUE,
-            weight = 1L
-          )
-      }
-
-      map
+      self$polygon_mgr$displayGuidePolygon(map)
     },
     displayGuidePoint = function(map) {
-      map <- map |>
-        leaflet::clearGroup('guide_point')
-
-      if (!is.null(self$guide_point)) {
-        map <- map |>
-          leaflet::addCircleMarkers(
-            data = self$guide_point,
-            fill = TRUE,
-            fillColor = 'white',
-            fillOpacity = 1L,
-            group = 'guide_point',
-            label = ~lf_name,
-            labelOptions = leaflet::labelOptions(
-              direction = 'bottom',
-              noHide = TRUE,
-              offset = c(0L, 7L),
-              textOnly = FALSE,
-              textsize = '10px',
-              style = list(
-                'background-color' = '#ffffff22',
-                # 'border' = 'none',
-                'border-color' = 'white',
-                'box-shadow' = 'none',
-                # "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
-                color = 'white',
-                'font-size' = '12px',
-                padding = '0 3px 0 3px',
-                'text-align' = 'center',
-                'text-shadow' = '0px 0px 1px #000, 0px 0px 1px #000;'
-              )
-            ),
-            layerId = ~lf_key,
-            options = leaflet::pathOptions(pane = 'polygon_1'),
-            opacity = 1L,
-            radius = 4L,
-            stroke = FALSE
-          )
-      }
-
-      map
+      self$polygon_mgr$displayGuidePoint(map)
     },
     export = function() {
       self$exporter$export()
@@ -632,223 +412,16 @@ UserData <- R6::R6Class(
       self$exporter$import()
     },
     invertSelection = function(map) {
-      private$.polygons$selected <- !self$polygons$selected
-
-      map |>
-        setStyleFast(
-          group = 'polygons',
-          fill_opacities = as.list(ifelse(self$polygons$selected, 0.2, 0.01))
-        )
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = TRUE)
-      )
+      self$polygon_mgr$invertSelection(map)
     },
     load = function(project_active = NULL, force = FALSE) {
-      if (is.null(project_active)) {
-        fp <- fs::path(cache, 'project.rds')
-        if (fs::file_exists(fp)) {
-          private$.project_active <- readFromCache('project.rds')$name
-        } else {
-          private$.project_active <- 'default'
-
-          project <- list(
-            status = private$.project_status,
-            priority = private$.project_priority,
-            method = private$.project_method,
-            name = private$.project_name,
-            description = private$.project_description
-          )
-
-          saveToCache(project, file = 'project.rds')
-        }
-      } else {
-        if (private$.project_active == project_active && !force) {
-          return()
-        }
-
-        private$.project_active <- project_active
-      }
-
-      project <- readFromCache(file = 'project.rds')
-
-      if (!is.null(project)) {
-        self$project_status <- project$status
-        self$project_priority <- project$priority
-        self$project_method <- project$method
-        self$project_name <- project$name
-        self$project_description <- project$description
-      }
-
-      private$.project_name_trigger$trigger()
-
-      guide_polygon_sf <- readFromCache(file = 'guide_polygon.rds')
-      guide_point_sf <- readFromCache(file = 'guide_point.rds')
-
-      self$guide_polygon <- guide_polygon_sf
-      self$guide_point <- guide_point_sf
-
-      polygons_sf <- readFromCache(file = 'polygons.rds')
-
-      if (!is.null(polygons_sf) && (nrow(polygons_sf) > 0L)) {
-        polygons_sf$focused_sample <- FALSE
-        polygons_sf$focused_result <- FALSE
-      }
-
-      self$polygons <- polygons_sf
+      self$persistence$load(project_active, force)
     },
     cutPolygons = function(map, line) {
-      intersect <- sf::st_intersects(self$polygons, line, FALSE)
-
-      if (any(intersect)) {
-        polygons_intersect <- self$polygons[intersect, ]
-
-        for (i in seq_len(nrow(polygons_intersect))) {
-          polygon_intersect <- polygons_intersect[i, ]
-
-          # Cast MULTIPOLYGON to POLYGON before splitting
-          geom_type <- sf::st_geometry_type(
-            polygon_intersect,
-            by_geometry = TRUE
-          )
-          if (any(geom_type == 'MULTIPOLYGON')) {
-            polygon_intersect <- sf::st_cast(polygon_intersect, 'POLYGON')
-          }
-
-          all_split <- list()
-          for (j in seq_len(nrow(polygon_intersect))) {
-            sub_polygon <- polygon_intersect[j, ]
-            sub_split <- tryCatch(
-              {
-                result <- lwgeom::st_split(sub_polygon, sf::st_geometry(line))
-                sf::st_collection_extract(result, 'POLYGON')
-              },
-              error = function(e) sub_polygon
-            )
-            all_split[[j]] <- sub_split
-          }
-          polygons_split <- do.call(rbind, all_split)
-
-          if (nrow(polygons_split) > 1L) {
-            polygons_split <- makeValidPolygons(
-              polygons_split,
-              id_max = st_get_id_max(self$polygons, 'ZN')
-            )
-
-            self$polygons <- self$polygons |>
-              dplyr::filter(id != polygons_intersect$id[i]) |>
-              dplyr::bind_rows(polygons_split)
-
-            leaflet::removeShape(map, layerId = polygons_intersect$id[i])
-            map |>
-              displayPolygons(sf = polygons_split, fit = FALSE)
-          }
-        }
-
-        step_delimit$state <- utils::modifyList(
-          step_delimit$state,
-          list(modified = TRUE, mode = 'select')
-        )
-      }
-
-      map |>
-        leafpm::clearFeatures()
+      self$polygon_mgr$cutPolygons(map, line)
     },
     makeValidPolygons = function(sf, id_max = 0L) {
-      if (is.null(sf)) {
-        sf <- sf_empty()
-      }
-
-      sf <- sf::st_make_valid(sf)
-
-      # sf <- sf[sf::st_is_valid(sf), ]
-
-      sf <- sf::st_set_crs(sf, 4326L)
-      sf <- dplyr::mutate(
-        sf,
-        id_n = seq_len(dplyr::n()) + id_max,
-        id = st_id(id_n, 'ZN'),
-        area = sf::st_area(sf),
-        name = sprintf('Polygon %s', id_n),
-        label = sprintf(
-          '<b>%s</b><br>%s (km\u00b2)',
-          name,
-          round(units::set_units(area, km^2L), 2L)
-        ),
-        label_short = id_n
-      )
-
-      key_name <- getKeyName(sf)
-
-      if ('lf_name' %in% names(sf)) {
-        key_name <- 'lf_name'
-      }
-
-      if (is.null(key_name)) {
-        sf <- dplyr::mutate(sf, name = sprintf('Polygon %s', id_n))
-      } else {
-        key_name <- rlang::sym(key_name)
-        sf <- dplyr::mutate(sf, name = as.character(!!key_name))
-      }
-
-      sf <- sf |>
-        dplyr::mutate(
-          label = sprintf(
-            '<b>%s</b><br>%s (km\u00b2)',
-            name,
-            round(units::set_units(area, km^2L), 2L)
-          ),
-          label_short = id_n
-        )
-
-      if (is.null(sf$selected)) {
-        sf <- sf |>
-          dplyr::mutate(
-            selected = FALSE,
-            focused_sample = FALSE,
-            focused_result = FALSE,
-            type = 'SP_QDR',
-            method = 'random',
-            count = 35L,
-            size = 200L,
-            confidence = 95L,
-            tvalue = NA_real_,
-            t = NA_real_,
-            z = NA_real_,
-            z_p = NA_real_,
-            mc = NA_real_,
-            mc_p = NA_real_,
-            d1 = NA_integer_,
-            d2 = NA_integer_,
-            pop_u5_1 = NA_integer_,
-            pop_u5_2 = NA_integer_,
-            pop_u5 = NA_integer_,
-            pop_u5_i = NA_integer_,
-            pop_u5_il = NA_integer_,
-            pop_u5_iu = NA_integer_,
-            pop_a5_1 = NA_integer_,
-            pop_a5_2 = NA_integer_,
-            pop_a5 = NA_integer_,
-            pop_a5_i = NA_integer_,
-            pop_a5_il = NA_integer_,
-            pop_a5_iu = NA_integer_,
-            pop = NA_integer_,
-            pop_i = NA_integer_,
-            pop_il = NA_integer_,
-            pop_iu = NA_integer_,
-            comment = NA_character_,
-            roofs_count = NA_integer_,
-            sample_df = list(tibble::tibble()),
-            samples_sf = list(sf_empty()),
-            samples_quadrat_sf = list(sf_empty()),
-            cells_count = NA_integer_,
-            cells_vect = list(sf_empty()),
-            cells_vect_rev = list(sf_empty())
-          )
-      }
-
-      sf
+      self$polygon_mgr$makeValidPolygons(sf, id_max)
     },
     displayPolygons = function(
       map,
@@ -861,317 +434,50 @@ UserData <- R6::R6Class(
       sf = NULL,
       ...
     ) {
-      if (is.null(sf)) {
-        sf <- self$polygons
-
-        map <- map |>
-          leaflet::clearGroup('polygons')
-      }
-
-      if (nrow(sf) > 0L) {
-        if (only_selected) {
-          sf <- dplyr::filter(sf, selected)
-          fill_opacity <- rep(0.01, nrow(sf))
-        } else {
-          fill_opacity <- ifelse(sf$selected, 0.2, 0.01)
-        }
-
-        map <- map |>
-          addPolygons(
-            highlight = FALSE,
-            fill_opacity = fill_opacity,
-            fit = fit,
-            label = TRUE,
-            sf = sf,
-            group = 'polygons',
-            pane = 'polygon_2',
-            ...
-          )
-
-        map <- leaflet::clearGroup(map, 'cells')
-
-        if (cells & data$project_method != 'RS_SMP') {
-          for (polygon_idx in seq_len(nrow(self$polygons))) {
-            if (self$polygons$selected[polygon_idx]) {
-              cells_vect_rev <- self$polygons$cells_vect_rev[[polygon_idx]]
-
-              if (nrow(cells_vect_rev) > 0L) {
-                # FIXME: #8 l'image est decalee
-
-                leaflet::addPolygons(
-                  map,
-                  data = cells_vect_rev,
-                  color = 'white',
-                  fill = TRUE,
-                  group = 'cells',
-                  options = leaflet::pathOptions(pane = 'polygon_1'),
-                  weight = 0.5
-                )
-
-                # map <- map |>
-                #   addPolygons(
-                #     highlight = FALSE,
-                #     fill_opacity = fill_opacity,
-                #     fit = fit,
-                #     label = TRUE,
-                #     sf = sf,
-                #     group = 'polygons',
-                #     pane = 'polygon_2',
-                #     ...
-                #   )
-
-                # map |>
-                #   leafem::addStarsImage(
-                #     stars::st_as_stars(r_polygon),
-                #     colors = c(
-                #       scales::alpha('white', 0.4)
-                #     ),
-                #     layerId = sprintf('cells_%s', polygon_idx),
-                #     group = 'cells',
-                #     project = FALSE,
-                #     na.color = '#00000000'
-                #   )
-              }
-            }
-          }
-        }
-
-        if (sample) {
-          for (polygon_idx in seq_len(nrow(self$polygons))) {
-            if (self$polygons$selected[polygon_idx]) {
-              displaySample(
-                map,
-                polygon_idx = polygon_idx,
-                plan = plan,
-                status = status
-              )
-            }
-          }
-        }
-      } else {
-        sf <- sf::st_sf(sf::st_sfc(st_bbox_polygon(self$bbox_default)))
-
-        fitToSpatialFeatureBounds(map, sf = sf)
-      }
-
-      leafpm::clearFeatures(map)
-
-      map
+      self$polygon_mgr$displayPolygons(
+        map,
+        only_selected,
+        sample,
+        cells,
+        plan,
+        fit,
+        status,
+        sf,
+        ...
+      )
     },
     addPolygon = function(map, polygon) {
-      polygon <- makeValidPolygons(
-        polygon,
-        id_max = st_get_id_max(self$polygons, 'ZN')
-      )
-
-      if (nrow(self$polygons) == 0L) {
-        private$.polygons <- polygon
-      } else {
-        join_covered <- sf::st_covered_by(self$polygons, polygon, FALSE)
-
-        if (any(join_covered)) {
-          map |>
-            leaflet::removeShape(layerId = self$polygons$id[join_covered])
-
-          polygons <- polygons |>
-            dplyr::filter(id %in% self$polygons$id[!join_covered])
-        }
-
-        intersect <- sf::st_intersects(polygons, polygon, FALSE)
-
-        if (any(intersect)) {
-          polygons_intersect <- self$polygons[intersect, ]
-
-          for (i in seq_len(nrow(polygons_intersect))) {
-            polygon_diff <- sf::st_geometry(polygons_intersect[i, ])
-            polygon_diff <- sf::st_sf(
-              geometry = sf::st_difference(polygon_diff, polygon)
-            )
-            polygon_diff <- makeValidPolygons(
-              polygon_diff,
-              id_max = st_get_id_max(self$polygons, 'ZN') + 1L
-            )
-
-            private$.polygons <- private$.polygons |>
-              dplyr::filter(id != polygons_intersect[i, ]$id) |>
-              dplyr::bind_rows(polygon_diff)
-
-            map |>
-              leaflet::removeShape(layerId = polygons_intersect[i, ]$id) |>
-              displayPolygons(sf = polygon_diff, fit = FALSE)
-          }
-        }
-
-        private$.polygons <- dplyr::bind_rows(private$.polygons, polygon)
-      }
-
-      displayPolygons(map, sf = polygon, fit = FALSE)
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = TRUE, mode = 'select')
-      )
+      self$polygon_mgr$addPolygon(map, polygon)
     },
     deletePolygon = function(map, id) {
-      private$.polygons <- dplyr::filter(private$.polygons, id != !!id)
-
-      map |>
-        leaflet::removeShape(layerId = id)
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = TRUE)
-      )
+      self$polygon_mgr$deletePolygon(map, id)
     },
     editPolygon = function(map, feature) {
-      polygon <-
-        st_as_sf.feature(feature)
-
-      m <- match(polygon$layerId, self$polygons$id)
-
-      if (!is.na(m)) {
-        # Ensure geometry type matches existing column type
-        existing_type <- sf::st_geometry_type(
-          private$.polygons[m, ],
-          by_geometry = TRUE
-        )
-        new_geom <- sf::st_geometry(polygon)
-        if (
-          existing_type == 'MULTIPOLYGON' &&
-            sf::st_geometry_type(polygon, by_geometry = TRUE) == 'POLYGON'
-        ) {
-          new_geom <- sf::st_cast(new_geom, 'MULTIPOLYGON')
-        }
-
-        private$.polygons[m, ] <- private$.polygons[m, ] |>
-          sf::st_set_geometry(new_geom) |>
-          dplyr::mutate(
-            area = sf::st_area(private$.polygons[m, ]),
-            label = sprintf(
-              '<b>Polygon %s</b><br>%s (km\u00b2)',
-              label_short,
-              round(units::set_units(area, km^2L), 2L)
-            )
-          )
-      }
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = TRUE)
-      )
+      self$polygon_mgr$editPolygon(map, feature)
     },
     togglePolygonSelected = function(map, id) {
-      m <- match(id, self$polygons$id)
-
-      private$.polygons$selected[m] <- !self$polygons$selected[m]
-
-      map |>
-        setStyleFast(
-          group = 'polygons',
-          fill_opacities = as.list(ifelse(self$polygons$selected, 0.2, 0.01))
-        )
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = TRUE)
-      )
+      self$polygon_mgr$togglePolygonSelected(map, id)
     },
     togglePolygonFocused = function(map, id, group, step) {
-      m <- match(id, self$polygons$id)
-
-      if (step == 'sample') {
-        private$.polygons$focused_sample[-m] <- FALSE
-        private$.polygons$focused_sample[m] <- !self$polygons$focused_sample[m]
-
-        focused <- polygons_selected$focused_sample
-      } else if (step == 'result') {
-        private$.polygons$focused_result[-m] <- FALSE
-        private$.polygons$focused_result[m] <- !self$polygons$focused_result[m]
-
-        focused <- polygons_selected$focused_result
-      } else {
-        focused <- rep(FALSE, nrow(polygons_selected))
-      }
-
-      setStylePolygonFocused(map, focused)
-
-      for (i in seq_len(nrow(self$polygons))) {
-        if (self$polygons$selected[i]) {
-          leafpm::editStop(map, targetGroup = sprintf('QDR_%s', i))
-        }
-      }
+      self$polygon_mgr$togglePolygonFocused(map, id, group, step)
     },
     setStylePolygonFocused = function(map, focused, group = 'polygons') {
-      map |>
-        setStyleFast(
-          group = 'polygons',
-          colors = as.list(ifelse(
-            focused,
-            col2hex('yellow'),
-            col2hex('yellow')
-          )),
-          # fills = as.list(ifelse(focused, col2hex('white'), col2hex('yellow'))),
-          # fill_opacities = as.list(ifelse(focused, 0.1, 0.01))
-          weights = as.list(ifelse(focused, 4L, 2L))
-        )
+      self$polygon_mgr$setStylePolygonFocused(map, focused, group)
     },
     addProject = function(status, priority, name, description) {
-      private$.project_status <- status
-      private$.project_priority <- priority
-      private$.project_name <- name
-      private$.project_description <- description
-      private$.project_active <- name
-
-      project <- list(
-        status = private$.project_status,
-        priority = private$.project_priority,
-        name = private$.project_name,
-        description = private$.project_description
-      )
-
-      saveToCache(project, file = 'project.rds')
-
-      self$load(name, force = TRUE)
+      self$persistence$addProject(status, priority, name, description)
     },
     projectClone = function(status, priority, name, description) {
-      fs::file_copy(
-        path = fs::dir_ls(
-          getDirAppUsers(application$user$email, private$.project_name),
-          full.names = TRUE
-        ),
-        new_path = getDirAppUsers(application$user$email, name)
-      )
-
-      addProject(status, priority, name, description)
+      self$persistence$projectClone(status, priority, name, description)
     },
     projectEdit = function(status, priority, description) {
-      private$.project_status <- status
-      private$.project_priority <- priority
-      private$.project_description <- description
-
-      save()
+      self$persistence$projectEdit(status, priority, description)
     },
     projectDelete = function() {
-      if (private$.project_name == 'default') {
-        return()
-      }
-
-      fs::dir_delete(cache)
-
-      projectSelect()
+      self$persistence$projectDelete()
     },
     projectSelect = function(name = 'default') {
-      self$load(name)
-
-      step_delimit$state <- utils::modifyList(
-        step_delimit$state,
-        list(modified = FALSE)
-      )
-
-      saveRDS(
-        list(project = private$.project_name),
-        fs::path(fs::path_dir(path = data$cache), 'project.rds')
-      )
+      self$persistence$projectSelect(name)
     },
     addRoof = function(map, lng, lat, ...) {
       self$tile_mgr$addRoof(map, lng, lat, ...)
@@ -1195,7 +501,7 @@ UserData <- R6::R6Class(
 
         bbox <- sf::st_bbox(polygon_sf)
 
-        tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 13L)
+        tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = ZOOM_OSM)
         tile_grid_sf <- tile_grid_to_sf(tile_grid)
         tile_grid_intersect <- sf::st_intersects(
           tile_grid_sf,
@@ -1212,7 +518,7 @@ UserData <- R6::R6Class(
 
         tiles_dir <- fs::path(self$cache, 'imageries')
 
-        for (t in seq_len(70L)) {
+        for (t in seq_len(OSM_MAX_TILES)) {
           progress(
             value = 100L *
               ((i - 1L) /
@@ -1223,7 +529,7 @@ UserData <- R6::R6Class(
           tile <- tiles[t, ]
 
           if (tile_grid_intersect[t]) {
-            tile_sfc <- st_bbox_polygon(tile_bbox_ll(tile$x, tile$y, 13L))
+            tile_sfc <- st_bbox_polygon(tile_bbox_ll(tile$x, tile$y, ZOOM_OSM))
 
             leaflet::addPolygons(
               map,
@@ -1366,140 +672,7 @@ UserData <- R6::R6Class(
       result = FALSE,
       project = FALSE
     ) {
-      if (delimit) {
-        if (nrow(self$polygons) > 0L) {
-          tiles <- data.frame()
-
-          for (i in seq_len(nrow(self$polygons))) {
-            polygon <- self$polygons[i, ]
-
-            if (polygon$selected) {
-              polygon_tiles <- polygonToTiles(polygon)
-              polygon_tiles$polygon <- i
-
-              if (nrow(tiles) == 0L) {
-                tiles <- polygon_tiles
-              } else {
-                tiles <- dplyr::bind_rows(tiles, polygon_tiles)
-              }
-            }
-          }
-
-          if (nrow(tiles) > 0L) {
-            tiles_0 <- dplyr::filter(tiles, status == 0L)
-            tiles_1 <- dplyr::filter(tiles, status == -1L)
-
-            dup <- duplicated(tiles_0 |> dplyr::select(x, y, status))
-
-            # tiles_0  <- tiles_0 |>
-            #   dplyr::mutate(
-            #     status = ifelse(dup, -1L, 0L)
-            #   )
-
-            tiles <-
-              dplyr::bind_rows(tiles_0, tiles_1) |>
-              dplyr::arrange(polygon, n)
-
-            if (self$data$project_method %in% c('SP_QDR', 'SP_TSQ')) {
-              tiles$status[tiles$status != -1L] <- 2L
-              tiles$cells[tiles$status != -1L] <- '111111111'
-            }
-
-            self$db$dbWriteTable(
-              name = 'tiles',
-              value = tiles,
-              overwrite = TRUE
-            )
-
-            self$db$dbWriteTable(
-              name = 'roofs',
-              value = data.frame(
-                id = character(),
-                polygon = integer(),
-                x = integer(),
-                y = integer(),
-                geometry = character(),
-                stringsAsFactors = FALSE
-              ),
-              overwrite = TRUE
-            )
-
-            self$db$dbExecute(
-              sql = 'CREATE INDEX idx_1 ON tiles (x, y, polygon)'
-            )
-            self$db$dbExecute(sql = 'CREATE INDEX idx_2 ON tiles (status)')
-            self$db$dbExecute(sql = 'CREATE INDEX idx_3 ON tiles (locked)')
-          }
-        }
-
-        step_delimit$state <- utils::modifyList(
-          step_delimit$state,
-          list(modified = FALSE)
-        )
-
-        step_identify$invalidatePolygons()
-        step_identify$invalidateGridIdentifyStatus(force = TRUE)
-        step_sample$invalidatePolygons()
-        step_result$invalidatePolygons()
-      }
-
-      if (identify) {
-        private$.polygons <- updateCells(private$.polygons)
-        private$.polygons$roofs_count <- 0L
-
-        roofs_sf <- self$roofs
-
-        for (polygon_idx in as.integer(unique(roofs_sf$polygon))) {
-          private$.polygons$roofs_count[polygon_idx] <- nrow(dplyr::filter(
-            roofs_sf,
-            polygon == polygon_idx
-          ))
-        }
-
-        step_identify$state <- utils::modifyList(
-          step_identify$state,
-          list(modified = FALSE)
-        )
-
-        step_identify$invalidatePolygons()
-        step_identify$invalidateGridIdentifyStatus(force = TRUE)
-        step_sample$invalidatePolygons()
-        step_result$invalidatePolygons()
-      }
-
-      if (sample) {
-        step_sample$state <- utils::modifyList(
-          step_sample$state,
-          list(modified = FALSE)
-        )
-
-        step_sample$invalidatePolygons()
-        step_result$invalidatePolygons()
-      }
-
-      if (result) {
-        step_result$state <- utils::modifyList(
-          step_result$state,
-          list(modified = FALSE)
-        )
-
-        step_result$invalidatePolygons()
-      }
-
-      self$polygons_memento <- self$polygons
-
-      project <- list(
-        status = private$.project_status,
-        priority = private$.project_priority,
-        method = private$.project_method,
-        name = private$.project_name,
-        description = private$.project_description
-      )
-
-      saveToCache(project, file = 'project.rds')
-      saveToCache(self$guide_polygon, file = 'guide_polygon.rds')
-      saveToCache(self$guide_point, file = 'guide_point.rds')
-      saveToCache(self$polygons, file = 'polygons.rds')
+      self$persistence$save(delimit, identify, sample, result, project)
     },
     clear = function(
       delimit = FALSE,
@@ -1507,58 +680,7 @@ UserData <- R6::R6Class(
       sample = FALSE,
       result = FALSE
     ) {
-      if (delimit) {
-        self$guide_polygon <- NULL
-        self$guide_point <- NULL
-        self$polygons <- NULL
-
-        shinyjs::delay(500L, application$dlg_method$show(ns = shiny::NS(NULL)))
-      }
-
-      if (identify) {
-        private$.polygons$roofs_count <- 0L
-        private$.polygons$cells_count <- 0L
-
-        db$dbExecute('DELETE FROM roofs')
-        db$dbExecute(
-          'UPDATE tiles SET status = 0, cells = "000000000" WHERE status <> -1'
-        )
-
-        invalidate(self$roofs_changed)
-      }
-
-      if (sample) {
-        private$.polygons <- private$.polygons |>
-          dplyr::mutate(
-            focused_sample = FALSE,
-            sample_df = list(tibble::tibble()),
-            samples_sf = list(sf_empty()),
-            samples_quadrat_sf = list(sf_empty())
-          )
-      }
-
-      if (result) {
-        for (i in seq_len(nrow(self$polygons))) {
-          if (nrow(self$polygons[i, ]$samples_sf[[1L]]) > 0L) {
-            private$.polygons[i, ]$samples_sf[[1L]]$d1 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$d2 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_u5_1 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_a5_1 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_u5_2 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_a5_2 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_u5 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$pop_a5 <- NA
-            private$.polygons[i, ]$samples_sf[[1L]]$comment <- NA
-          }
-        }
-      }
-
-      save(
-        delimit = delimit,
-        identify = identify,
-        sample = sample,
-        result = result
-      )
+      self$persistence$clear(delimit, identify, sample, result)
     },
     rollback = function(
       delimit = FALSE,
@@ -1566,56 +688,13 @@ UserData <- R6::R6Class(
       sample = FALSE,
       result = FALSE
     ) {
-      self$polygons <- private$.polygons_memento
-
-      if (delimit) {
-        step_delimit$state <- utils::modifyList(
-          step_delimit$state,
-          list(modified = FALSE)
-        )
-      }
-
-      if (identify) {
-        step_identify$state <- utils::modifyList(
-          step_identify$state,
-          list(modified = FALSE)
-        )
-      }
-
-      if (sample) {
-        step_sample$state <- utils::modifyList(
-          step_sample$state,
-          list(modified = FALSE)
-        )
-      }
-
-      if (result) {
-        step_result$state <- utils::modifyList(
-          step_result$state,
-          list(modified = FALSE)
-        )
-      }
+      self$persistence$rollback(delimit, identify, sample, result)
     },
     readFromCache = function(file) {
-      fp <- fs::path(cache, file)
-      safe_read_rds(fp, default = NULL, msg = "readFromCache")
+      self$persistence$readFromCache(file)
     },
     saveToCache = function(rds, file) {
-      fp <- fs::path(cache, file)
-      if (is.null(rds)) {
-        tryCatch(
-          if (fs::file_exists(fp)) fs::file_delete(fp),
-          error = function(e) {
-            logWarn(
-              "[saveToCache] Failed to delete %s: %s",
-              fp,
-              conditionMessage(e)
-            )
-          }
-        )
-      } else {
-        safe_save_rds(rds, fp, msg = "saveToCache")
-      }
+      self$persistence$saveToCache(rds, file)
     },
     sampleAppend = function(map = NULL, polygon_idx = NULL) {
       self$sample_mgr$sampleAppend(map, polygon_idx)
@@ -1675,7 +754,7 @@ UserData <- R6::R6Class(
     ) {
       self$exporter$sampleExportToDocEach(file, open, polygon_idx, samples_idxs)
     },
-    # TODO: #7 Gestion du mode de tirage aleatoire
+    # TODO: #7 Implement random sampling mode management
     sampleQuadratEdit = function(map, id, ...) {
       self$sample_mgr$sampleQuadratEdit(map, id, ...)
     },
@@ -1729,6 +808,9 @@ UserData <- R6::R6Class(
     validAll = function(map) {
       self$tile_mgr$validAll(map)
     },
+    triggerProjectName = function() {
+      private$.project_name_trigger$trigger()
+    },
     invalidateGrid = function() {
       private$.tiles_trigger$trigger()
     }
@@ -1739,6 +821,8 @@ UserData <- R6::R6Class(
     .exporter = NULL,
     .tile_mgr = NULL,
     .sample_mgr = NULL,
+    .polygon_mgr = NULL,
+    .persistence = NULL,
     .grid_status_invalidated = TRUE,
     .guide_polygon = NULL,
     .guide_polygon_trigger = NULL,
@@ -1778,24 +862,6 @@ UserData <- R6::R6Class(
 
       .globals$session$tokens <- c(.globals$session$tokens, session$token)
 
-      # Events
-      # .................................................
-
-      # shiny::observe({
-      # if (shiny::getShinyOption('about')) {
-      #   shiny::showModal(modalAboutUI(vars = vars, project = project))
-      # }
-      # })
-
-      # shiny::observe({
-      #   query <- shiny::parseQueryString(session$clientData$url_search)
-      #   if (
-      #     !is.null(query[['project']]) &
-      #       !is.null(query[['user']])) {
-      #     project$select(query[['project']], query[['user']])
-      #   }
-      # })
-
       profvis_file <- fs::path(
         self$cache,
         strftime(Sys.time(), '%Y-%m-%d_%H-%M-%S.Rprof')
@@ -1806,15 +872,9 @@ UserData <- R6::R6Class(
 
       mdl_about <- modalAbout(vars = vars, project = project)
 
-      # tab modules
-      # tabSplash(vars = vars, project = project)
-      # tabSteps(vars = vars, project = project)
-
       application$addModule('steps', Steps$new(parent = self))
 
       private$.db$bind()
-
-      # hintjs(session)
 
       # Bookmarks (Save states)
       # .................................................
@@ -1824,10 +884,6 @@ UserData <- R6::R6Class(
       shiny::onBookmark(function(state) {
         state$values$project <- project
       })
-
-      # onBookmarked(function(url) {
-      #   shiny::updateQueryString(url)
-      # })
 
       shiny::onRestore(function(state) {
         project <- state$values$project
@@ -1854,18 +910,6 @@ UserData <- R6::R6Class(
         vars$width <- input$resize[1L]
         vars$height <- input$resize[2L]
       })
-
-      # shiny::observeEvent(input$recalculated, {
-      # project$recalculated <- input$recalculated
-      # })
-
-      # shiny::observe({
-      # project$width <- input$dimension[1]
-      # project$height <- input$dimension[2]
-      # })
-
-      # --------------------------------------------------------------------------------------
-      # Inslegendtion
 
       shiny::observeEvent(input$act_help, {
         current_tab <- input$navbar
