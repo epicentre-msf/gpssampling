@@ -1,0 +1,1290 @@
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 300;
+  src: url("assets/fonts/firasans-light-webfont.woff");
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 400;
+  src: url("assets/fonts/firasans-regular-webfont.woff");
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 500;
+  src: url("assets/fonts/firasans-medium-webfont.woff");
+}
+
+/* Technically, firasans-bold should be font-weight 700.
+   However, firasans-medium is more appropriate for regular
+   use as a "bold" font, and font-weight: bold is the same
+   as font-weight: 700. Thus it looks much better to make
+   firasans-medium font-weight 700.
+   Where firasans-bold is required, use font-weight: 900 instead.*/
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 700;
+  src: url("assets/fonts/firasans-medium-webfont.woff");
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 900;
+  src: url("assets/fonts/firasans-bold-webfont.woff");
+}
+
+h1, h2, h3, h4, h5, h6 {
+   line-height: 1.115em;
+   padding-top: 10px;
+   margin-top: 0px;
+   margin-bottom: 15px;
+}
+
+h1 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 42px;
+   font-weight: 100;
+   color: #414042;
+   margin-bottom: 30px;
+   border-bottom: 1px solid #eee;
+}
+
+h2 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 31.3667px;
+   font-weight: 100;
+   color: #414042;
+}
+
+h3 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 25px;
+   font-weight: 100;
+   color: #414042;
+}
+
+h4 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 17.37px;
+   font-weight: 600;
+   color: #414042;
+}
+
+h5 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 15px;
+   font-weight: 900;
+   color: #000000;
+}
+
+h6 {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 14.3px;
+   font-weight: 500;
+   color: #000000;
+}
+
+body {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 14px;
+   font-weight: 300;
+   color: #000000;
+}
+
+label {
+  font-weight: 400;
+  color: grey;
+}
+
+small > label {
+  margin-bottom: 0px;
+}
+
+/* Waiter */
+
+.pg-loading-logo-header {
+    display: none;
+}
+
+.pg-loading-center-middle {
+  vertical-align: top !important;;
+}
+
+[class*="loaderz-"] {
+  width: 5em;
+  height: 5em;
+}
+
+/* Layout */
+
+#controls {
+  /* Appearance */
+  background-color: #ffffffb3;
+  padding: 7px;
+  cursor: move;
+  /* Fade out while not hovering */
+}
+
+#controls:hover {
+  /* Fade in while hovering */
+  opacity: 0.95;
+  transition-delay: 0;
+}
+
+.dropdown-menu {
+  z-index: 10000;
+}
+
+.about-title {
+  color: #2e6da4;
+  font-weight: bold;
+}
+
+.pretty .state label {
+    margin-top: 1px;
+}
+
+.small {
+   font-size: 12px;
+}
+
+.readmore {
+   font-family: "Fira Sans",Helvetica,Arial,sans-serif;
+   font-size: 12px;
+   font-weight: 700;
+   color: #414042;
+}
+
+.cs {
+  background-repeat: no-repeat;
+  text-align: left;
+  text-indent: 22px;
+}
+
+.cs-facility-clinic         {background-image: url("assets/icons/ocha/box-alpha/20px/infrastructure/clinic.png")}
+.cs-facility-health-center  {background-image: url("assets/icons/ocha/box-alpha/20px/infrastructure/health_facility.png")}
+.cs-facility-health-post    {background-image: url("assets/icons/ocha/box-alpha/20px/infrastructure/health_post.png")}
+.cs-facility-hospital       {background-image: url("assets/icons/ocha/box-alpha/20px/infrastructure/hospital.png")}
+.cs-facility-nutrition      {background-image: url("assets/icons/ocha/box-alpha/20px/cluster/nutrition.png")}
+
+.ocha-hs {
+  background: #990000; /* color of the circle */
+  border-radius: 50%; /* make the div a circular shape */
+  border-color: white;
+  border-style: solid;
+  border-width: 2px;
+  padding:2px;
+}
+
+.ocha-hs-msf {
+  background: #ff0000; /* color of the circle */
+  border-radius: 50%; /* make the div a circular shape */
+  border-color: white;
+  border-style: solid;
+  border-width: 2px;
+  padding:2px;
+}
+
+.ocha-wtd {
+  background: #58ADC2; /* color of the circle */
+  border-radius: 50%; /* make the div a circular shape */
+  border-color: white;
+  border-style: solid;
+  border-width: 2px;
+  padding:2px;
+}
+
+.ocha-wte {
+  background: #275AA0; /* color of the circle */
+  border-radius: 50%; /* make the div a circular shape */
+  border-color: white;
+  border-style: solid;
+  border-width: 2px;
+  padding:2px;
+}
+
+.ocha-wts {
+  background: #4e00ff; /* color of the circle */
+  border-radius: 50%; /* make the div a circular shape */
+  border-color: white;
+  border-style: solid;
+  border-width: 2px;
+  padding:2px;
+}
+
+.ocha-san {
+  padding:4px;
+}
+
+/*.oca {
+  border-color: red;
+}
+
+.ocb {
+  border-color: blue;
+}
+
+.ocp {
+  border-color: yellow;
+}*/
+
+body {
+  padding-top: 50px;
+}
+
+footer {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+input[type='number'] {
+  max-width: 80%;
+}
+
+div.splash {
+  color: #fff;
+  top: 0px;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  position: relative;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  text-align: center;
+  width: 100%;
+  z-index: 10000;
+}
+
+div.splash-caption {
+  position: relative;
+  display: table;
+  height: 100%;
+  width: 100%;
+  margin: 0 auto;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.50) 25%, rgba(0, 0, 0, 0) 75%);
+}
+
+div.caption-content {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+
+div.caption-content > img {
+  position: absolute;
+  top: 25px;
+}
+
+div.font-alt {
+  font-family: "Roboto Condensed", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+div.title-size-1 {
+  letter-spacing: 4px;
+  font-size: 15px;
+}
+
+div.title-size-4 {
+  letter-spacing: 24px;
+  font-weight: 400;
+  font-size: 48px;
+}
+
+div.mb-30 {
+  margin-bottom: 30px !important;
+}
+
+div.mb-40 {
+  margin-bottom: 40px !important;
+}
+
+div.toolbar {
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #e7e7e7;
+  box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.2);
+  top: 40px;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  height: 75px;
+  padding: 20px 5px;
+  position: fixed;
+}
+
+div.toolbar-left {
+  background-color: #f0f0f0;
+  border-top: 1px solid #e7e7e7;
+  box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.2);
+  top: 40px;
+  left: 0px;
+  bottom: 0px;
+  /*right: 0px;*/
+  /*height: 0px;*/
+  width: 300px;
+  padding: 20px 5px;
+  position: fixed;
+}
+
+div.outer {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0;
+  overflow: none;
+}
+
+div.outer-toolbar {
+  top: 110px;
+}
+
+div.outer-toolbar-left {
+  left: 300px;
+}
+
+div.outer-text {
+  /*border-top: 1px solid #e7e7e7;*/
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+div.inner {
+/*  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 10vh;
+  overflow-y: auto;
+  overflow-x: hidden;*/
+  background-color: white;
+  border-left: 1px #DDDDDD solid;
+  border-right: 1px #DDDDDD solid;
+  border-bottom: 1px #DDDDDD solid;
+  padding: 7px;
+}
+
+div.hcon {
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  background-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  padding: 10px 10px 0px 40px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+div.hcon > h1 {
+   font-weight: 150;
+   margin-bottom: 0px;
+   padding-top: 0px
+}
+
+div.box-con {
+   height: 130px;
+   margin-top: 10px;
+   margin-bottom: 10px;
+}
+
+div.box {
+   height: 100%;
+   padding: 9px;
+   padding-top: 15px;
+}
+
+div.box p {
+   margin: 0px;
+}
+
+div.box-more {
+   float: left;
+   width: 64%;
+   color: #3F3F3F;
+   background-color: #D6E8F7;
+   border-top: 2px solid transparent;
+}
+
+div.box-more:hover {
+   /*background-color: #3F3F3F;*/
+   border-image: linear-gradient(to right, #157BA3 0%, #96D602 100%) 1 1 stretch;
+}
+
+p.intro {
+   font-family: 'Fira Sans', Helvetica, Arial, sans-serif;
+   font-weight: 200;
+   font-size: 19px;
+   color: #414042;
+}
+
+#mod_start-map_hollow-topleft {
+   width: 100%;
+}
+
+/* IntroJs */
+
+.intro-divider {
+   height: 3px;
+   background: transparent linear-gradient(to right, #157BA3 0%, #96D602 100%) repeat scroll 0% 0%;
+   margin-top: 20px;
+   margin-bottom: 20px;
+}
+
+.introjs-tooltiptext {
+  padding-top: 0px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.introjs-tooltip-header {
+	padding-left: 0px;
+	padding-right: 0px;
+	padding-top: 0px;
+}
+
+/*[class*='col-'] {
+  padding: unset;
+}
+
+@media handheld, only screen and (max-width: 767px) {
+  [class*='col-'] {
+  }
+}
+*/
+.tabfill {
+  min-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 10px;
+}
+
+.shiny-split-layout > div {
+  overflow: visible;
+}
+
+/* Choices in selectInput to appear over */
+.handsontable {z-index: 0}
+.selectize-dropdown {z-index: 10000}
+
+/*
+   Tabset styles
+*/
+
+.tabbable > .nav > li > a {
+  padding: 6px 6px;
+  /* font-size: 12px; */
+}
+
+.nav > li.disabled > a {
+  color: #ccc;
+}
+
+/*
+   Table Grid styles
+*/
+
+ag-header {
+  background-color: white;
+}
+
+ag-header-group-cell-with-group {
+  background-color: white;
+}
+
+.cell-span {
+  background-color: white;
+  border-bottom: 1px solid #d9dcde !important;
+}
+
+.cell-header-1 {
+  background-color: #d7ebff;
+  font-weight: bold;
+}
+
+.cell-header-2 {
+  background-color: #ecf6ff;
+}
+
+/*
+   highcharts styles
+*/
+
+.highcharts-legend-item rect.highcharts-point {
+  stroke: #c9c9c9
+}
+
+.irs-bar {
+  border-top: none;
+  border-bottom: none;
+  background: none;
+}
+
+.irs-bar-edge {
+  border: none;
+  background: none;
+}
+
+/*
+   Forms
+*/
+
+.mandatory_star { color: red; }
+
+/*
+   Navbar styles
+*/
+
+.navbar { min-height:38px;   }
+.navbar .navbar-brand{ padding: 0 12px; font-size: 16px; line-height: 38px; height: 38px; }
+.navbar .navbar-nav > li > a {  padding-top: 0px; padding-bottom: 0px; line-height: 38px; }
+.navbar .navbar-toggle {  margin-top: 3px; margin-bottom: 0px; padding: 8px 9px; }
+.navbar .navbar-form { margin-top: 2px; margin-bottom: 0px }
+
+.navbar-default {
+  background-color: white;
+   /*box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.4);*/
+   box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.4)
+}
+
+/*
+.nav > li > a {
+  padding: 5px 10px;
+}
+*/
+
+/* Fix width (manually adjusted)
+   Looks better than the automatic widths if fixed correctly. */
+.navbar-default > .container {
+   /*width: 740px;*/
+}
+
+ .navbar-default:hover {
+   /*border-color: #e7e7e7;*/
+}
+
+/* Top-level nav buttons */
+.navbar-default .navbar-nav > li {
+   /*border-top: 2px solid transparent;*/
+}
+
+.navbar-default .navbar-nav > li:hover {
+   /*border-image: linear-gradient(to right, #157BA3 0%, #96D602 100%) 1 1 stretch;*/
+   /*border-image: linear-gradient(to right, #337AB7 0%, #337AB7 100%) 1 1 stretch;*/
+   /*border-image-width: 1 0 0 0;*/
+}
+
+.navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:focus, .navbar-default .navbar-nav > .open > a:hover {
+   /*background-color: transparent;*/
+   /*text-decoration: underline;*/
+}
+
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:focus, .navbar-default .navbar-nav > .active > a:hover {
+   /*background-color: transparent;*/
+}
+
+.navbar-default .navbar-nav .navbar-right > li:hover {
+   /*border-image: linear-gradient(to right, #157BA3 0%, #96D602 100%) 1 1 stretch;*/
+   /*border-image: linear-gradient(to right, #ff0000 0%, #337AB7 100%) 1 1 stretch;*/
+   /*border-image-width: 1 0 0 0;*/
+}
+
+.navbar-default .navbar-collapse {
+  /*background-color: white;*/
+}
+
+#mod_summary-tabs-render {
+  display: none;
+}
+
+/* Drop-down navigation box */
+/*.dropdown-menu {
+   background-color: #e6e6e6;
+}*/
+/* Drop-down navigation buttons */
+/*.dropdown-menu > li > a:hover {
+   color: inherit;
+   background-color: inherit;
+   text-decoration: underline;
+}
+.dropdown-menu > .active > a, .dropdown-menu > .active > a:focus, .dropdown-menu > .active > a:hover {
+   color: inherit;
+   background-color: inherit;
+}*/
+
+.popover {
+  max-width: 600px;
+}
+
+.popover-title {
+  font-weight: bold;
+}
+
+.popover-link {
+  color: #444;
+  font-size: 16px;
+}
+
+.popover-link > i.fa {
+  vertical-align: top;
+}
+
+.radioGroupButtons {
+  margin: 0px !important;
+}
+
+.checkboxGroupButtons {
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+.shiny-file-input-progress {
+  border-top-left-radius: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.shiny-progress .progress-text {
+  margin-top: 100px;
+}
+
+.btn-file {
+  border-bottom-left-radius: 0;
+}
+
+.well {
+  margin-bottom: 7px;
+  padding: 7px 7px 3px 7px;
+}
+
+.well.tab {
+    background-color: white;
+    border: none;
+}
+
+/* .form-control { */
+  /* background-color: transparent; */
+/* } */
+.form-group {
+  margin-bottom: 7px;
+}
+
+select.selectpicker {
+ display:unset !important
+}
+
+ul.nav > li > div.form-group {
+  margin-bottom: 0px !important;
+}
+
+.introjs-helperLayer {
+  background-color: rgba(255,255,255,.25);
+}
+
+.introjs-helperNumberLayer {
+  top: -35px;
+  left: 2px;
+}
+
+.controls {
+  background: rgba(255,255,255,0.95);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: move;
+  opacity: 0.75;
+  zoom: 0.9;
+  transition: opacity 500ms 100ms;
+}
+
+.controls:hover {
+  opacity: 0.95;
+  transition-delay: 0;
+}
+
+#transparent {
+  background-color: rgba(255,255,255,0);
+}
+
+.panel-default {
+  border-top-width: 0px;
+  border-bottom-width: 0px;
+}
+
+.hot-container {
+    width: 500px;
+    height: 500px;
+    overflow: hidden;
+}
+
+.input-group div.form-group {
+  margin-bottom: 0;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+  /*margin: 2px;*/
+}
+
+.btn-input {
+    padding: 6px;
+}
+
+/* ................................................................................. */
+/* Spinner https://github.com/daattali/advanced-shiny/blob/master/plot-spinner/app.R */
+
+#output-container {
+  position: relative;
+}
+
+#output-recalculating {
+  z-index: -2;
+}
+
+#loading-spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  margin-top: -33px;  /* half of the spinner's height */
+  margin-left: -33px; /* half of the spinner's width */
+}
+
+/* ........................................................................... */
+
+.col-0 {
+padding-right: 1px;
+padding-left: 1px;
+}
+
+.dataset-heading{
+  font-weight: bold;
+}
+
+.dataset-updated {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #888888;
+  letter-spacing: 0.01em;
+}
+
+.dataset-description {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #888888;
+  letter-spacing: 0.01em;
+}
+
+.label {
+  padding: .4em .6em .3em;
+}
+
+.table > tbody > tr > td,
+.table > tbody > tr > th,
+.table > tfoot > tr > td,
+.table > tfoot > tr > th,
+.table > thead > tr > td,
+.table > thead > tr > th {
+  padding: 1px;
+  font-size: 12px;
+  line-height: unset;
+  /*vertical-align: bottom;*/
+  border-top: 0px solid #ddd;
+  white-space: nowrap;
+}
+
+.table-title {
+  color: #333333;
+  font-size: 18px;
+  font-family: Roboto Condensed;
+  font-weight: bold;
+  fill: #333333;
+}
+/*
+@media screen and (max-width: 1225px) and (min-width: 1045px) {
+  .table > tbody > tr > td:nth-child(2),
+  .table > tbody > tr > th:nth-child(2),
+  .table > tfoot > tr > td:nth-child(2),
+  .table > tfoot > tr > th:nth-child(2),
+  .table > thead > tr > td:nth-child(2),
+  .table > thead > tr:nth-child(2) > th:nth-child(2) {
+     display:none;
+  }
+}
+
+@media screen and (max-width: 1045px) and (min-width: 835px) {
+  .priority-5{
+    display:none;
+  }
+  .priority-4{
+    display:none;
+  }
+}
+
+@media screen and (max-width: 565px) and (min-width: 300px) {
+  .priority-5{
+    display:none;
+  }
+  .priority-4{
+    display:none;
+  }
+  .priority-3{
+    display:none;
+  }
+}
+
+@media screen and (max-width: 300px) {
+  .priority-5{
+    display:none;
+  }
+  .priority-4{
+    display:none;
+  }
+  .priority-3{
+    display:none;
+  }
+  .priority-2{
+    display:none;
+  }
+}*/
+
+.btn-loading-container {
+  margin-left: 10px;
+  font-size: 1.2em;
+}
+.btn-done-indicator {
+  color: green;
+}
+.btn-err {
+  margin-top: 10px;
+  color: red;
+}
+
+/*
+
+.btn {
+  padding: 3px 6px;
+  # border-color: transparent;
+  border-bottom: 1px solid #ccc;
+}
+
+.btn-group-vertical {
+  # box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+}
+
+.dropdown {
+  # box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+}
+
+.radioGroupButtons {
+  # box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+}
+
+.action-button:focus {
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.dropdown-toggle :focus {
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+
+.easy-button-button {
+  font-size: 14px;
+}
+
+#map {
+  height: calc(100vh - 90px) !important;}
+
+#map .leaflet-label {
+  border-width: 1px;
+  box-shadow = 3px 3px rgba(0,0,0,0.25)}
+
+*/
+
+iframe {
+  height: calc(100vh - 60px);
+    /*position: fixed;*/
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+/*    top: 100px;
+    right: 0;
+    bottom: 0; left: 0;*/
+  width: 100%;
+/*    height: 100%;
+    padding-bottom:100px;*/
+}
+
+.tabwid table tr td {
+  white-space: nowrap;
+}
+
+/*
+  Simple Grid
+  Project Page - http://thisisdallas.github.com/Simple-Grid/
+  Author - Dallas Bass
+  Site - http://dallasbass.com
+*/
+
+*, *:after, *:before {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.grid {
+  width: 100%;
+  /*max-width: 1140px;*/
+  /*min-width: 748px; /* when using padded grid on ipad in portrait mode, width should be viewport-width - padding = (768 - 20) = 748. actually, it should be even smaller to allow for padding of grid containing element */
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.grid:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.grid-pad {
+  padding-top: 0px;
+  padding-left: 0px; /* grid-space to left */
+  padding-right: 0; /* grid-space to right: (grid-space-left - column-space) e.g. 20px-20px=0 */
+}
+
+.push-right {
+  float: right;
+}
+
+
+.grid-pad > [class*='col-'] {
+  float: left;
+  min-height: 1px;
+  padding-right: 0px; /* column-space */
+}
+
+/* Content Columns */
+
+.col-1-1 {
+  width: 100%;
+}
+.col-2-3, .col-8-12 {
+  width: 66.66%;
+}
+
+.col-1-2, .col-6-12 {
+  width: 50%;
+}
+
+.col-1-3, .col-4-12 {
+  width: 33.33%;
+}
+
+.col-1-4, .col-3-12 {
+  width: 25%;
+}
+
+.col-1-5 {
+  width: 20%;
+}
+
+.col-1-6, .col-2-12 {
+  width: 16.667%;
+}
+
+.col-1-7 {
+  width: 14.28%;
+}
+
+.col-1-8 {
+  width: 12.5%;
+}
+
+.col-1-9 {
+  width: 11.1%;
+}
+
+.col-1-10 {
+  width: 10%;
+}
+
+.col-1-11 {
+  width: 9.09%;
+}
+
+.col-1-12 {
+  width: 8.33%
+}
+
+/* Layout Columns */
+
+.col-11-12 {
+  width: 91.66%
+}
+
+.col-10-12 {
+  width: 83.333%;
+}
+
+.col-9-12 {
+  width: 75%;
+}
+
+.col-5-12 {
+  width: 41.66%;
+}
+
+.col-7-12 {
+  width: 58.33%
+}
+
+/* Pushing blocks */
+
+.push-2-3, .push-8-12 {
+  margin-left: 66.66%;
+}
+
+.push-1-2, .push-6-12 {
+  margin-left: 50%;
+}
+
+.push-1-3, .push-4-12 {
+  margin-left: 33.33%;
+}
+
+.push-1-4, .push-3-12 {
+  margin-left: 25%;
+}
+
+.push-1-5 {
+  margin-left: 20%;
+}
+
+.push-1-6, .push-2-12 {
+  margin-left: 16.667%;
+}
+
+.push-1-7 {
+  margin-left: 14.28%;
+}
+
+.push-1-8 {
+  margin-left: 12.5%;
+}
+
+.push-1-9 {
+  margin-left: 11.1%;
+}
+
+.push-1-10 {
+  margin-left: 10%;
+}
+
+.push-1-11 {
+  margin-left: 9.09%;
+}
+
+.push-1-12 {
+  margin-left: 8.33%
+}
+
+/* Smartphones (portrait and landscape) ----------- */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 480px) {
+/* Styles */
+}
+
+/* Smartphones (landscape) ----------- */
+@media only screen
+and (min-width : 321px) {
+/* Styles */
+}
+
+/* Smartphones (portrait) ----------- */
+@media only screen
+and (max-width : 320px) {
+/* Styles */
+}
+
+/* Tablets, iPads (portrait and landscape) ----------- */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px) {
+/* Styles */
+}
+
+/* Tablets, iPads (landscape) ----------- */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : landscape) {
+/* Styles */
+}
+
+/* Tablets, iPads (portrait) ----------- */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : portrait) {
+/* Styles */
+}
+
+/* Desktops and laptops ----------- */
+@media only screen
+and (min-width : 970px) {
+}
+
+@media only screen
+and (min-width : 1224px) {
+}
+
+/* Large screens ----------- */
+@media only screen
+and (min-width : 1824px) {
+/* Styles */
+}
+
+/* iPhone 4 ----------- */
+@media
+only screen and (-webkit-min-device-pixel-ratio : 1.5),
+only screen and (min-device-pixel-ratio : 1.5) {
+/* Styles */
+}
+
+@media handheld, only screen and (max-width: 1050px) {
+  .hide-on-800 {
+    display: none !important;
+    width: 0;
+    height: 0;
+  }
+}
+
+@media handheld, only screen and (max-width: 767px) {
+  .grid {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 20px; /* grid-space to left */
+    padding-right: 10px; /* grid-space to right: (grid-space-left - column-space) e.g. 20px-10px=10px */
+  }
+
+  .grid-pad > [class*='col-'] {
+    width: auto;
+    float: none;
+    margin: 10px 0;
+    padding-left: 0;
+    padding-right: 10px; /* column-space */
+  }
+
+  /* Mobile Layout */
+
+  [class*='mobile-col-'] {
+    float: left;
+    margin: 0 0 10px;
+    padding-left: 0;
+    padding-right: 10px; /* column-space */
+    padding-bottom: 0;
+  }
+
+  .mobile-col-1-1 {
+    width: 100%;
+  }
+  .mobile-col-2-3, .mobile-col-8-12 {
+    width: 66.66%;
+  }
+
+  .mobile-col-1-2, .mobile-col-6-12 {
+    width: 50%;
+  }
+
+  .mobile-col-1-3, .mobile-col-4-12 {
+    width: 33.33%;
+  }
+
+  .mobile-col-1-4, .mobile-col-3-12 {
+    width: 25%;
+  }
+
+  .mobile-col-1-5 {
+    width: 20%;
+  }
+
+  .mobile-col-1-6, .mobile-col-2-12 {
+    width: 16.667%;
+  }
+
+  .mobile-col-1-7 {
+    width: 14.28%;
+  }
+
+  .mobile-col-1-8 {
+    width: 12.5%;
+  }
+
+  .mobile-col-1-9 {
+    width: 11.1%;
+  }
+
+  .mobile-col-1-10 {
+    width: 10%;
+  }
+
+  .mobile-col-1-11 {
+    width: 9.09%;
+  }
+
+  .mobile-col-1-12 {
+    width: 8.33%
+  }
+
+  /* Layout Columns */
+
+  .mobile-col-11-12 {
+    width: 91.66%
+  }
+
+  .mobile-col-10-12 {
+    width: 83.333%;
+  }
+
+  .mobile-col-9-12 {
+    width: 75%;
+  }
+
+  .mobile-col-5-12 {
+    width: 41.66%;
+  }
+
+  .mobile-col-7-12 {
+    width: 58.33%
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+    width: 0;
+    height: 0;
+  }
+}

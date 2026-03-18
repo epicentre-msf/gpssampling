@@ -1,0 +1,204 @@
+*/
+/* Leaflet
+
+/* If not using map tiles, show a white background */
+.leaflet-container {
+  background-color: white !important;
+}
+
+.leaflet-container a.btn {
+  color: unset;
+}
+
+.leaflet {
+   position: relative;
+   z-index: 0;
+}
+
+.leaflet > .map-wrapper {
+    position: relative;
+    z-index: 5;
+}
+/*
+.leaflet-left .leaflet-control {
+    margin-left: 5px;
+}
+
+.leaflet-top .leaflet-control {
+    margin-top: 3px;
+}
+
+.leaflet-bottom .leaflet-control {
+    margin-bottom: 3px;
+}
+
+.leaflet-right .leaflet-control {
+    margin-right: 5px;
+} */
+
+.leaflet-info {
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255,255,255,0.2);
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+
+.leaflet .info {
+  border: 1px solid #ddd;
+  box-shadow: none;
+  padding: 6px 8px;
+  font: 12px/14px Arial, Helvetica, sans-serif;
+  /*opacity: 0.5;*/
+  margin-top: 0;
+  transition: opacity 500ms 100ms;
+}
+
+.leaflet .info:hover {
+  /* Fade in while hovering */
+  opacity: 1;
+  transition-delay: 0;
+}
+
+.leaflet .info-title {
+  margin: 0;
+}
+
+.leaflet .info-subtitle {
+  margin: 0;
+  font-weight: normal;
+}
+
+.leaflet .legend {
+  line-height: 14px;
+}
+
+.leaflet .legend i {
+  border-radius: 50%;
+  width:10px;
+  height: 10px;
+  margin-top: 4px;
+}
+
+.leaflet .form-group {
+  margin-bottom: 0;
+}
+
+.leaflet-control-search {
+  background: rgba(0, 0, 0, 0) !important;
+  /* background-color: rgba(0, 0, 0, 0) !important; */
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: none !important;
+}
+
+/* si positionne en bas de l'ecran */
+.leaflet-control-search .search-tooltip {
+  top: unset !important;
+  bottom: 22px;
+  left: -4px;
+}
+
+.leaflet-control-search.search-exp {
+  background: rgb(255, 255, 255) !important;
+  /* background-color: rgba(0, 0, 0, 0) !important; */
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: none !important;
+}
+
+.leaflet-control-search .search-input {
+  border: 1px solid #c0c0c0;
+  height: 24px;
+}
+
+.leaflet-control-search .search-button:hover {
+  background-position-x:4px;
+  background-position-y:4px;
+}
+
+.leaflet-control-search .search-button {
+  width: 30px;
+  height: 30px;
+  background-position-x:4px;
+  background-position-y:4px;
+  border-radius: 4px;
+}
+
+.leaflet-panel {
+  /* Appearance */
+  background-color: white;
+  padding: 0 20px 20px 20px;
+  cursor: move;
+  /* Fade out while not hovering */
+  opacity: 0.85;
+  zoom: 0.9;
+  transition: opacity 500ms 1s;
+  z-index: 5000
+}
+
+.leaflet-panel:hover {
+  /* Fade in while hovering */
+  opacity: 0.95;
+  transition-delay: 0;
+}
+
+.input-group div.form-group {
+  margin-bottom: 0;
+}
+
+/* .btn-group-sm > .btn, .btn-sm {
+  margin: 2px;
+} */
+
+.btn-input {
+    padding: 6px;
+}
+
+.ebar {
+  top: 5px !important;
+  left: 5px !important;
+  height: 100% !important;
+  /* border-radius: 0px !important; */
+  /* border: none !important; */
+}
+
+.leaflet-buttons-control-button {
+  box-shadow: none !important;
+}
+
+.leaflet-pm-toolbar .leaflet-buttons-control-button > .leaflet-pm-icon-circle-marker {
+  border-radius: 4px !important;
+}
+
+.leaflet-pm-toolbar .button-container:first-child .leaflet-buttons-control-button {
+  border-radius: 4px 4px 0 0  !important;
+}
+
+.leaflet-pm-toolbar .button-container:last-child .leaflet-buttons-control-button {
+  border-radius: 0 0 4px 4px !important;
+}
+
+.leaflet-pm-draw:disabled > .button-container {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.leaflet-pm-edit:disabled > .button-container {
+  pointer-events: none;
+  opacity: 0.4;
+}
+/*
+.leaflet-pm-icon-edit:before {
+  content: "\f00c";
+}
+
+.leaflet-pm-icon-edit {
+  background-image: none !important;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  padding-top: 4px;
+} */

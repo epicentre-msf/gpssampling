@@ -1,0 +1,31 @@
+.panel {
+  background-color: transparent;
+}
+.panel-group {
+  width: 200px;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+.panel-default > .panel-heading {
+  background-color: transparent;
+}
+
+.panel-default > .panel-heading > .panel-title > a:collapsed {
+  background-color: #fff;
+}
+
+.panel-heading:hover {
+  background-color: #fff;
+}
+
+.panel-heading.is-active {
+  background-color: #fff;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 400;
+  padding-top: 0;
+}
+
+a:focus, a:hover {
+  text-decoration: none;
+}

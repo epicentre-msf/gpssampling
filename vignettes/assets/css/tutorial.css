@@ -1,0 +1,28 @@
+
+.TutorSection {
+  background-color: lightgrey;
+  border: 1px solid #ff0000;
+  border-radius: 9px;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.img-left {
+  float: left;
+  margin-right: 2em;
+}
+
+.red-text {
+  color: red;
+}
+
+.par-note {
+  background-color: lightgrey;
+  font-size: 14px;
+  font-style: italic;
+  color: blue;
+  border-radius: 3px;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+

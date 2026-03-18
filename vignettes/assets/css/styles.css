@@ -1,0 +1,37 @@
+#sidebar h2 {
+  background-color: #31a354;
+}
+
+h1, h2, h3, h4, h5, h6, legend {
+  color: #006d2c        /* Geen */
+}
+
+pre { /* Code block - determines code spacing between lines */
+    font-size: 14px;
+}
+
+.footer {
+  /*background-color: #c2cdb4; */
+  padding: 2px;
+  border-top: 1px solid #006d2c
+}
+
+.green-outline-img {
+   background-color: #c2cdb4;
+   padding:3px;
+   display: inline-block;
+}
+
+.text-red {
+  color: red; 
+}
+
+.tab-style {
+ border-style:solid;
+ border-color:#a9a9a9;
+ border-radius: 5px;
+ border-width: 1px;
+ padding: 2px;
+ font-family: Arial;
+ color: #000000
+}

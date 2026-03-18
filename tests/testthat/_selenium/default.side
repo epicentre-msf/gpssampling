@@ -1,0 +1,460 @@
+{
+  "id": "954d5cd8-39ab-4f61-a2dd-dccd1f1fccb6",
+  "version": "2.0",
+  "name": "GeoSampler",
+  "url": "http://127.0.0.1:8000",
+  "tests": [{
+    "id": "0ab69dba-0826-4220-b598-abe619df21bc",
+    "name": "Test: Sample",
+    "commands": [{
+      "id": "d7515165-5cc3-4001-af3c-37c4383c5391",
+      "comment": "",
+      "command": "store",
+      "target": "SP_SMP",
+      "targets": [],
+      "value": "method"
+    }, {
+      "id": "66dd9053-8ffe-48a0-9532-e26db09e4268",
+      "comment": "",
+      "command": "run",
+      "target": "01 Macro: Start",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "c4081565-d69a-4b67-b56f-0d6676bce527",
+      "comment": "",
+      "command": "run",
+      "target": "02 Macro: New Case",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "14655e1c-09b0-4102-9d51-582dc7da7d3d",
+      "comment": "",
+      "command": "run",
+      "target": "03 Macro: Find Masai Lodge",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "79019f34-a2df-4cb3-9313-cc33ca2151cf",
+      "comment": "",
+      "command": "run",
+      "target": "04 Macro: Create Masai Lodge Bound",
+      "targets": [],
+      "value": ""
+    }]
+  }, {
+    "id": "ea1f5270-303d-41ad-930d-21760c65532f",
+    "name": "01 Macro: Start",
+    "commands": [{
+      "id": "c70a4520-6821-464c-a3ae-fea7b577821d",
+      "comment": "",
+      "command": "open",
+      "target": "http://127.0.0.1:8000",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "9657d515-bfbf-449e-b21b-4fd38f5e9e20",
+      "comment": "",
+      "command": "setWindowSize",
+      "target": "1000x800",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "6a6b44e3-556f-4987-a5f6-6cff2d2d0d93",
+      "comment": "",
+      "command": "//executeAsyncScript",
+      "target": "Shiny.setInputValue(\"screenshot\", {selector: \"body\", filename: \"body\"})",
+      "targets": [],
+      "value": ""
+    }]
+  }, {
+    "id": "012c7d77-65e0-444f-87da-940cd35920d4",
+    "name": "02 Macro: New Case",
+    "commands": [{
+      "id": "236c791c-8d04-4c20-bfb9-d1af485bed07",
+      "comment": "",
+      "command": "store",
+      "target": "delimit",
+      "targets": [],
+      "value": "step"
+    }, {
+      "id": "d06d4b8a-a455-472c-a8ea-389d4004aaf7",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_${step}-act_clear_btn",
+      "targets": [
+        ["id=app-steps-step_delimit-act_clear_btn", "id"],
+        ["css=#app-steps-step_delimit-act_clear_btn", "css:finder"],
+        ["xpath=//button[@id='app-steps-step_delimit-act_clear_btn']", "xpath:attributes"],
+        ["xpath=//div[@id='app-steps-step_delimit-bar_ok']/button[3]", "xpath:idRelative"],
+        ["xpath=//button[3]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "77bc42cf-efce-492e-891c-275791f747bc",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_${step}-act_clear_confirm",
+      "targets": [
+        ["id=app-steps-step_delimit-act_clear_btn", "id"],
+        ["css=#app-steps-step_delimit-act_clear_btn", "css:finder"],
+        ["xpath=//button[@id='app-steps-step_delimit-act_clear_btn']", "xpath:attributes"],
+        ["xpath=//div[@id='app-steps-step_delimit-bar_ok']/button[3]", "xpath:idRelative"],
+        ["xpath=//button[3]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "61886504-2df7-4ade-94ab-12d97ced52dd",
+      "comment": "",
+      "command": "click",
+      "target": "css=input[name=\"dlg_method-opt_method\"][value=\"${method}\"]",
+      "targets": [
+        ["id=app-steps-step_delimit-act_clear_btn", "id"],
+        ["css=#app-steps-step_delimit-act_clear_btn", "css:finder"],
+        ["xpath=//button[@id='app-steps-step_delimit-act_clear_btn']", "xpath:attributes"],
+        ["xpath=//div[@id='app-steps-step_delimit-bar_ok']/button[3]", "xpath:idRelative"],
+        ["xpath=//button[3]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "05675ccc-3267-469d-93c9-0668056e49a6",
+      "comment": "",
+      "command": "click",
+      "target": "css=#dlg_method-act_ok > .i18n",
+      "targets": [
+        ["css=#dlg_method-act_ok > .i18n", "css:finder"],
+        ["xpath=//button[@id='dlg_method-act_ok']/span", "xpath:idRelative"],
+        ["xpath=//div[6]/div/div/div/div[3]/button/span", "xpath:position"],
+        ["xpath=//span[contains(.,'OK')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }]
+  }, {
+    "id": "7f93bd08-572f-4151-8382-33b12ec10fdf",
+    "name": "03 Macro: Find Masai Lodge",
+    "commands": [{
+      "id": "968c6ec9-baac-49aa-8ac7-f96e19054677",
+      "comment": "",
+      "command": "click",
+      "target": "css=.search-button",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "bd7a6905-1bad-4e87-be5d-91b1c37ec37a",
+      "comment": "",
+      "command": "type",
+      "target": "id=searchtext25",
+      "targets": [],
+      "value": "masai lodge"
+    }, {
+      "id": "a71c8a2d-ee22-4b8b-a132-5072b55a82bd",
+      "comment": "",
+      "command": "click",
+      "target": "css=.search-tip:nth-child(2)",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "2485e132-a067-4180-a1e9-eb901c22a2bd",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "bdf939be-1012-46d7-9751-4cdd8be62378",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_DOWN}"
+    }, {
+      "id": "eb805cdb-bfd1-4ea8-8c34-bddc922d7136",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_DOWN}"
+    }, {
+      "id": "eb2e904f-a431-49f0-ba68-cf157dfe0937",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_DOWN}"
+    }, {
+      "id": "4bc7c677-5c43-4334-b3f8-dcba3e9f0f8a",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_DOWN}"
+    }, {
+      "id": "d93e87ea-d7a4-4f72-97db-d7830d44d045",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_RIGHT}"
+    }, {
+      "id": "e92efe63-97d6-41e4-a00b-9e2924359c5b",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_RIGHT}"
+    }, {
+      "id": "7fa23458-801f-4640-9aca-3bdb39ef4578",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_RIGHT}"
+    }, {
+      "id": "a5acdd21-ee14-4c9e-93fe-e628baf7b737",
+      "comment": "",
+      "command": "sendKeys",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "${KEY_RIGHT}"
+    }]
+  }, {
+    "id": "1abaa8d2-2bc0-44ed-a824-71a44ea642eb",
+    "name": "Test Session",
+    "commands": []
+  }, {
+    "id": "cd350da2-2d95-4313-9618-6bd3c7e9adbc",
+    "name": "04 Macro: Create Masai Lodge Bound",
+    "commands": [{
+      "id": "417b5871-cf87-4dc6-ab36-eeec935d1bf0",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-act_draw_polygon_btn",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "b1a1132d-96a8-4977-b75e-048c57118187",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "337,275"
+    }, {
+      "id": "392a515f-b1cc-4d94-8e9b-991b341cc284",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "652,48"
+    }, {
+      "id": "55544ec1-86c9-4f90-85bd-c912c1de4534",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "754,53"
+    }, {
+      "id": "29c3cc9c-624a-49ae-b9ff-7e3935acebc7",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "789,250"
+    }, {
+      "id": "f072c804-63ce-48d7-8541-a97da0c8be95",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "469,452"
+    }, {
+      "id": "2707b067-bc13-4f0b-b0a4-2f837ee453e6",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "368,418"
+    }, {
+      "id": "dd7ee86f-51d9-4a91-b2fd-fa1c3a7f0dd6",
+      "comment": "",
+      "command": "clickAt",
+      "target": "id=app-steps-step_delimit-map",
+      "targets": [],
+      "value": "337,275"
+    }, {
+      "id": "09c1e5fd-1eb4-48ea-bc11-0f4e975db9b5",
+      "comment": "",
+      "command": "click",
+      "target": "css=g > .leaflet-interactive",
+      "targets": [
+        ["css=g > .leaflet-interactive", "css:finder"]
+      ],
+      "value": ""
+    }, {
+      "id": "50d8fe12-bb14-40c1-8496-e88702e292ff",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-act_ok_btn",
+      "targets": [
+        ["id=app-steps-step_delimit-act_ok_btn", "id"],
+        ["css=#app-steps-step_delimit-act_ok_btn", "css:finder"],
+        ["xpath=//button[@id='app-steps-step_delimit-act_ok_btn']", "xpath:attributes"],
+        ["xpath=//div[@id='app-steps-step_delimit-bar_ok']/button", "xpath:idRelative"],
+        ["xpath=//div[3]/div/div[2]/button", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "89dbc03e-6a59-4342-a458-1e1c4f6fccb6",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-act_ok_confirm",
+      "targets": [
+        ["css=g > .leaflet-interactive", "css:finder"]
+      ],
+      "value": ""
+    }, {
+      "id": "b0d7664f-25d0-43b4-888b-81d4e765fa3e",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-act_upload_btn",
+      "targets": [
+        ["css=g > .leaflet-interactive", "css:finder"]
+      ],
+      "value": ""
+    }]
+  }, {
+    "id": "7b2b7456-6f8b-4a8a-b0c2-c6a77def32a1",
+    "name": "05 Macro: Upload Delimit Bound",
+    "commands": [{
+      "id": "2d591172-50d2-4c6b-9dc9-09bfb6f263bb",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-act_upload_btn",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "42db503f-4191-4d55-824c-23ba5054eccb",
+      "comment": "",
+      "command": "type",
+      "target": "id=app-steps-step_delimit-mod_1-tab_1-file",
+      "targets": [
+        ["id=app-steps-step_delimit-mod_1-tab_1-file", "id"],
+        ["name=app-steps-step_delimit-mod_1-tab_1-file", "name"],
+        ["css=#app-steps-step_delimit-mod_1-tab_1-file", "css:finder"],
+        ["xpath=//input[@id='app-steps-step_delimit-mod_1-tab_1-file']", "xpath:attributes"],
+        ["xpath=//div[@id='tab-5382-1']/div/div/div/div/div/div/div/label/span/input", "xpath:idRelative"],
+        ["xpath=//label/span/input", "xpath:position"]
+      ],
+      "value": "C:\\fakepath\\masai-lodge.kmz"
+    }, {
+      "id": "75965020-443a-4927-b814-0ad30a9f7ebe",
+      "comment": "",
+      "command": "click",
+      "target": "id=app-steps-step_delimit-mod_1-act_ok",
+      "targets": [],
+      "value": ""
+    }]
+  }, {
+    "id": "0ece8fd1-82bc-4ee4-9253-9c9e0bf7008d",
+    "name": "Test: Sample (1)",
+    "commands": [{
+      "id": "344a5d5f-2afb-4f94-a84a-335c0ae85c47",
+      "comment": "",
+      "command": "store",
+      "target": "RS_SMP",
+      "targets": [],
+      "value": "method"
+    }, {
+      "id": "4a5802f3-bf2c-496e-95f8-dadade40b633",
+      "comment": "",
+      "command": "run",
+      "target": "01 Macro: Start",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "fe5655d3-5d12-4d34-b5a8-fd30189ee39d",
+      "comment": "",
+      "command": "run",
+      "target": "02 Macro: New Case",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "efbfe741-77ec-46dd-90d0-a1e3b7f9294a",
+      "comment": "",
+      "command": "run",
+      "target": "03 Macro: Find Masai Lodge",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "2dcf1bce-8ed2-4b2d-ae0f-da73c886e538",
+      "comment": "",
+      "command": "run",
+      "target": "04 Macro: Create Masai Lodge Bound",
+      "targets": [],
+      "value": ""
+    }]
+  }, {
+    "id": "5969630a-0e42-41dc-a37a-50c4af6599b6",
+    "name": "02.1 Macro: Identify: Roofs ",
+    "commands": [{
+      "id": "7bde7e19-1a56-4efd-8508-70c9d7413026",
+      "comment": "",
+      "command": "click",
+      "target": "css=#app-steps-step_identify-title_panel > .i18n",
+      "targets": [
+        ["css=#app-steps-step_identify-title_panel > .i18n", "css:finder"],
+        ["xpath=//span[@id='app-steps-step_identify-title_panel']/span", "xpath:idRelative"],
+        ["xpath=//li[2]/a/span/span", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "2c4ee24a-89a6-45e8-a321-0df51484b5c5",
+      "comment": "",
+      "command": "click",
+      "target": "css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive",
+      "targets": [
+        ["css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive", "css:finder"]
+      ],
+      "value": ""
+    }, {
+      "id": "c611bcad-02bd-428f-919b-6ae154823947",
+      "comment": "",
+      "command": "clickAt",
+      "target": "css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive",
+      "targets": [
+        ["css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive", "css:finder"]
+      ],
+      "value": "400,400"
+    }, {
+      "id": "4c83dcf2-3711-4291-a5b5-d51a1f61c865",
+      "comment": "",
+      "command": "mouseDownAt",
+      "target": "css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "6a0cf35c-d846-484c-baeb-07c97b885f97",
+      "comment": "",
+      "command": "mouseUp",
+      "target": "css=#app-steps-step_identify-map > .leaflet-pane .leaflet-interactive",
+      "targets": [],
+      "value": ""
+    }]
+  }],
+  "suites": [{
+    "id": "a73664cb-130a-4409-b121-53f21e77c48a",
+    "name": "Default Suite",
+    "persistSession": true,
+    "parallel": false,
+    "timeout": 300,
+    "tests": []
+  }, {
+    "id": "d69bb723-fda1-408f-afbb-fe456e783de4",
+    "name": "Macros",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": ["ea1f5270-303d-41ad-930d-21760c65532f", "0ab69dba-0826-4220-b598-abe619df21bc"]
+  }],
+  "urls": ["http://127.0.0.1:6306/", "http://127.0.0.1:8000/"],
+  "plugins": []
+}
