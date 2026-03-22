@@ -990,41 +990,63 @@ observeEventMap <- function(session, input, vars, inputId) {
 }
 
 pickerInputBasemaps <- function(inputId, selected = NULL) {
+  has_google <- nzchar(Sys.getenv("MAPS_API_KEY_GOOGLE"))
+  has_mapbox <- nzchar(Sys.getenv("MAPS_API_KEY_MAPBOX"))
+  has_bing <- nzchar(Sys.getenv("MAPS_API_KEY_BING"))
+
+  # Always-available (free) choices
+  road <- list('Road: OSM' = 'road.osm', 'Road: OSM (HOT)' = 'road.osm.hot')
+  satellite <- list('Sat.: ESRI' = 'sat.esri', 'Sat.: Maxar' = 'sat.maxar')
+  terrain <- list()
+  dark <- list()
+  gray <- list('Gray: OSM' = 'gray.osm')
+  light <- list()
+
+  # Add provider-specific options when API keys are available
+  if (has_google) {
+    road <- c(road, list('Road: Google' = 'road.google'))
+    satellite <- c(satellite, list('Sat.: Google' = 'sat.google'))
+    terrain <- c(terrain, list('Terrain: Google' = 'terrain.google'))
+  }
+
+  if (has_mapbox) {
+    road <- c(road, list('Road: Mapbox' = 'road.mapbox'))
+    satellite <- c(satellite, list('Sat.: Mapbox' = 'sat.mapbox'))
+    terrain <- c(terrain, list('Terrain: Mapbox' = 'terrain.mapbox'))
+    dark <- c(dark, list('Dark: Mapbox' = 'dark.mapbox'))
+    gray <- c(gray, list('Gray: Mapbox' = 'gray.mapbox'))
+    light <- c(
+      light,
+      list(
+        'Light: Mapbox' = 'light.mapbox',
+        'Light: Mapbox (Blue)' = 'light.mapbox.blue'
+      )
+    )
+  }
+
+  if (has_bing) {
+    satellite <- c(satellite, list('Sat.: Bing' = 'sat.bing'))
+  }
+
+  # Build grouped choices, dropping empty groups
+  choices <- list(Road = road, Satellite = satellite)
+  if (length(terrain) > 0L) choices$Terrain <- terrain
+  if (length(dark) > 0L) choices$Dark <- dark
+  choices$Gray <- gray
+  if (length(light) > 0L) choices$Light <- light
+
+  # If selected basemap is not available, fall back to default
+  all_values <- unlist(choices, use.names = FALSE)
+  if (is.null(selected) || !selected %in% all_values) {
+    selected <- DEFAULT_BASEMAP
+  }
+
   pickerInputEx(
     inputId = paste0(inputId, '_basemap'),
     inline = FALSE,
     label = NULL,
     width = 200L,
-    choices = list(
-      Road = list(
-        'Road: Google' = 'road.google',
-        'Road: Mapbox' = 'road.mapbox',
-        'Road: OSM' = 'road.osm',
-        'Road: OSM (HOT)' = 'road.osm.hot'
-      ),
-      Satellite = list(
-        'Sat.: Bing' = 'sat.bing',
-        'Sat.: ESRI' = 'sat.esri',
-        'Sat.: Google' = 'sat.google',
-        'Sat.: Mapbox' = 'sat.mapbox',
-        'Sat.: Maxar' = 'sat.maxar'
-      ),
-      Terrain = list(
-        'Terrain: Google' = 'terrain.google',
-        'Terrain: Mapbox' = 'terrain.mapbox'
-      ),
-      Dark = list(
-        'Dark: Mapbox' = 'dark.mapbox'
-      ),
-      Gray = list(
-        'Gray: Mapbox' = 'gray.mapbox',
-        'Gray: OSM' = 'gray.osm'
-      ),
-      Light = list(
-        'Light: Mapbox' = 'light.mapbox',
-        'Light: Mapbox (Blue)' = 'light.mapbox.blue'
-      )
-    ),
+    choices = choices,
     buttons = list(
       list(id = 'toggle_type', icon = 'map-o'),
       list(id = 'toggle_provider', icon = 'angle-double-right')
@@ -1041,8 +1063,13 @@ setBasemap <- function(
   lf,
   basemap,
   api.key.bing = Sys.getenv('MAPS_API_KEY_BING'),
-  api.key.mapbox = Sys.getenv('MAPS_API_KEY_MAPBOX')
+  api.key.mapbox = Sys.getenv('MAPS_API_KEY_MAPBOX'),
+  api.key.maxar = Sys.getenv('MAPS_API_KEY_MAXAR')
 ) {
+  # Fall back to internal default if no Maxar key is provided
+  if (!nzchar(api.key.maxar)) {
+    api.key.maxar <- DEFAULT_MAXAR_CONNECT_ID
+  }
   lf <- leaflet::removeTiles(lf, layerId = 'base')
 
   if (grepl('google', basemap, fixed = TRUE)) {
@@ -1114,8 +1141,8 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://wiki.openstreetmap.org/wiki/Maxar\" target=\"_blank\">&copy; Maxar</a>',
       urlTemplate = sprintf(
-        'https://services.digitalglobe.com/earthservice/tmsaccess/tms/1.0.0/DigitalGlobe:ImageryTileService@EPSG:3857@jpg/{z}/{x}/{-y}.jpg?connectId=552c824a-5d4b-4bea-969f-06c8b50b80bc&foo=premium',
-        api.key.mapbox
+        'https://services.digitalglobe.com/earthservice/tmsaccess/tms/1.0.0/DigitalGlobe:ImageryTileService@EPSG:3857@jpg/{z}/{x}/{-y}.jpg?connectId=%s&foo=premium',
+        api.key.maxar
       ),
       options = leaflet::tileOptions(
         maxNativeZoom = 19L,

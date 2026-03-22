@@ -94,3 +94,15 @@ POLYGON_WEIGHT_DEFAULT <- 2L
 #' Maximum number of tiles to iterate when fetching OSM buildings.
 #' @noRd
 OSM_MAX_TILES <- 70L
+
+# Basemap API Keys
+# ............................................................................
+
+#' Default Maxar/DigitalGlobe connection ID (OSM community shared key).
+#' Override via env var MAPS_API_KEY_MAXAR.
+#' @noRd
+DEFAULT_MAXAR_CONNECT_ID <- "552c824a-5d4b-4bea-969f-06c8b50b80bc"
+
+#' Default basemap when no API keys are configured.
+#' @noRd
+DEFAULT_BASEMAP <- "sat.esri"

@@ -481,7 +481,7 @@ Step <- R6::R6Class(
       shiny::observeEvent(input$map_rendered, {
         insertSelectBasemaps(
           inputId = self$ns('map'),
-          selected = 'sat.google',
+          selected = DEFAULT_BASEMAP,
           position = 'bottomright'
         )
 
