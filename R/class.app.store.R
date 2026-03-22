@@ -139,8 +139,7 @@ UserData <- R6::R6Class(
         }
       }
     },
-    #'
-    #' Polygons: sf not null
+    # Polygons: sf not null
     polygons = function(value) {
       if (missing(value)) {
         return(private$.polygons)
@@ -256,10 +255,7 @@ UserData <- R6::R6Class(
     }
   ),
   public = list(
-    #' @description
-    #' Initialize Application class for shiny app
-    #'
-    #' @return A new Application object
+    # Initialize Application class for shiny app
     initialize = function(application, load = TRUE) {
       super$initialize(id = 'app', parent = application)
 

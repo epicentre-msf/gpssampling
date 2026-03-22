@@ -169,18 +169,7 @@ row <- function(..., flex = TRUE, align_self = NULL) {
 
 # styler: block Modal Dialog
 
-#' @examples
-#' shiny::shinyApp(
-#'   ui = shiny::basicPage(
-#'     shiny::actionButton('show', 'Show modal dialog')
-#'   ),
-#'   server = function(input, output) {
-#'     shiny::observeEvent(input$show, {
-#'       shiny::showModal(modalDanger('rt'))
-#'     })
-#'   }
-#' )
-#'
+#' @noRd
 modalDanger <- function(
   inputIdOk,
   icon = 'alert',

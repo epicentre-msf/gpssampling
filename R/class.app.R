@@ -1,52 +1,18 @@
-#' GpsSampler R6 class
+#' GpsSampler R6 Class
 #'
 #' Main entry point for the GPS sampling Shiny application.
 #' Use the [sampler()] factory function for idiomatic construction.
 #'
-#' @format A list of additional arguments
-#'
-#' @field data (`character(1)`)
-#'   A function to retrieve the application's data
-#'
-#' @field dlg_method (`character(1)`)
-#'   A function to retrieve the dialog method
-#'
-#' @field keypress (`character(1)`)
-#'   A function to retrieve the keypress
-#'
-#' @section Public:
-#'
-#' @describeIn launch Launch a project
-#' @param open logical indicating whether or not to open the project on launch
-#' @param port Optional numeric port number for the project
-#' @param method An optional character string specifying a specific method for the project
-#' @param options An optional list of named attributes that are passed as options to the project launch
-#' @param authentification Logical indicating whether or not to use authentication
-#' @param identify Logical indicating whether or not to use identify part only
-#' @return The launch application
-#'
-#' @describeIn initialize Initializes the object
-#' @param ... A list of additional arguments
-#'
-#' @section Private:
-#'
-#' @describeIn getTitle
-#'   A function to get the package title
-#'
-#' @describeIn getUIMenu
-#'   A function to get the UI menu
-#'
-#' @describeIn getServerInternal
-#'   A function to get the server internal
-#'
-#' @describeIn onChangeLanguage
-#'   A function to handle language change
-#'
-#' @describeIn onSessionEnded
-#'   A function to handle session end
-#'
-#' @describeIn start
-#'   A function to start the application
+#' @param ... Additional arguments passed to the parent class.
+#' @param open Logical; open the app in a browser on launch.
+#' @param port Optional numeric port number.
+#' @param options Named list of Shiny options.
+#' @param test Logical; run in test mode.
+#' @param test_record Logical; enable shinytest2 recording.
+#' @param authentification Logical; enable OAuth2 authentication.
+#' @param method Character; sampling method code (e.g. `"RS_SMP"`, `"SP_SMP"`).
+#' @param identify Logical; run in identify-only mode.
+#' @param bbox Numeric vector of length 4; default bounding box.
 #'
 #' @export
 #'
@@ -55,26 +21,21 @@ GpsSampler <- R6::R6Class(
   inherit = AppShiny,
   portable = FALSE,
   active = list(
-    #' @field data (`character(1)`)\cr
+    #' @field data The application's UserData store.
     data = function() {
       self$domain$userData$data
     },
-    #' @field dlg_method (`character(1)`)\cr
+    #' @field dlg_method The method selection dialog.
     dlg_method = function() {
       self$domain$userData$dlg_method
     },
-    #' @field keypress (`character(1)`)\cr
+    #' @field keypress The keyboard shortcut handler.
     keypress = function() {
       private$.keypress
     }
   ),
   public = list(
-    #' Initializes the object
-    #'
-    #' This function initializes the object with given arguments.
-    #'
-    #' @param ... A list of additional arguments
-    #'
+    #' @description Create a new GpsSampler instance.
     initialize = function(...) {
       super$initialize(...)
 
@@ -91,19 +52,8 @@ GpsSampler <- R6::R6Class(
         )
     },
 
-    #' Launch a project
-    #'
-    #' This function launches a project with given parameters.
-    #'
-    #' @param open logical indicating whether or not to open the project on launch
-    #' @param port Optional numeric port number for the project
-    #' @param method An optional character string specifying a specific method for the project
-    #' @param options An optional list of named attributes that are passed as options to the project launch
-    #' @param authentification Logical indicating whether or not to use authentication
-    #' @param identify Logical indicating whether or not to use identify part only
-    #'
-    #' @return The launch application
-    #'
+    #' @description Launch the Shiny application.
+    #' @return A `shiny.appobj` object.
     launch = function(
       open = TRUE,
       port = NULL,
@@ -230,6 +180,7 @@ GpsSampler <- R6::R6Class(
   )
 )
 
+#' @noRd
 GpsSamplerModule <- R6::R6Class(
   classname = 'GpsSamplerModule',
   inherit = ModShiny,
@@ -257,8 +208,8 @@ GpsSamplerModule <- R6::R6Class(
   )
 )
 
-#' @rdname GpsSampler
 #' @export
+#' @noRd
 ApplicationModule <- GpsSamplerModule
 
 #' Create a GPS sampler instance
@@ -280,9 +231,6 @@ sampler <- function(...) {
   GpsSampler$new(...)
 }
 
-#' @rdname GpsSampler
-#' @description
-#' `Application` is a deprecated alias for `GpsSampler`. Use [sampler()]
-#' or `GpsSampler$new()` instead.
 #' @export
+#' @noRd
 Application <- GpsSampler

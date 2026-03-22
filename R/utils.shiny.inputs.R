@@ -656,13 +656,7 @@ tokenInput <- function(
   )
 }
 
-#' @inheritDotParams shinyWidgets::virtualSelectInput
-#'
-#' @return A virtual select input created using shinyWidgets::virtualSelectInput.
-#'
-#' @examples
-#' virtualSelectInput(optionHeight = '40px')
-#'
+#' @noRd
 virtualSelectInput <- function(..., fill = TRUE) {
   args <- rlang::list2(...)
   args <- utils::modifyList(args, list(optionHeight = '40px'))

@@ -71,8 +71,7 @@ AppShinyBase <- R6::R6Class(
       assign(module_name, module, envir = self$domain$userData)
       self$domain$userData[[module_name]]$bind()
     },
-    #' @description
-    #' Launch the shiny app
+    # Launch the shiny app
     launch = function(
       open = TRUE,
       port = NULL,
@@ -259,6 +258,7 @@ AppShinyBase <- R6::R6Class(
   )
 )
 
+
 AppShinyWithAuthentification <- R6::R6Class(
   classname = 'AppShinyWithAuthentification',
   portable = FALSE,
@@ -338,6 +338,7 @@ AppShinyWithAuthentification <- R6::R6Class(
     }
   )
 )
+
 
 AppShinyWithTranslation <- R6::R6Class(
   classname = 'AppShinyWithTranslation',
@@ -425,6 +426,7 @@ AppShinyWithTranslation <- R6::R6Class(
   )
 )
 
+
 AppShinyNav <- R6::R6Class(
   classname = 'AppShinyNav',
   portable = FALSE,
@@ -505,6 +507,7 @@ AppShinyNav <- R6::R6Class(
   )
 )
 
+
 AppShinyFillPage <- R6::R6Class(
   classname = 'AppShinyFillPage',
   portable = FALSE,
@@ -553,6 +556,7 @@ AppShinyFillPage <- R6::R6Class(
   )
 )
 
+
 AppShiny <- R6::R6Class(
   classname = 'AppShiny',
   inherit = AppShinyWithTranslation,
@@ -572,10 +576,7 @@ AppShiny <- R6::R6Class(
     }
   ),
   public = list(
-    #' @description
-    #' Initialize Application class for shiny app
-    #'
-    #' @return A new Application object
+    # Initialize Application class for shiny app
     initialize = function(
       about = FALSE,
       reactlog = FALSE,
@@ -747,12 +748,9 @@ AppShiny <- R6::R6Class(
         )
       )
     },
-    #' Get the URL site
-    #'
-    #' @param page a character parameter for selecting the target page to get the site of
-    #'
-    #' @return a URL (character)
-    #'
+    # Get the URL site
+    # @param page character; the target page
+    # @return A URL (character)
     getURLSite = function(page = 'index.html') {
       if (session$clientData$url_hostname == '127.0.0.1') {
         # app is offline
@@ -883,6 +881,7 @@ AppShiny <- R6::R6Class(
   )
 )
 
+
 ModShiny <- R6::R6Class(
   classname = 'ModShiny',
   inherit = Base,
@@ -918,6 +917,7 @@ ModShiny <- R6::R6Class(
     }
   )
 )
+
 
 ModKey <- R6::R6Class(
   classname = 'ModKey',
@@ -961,6 +961,7 @@ ModKey <- R6::R6Class(
     }
   )
 )
+
 
 ModDatabase <- R6::R6Class(
   classname = 'ModDatabase',
@@ -1027,6 +1028,7 @@ ModDatabase <- R6::R6Class(
     .pool_changed = NULL
   )
 )
+
 
 ModalDialog <- R6::R6Class(
   classname = 'ModalDialog',
@@ -1109,6 +1111,7 @@ ModalDialog <- R6::R6Class(
   )
 )
 
+
 ModalDialogProgress <- R6::R6Class(
   classname = 'ModalDialogProgress',
   inherit = ModalDialog,
@@ -1127,6 +1130,7 @@ ModalDialogProgress <- R6::R6Class(
     }
   )
 )
+
 
 ModalDialogTab <- R6::R6Class(
   classname = 'ModalDialogTab',

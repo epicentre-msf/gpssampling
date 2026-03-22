@@ -51,12 +51,64 @@ WARNINGS
    sampling, refer to the official GeoSampler documentation at the URL above.
 
 
+INSTALLATION
+------------
+
+Prerequisites:
+  - R >= 4.3.1
+  - System libraries for spatial packages (sf, terra, gdal, geos, proj)
+
+On Ubuntu/Debian:
+  sudo apt-get install -y \
+    libcurl4-openssl-dev libssl-dev libxml2-dev \
+    libgdal-dev libgeos-dev libproj-dev libudunits2-dev \
+    libsqlite3-dev libfontconfig1-dev libfreetype6-dev \
+    libharfbuzz-dev libfribidi-dev libpng-dev libtiff-dev libjpeg-dev
+
+On macOS (Homebrew):
+  brew install gdal geos proj udunits
+
+Install from GitHub:
+  # install.packages("remotes")
+  remotes::install_github("yves-amevoin/gpssampling")
+
+Install from a local clone:
+  git clone https://github.com/yves-amevoin/gpssampling.git
+  R CMD INSTALL gpssampling
+
+  # Or from within R:
+  devtools::install("path/to/gpssampling")
+
+
 USAGE
 -----
 
 library(gpssampling)
 samp <- sampler()
 samp$launch()
+
+
+DEVELOPMENT
+-----------
+
+Development happens on the 'dev' branch. To contribute:
+
+  git clone https://github.com/yves-amevoin/gpssampling.git
+  cd gpssampling
+  git checkout dev
+
+Run tests:
+  Rscript -e 'devtools::test()'
+
+Regenerate documentation:
+  Rscript -e 'devtools::document()'
+
+Check the package:
+  Rscript -e 'devtools::check()'
+
+Branch workflow:
+  - dev    : active development, CI runs R-CMD-check on push
+  - main   : stable releases, protected branch, auto-release on push
 
 
 MAP TILE API KEYS (OPTIONAL)
