@@ -347,7 +347,7 @@ PolygonManager <- R6::R6Class(
       }
 
       map |>
-        leafpm::clearFeatures()
+        pm_clear_features()
     },
 
     #' @description Validate, fix geometry, and add metadata columns.
@@ -357,6 +357,20 @@ PolygonManager <- R6::R6Class(
     makeValidPolygons = function(sf, id_max = 0L) {
       if (is.null(sf)) {
         sf <- sf_empty()
+      }
+
+      # Empty sf has no rows — return early with required columns
+      if (nrow(sf) == 0L) {
+        sf <- sf::st_set_crs(sf, 4326L)
+        sf$id_n <- integer(0L)
+        sf$id <- character(0L)
+        sf$area <- units::set_units(numeric(0L), "m^2")
+        sf$name <- character(0L)
+        sf$label <- character(0L)
+        sf$label_short <- integer(0L)
+        sf$selected <- logical(0L)
+        sf$focused <- logical(0L)
+        return(sf)
       }
 
       sf <- sf::st_make_valid(sf)
@@ -371,7 +385,7 @@ PolygonManager <- R6::R6Class(
         label = sprintf(
           '<b>%s</b><br>%s (km\u00b2)',
           name,
-          round(units::set_units(area, km^2L), 2L)
+          round(units::set_units(area, "km^2"), 2L)
         ),
         label_short = id_n
       )
@@ -394,7 +408,7 @@ PolygonManager <- R6::R6Class(
           label = sprintf(
             '<b>%s</b><br>%s (km\u00b2)',
             name,
-            round(units::set_units(area, km^2L), 2L)
+            round(units::set_units(area, "km^2"), 2L)
           ),
           label_short = id_n
         )
@@ -538,7 +552,7 @@ PolygonManager <- R6::R6Class(
         fitToSpatialFeatureBounds(map, sf = sf)
       }
 
-      leafpm::clearFeatures(map)
+      pm_clear_features(map)
 
       map
     },
@@ -644,7 +658,7 @@ PolygonManager <- R6::R6Class(
             label = sprintf(
               '<b>Polygon %s</b><br>%s (km\u00b2)',
               label_short,
-              round(units::set_units(area, km^2L), 2L)
+              round(units::set_units(area, "km^2"), 2L)
             )
           )
       }
@@ -701,7 +715,7 @@ PolygonManager <- R6::R6Class(
 
       for (i in seq_len(nrow(data$polygons))) {
         if (data$polygons$selected[i]) {
-          leafpm::editStop(map, targetGroup = sprintf('QDR_%s', i))
+          pm_edit_stop(map, targetGroup = sprintf('QDR_%s', i))
         }
       }
     },

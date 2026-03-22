@@ -73,14 +73,14 @@ This page is meant to accomplish the first task which is to **delimit with one o
 
 **Edit tools in this page:**
 
-* `r epi.icons::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
-* `r epi.icons::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
-* `r epi.icons::icon_mdi('delete-outline')` **Delete**. This action throw in the bin all polygons imported or created. The application is then set to the initial status.
-* `r epi.icons::icon_mdi('layers-plus', size = "xs")` **Add a polygon layer** from an external source or file. Follow the pop-up window to do so.
-* `r epi.icons::icon_mdi('shape-square-plus')` Activate the **Draw a new polygon** mode. Click on the icon and click on the image to start drawing a polygon. At each left-click of the mouse a new vertex is created. The polygon is created when the last click of the mouse will overlap the first vertex.
-* `r epi.icons::icon_mdi('square-edit-outline')` Activate the **Edit a polygon** mode. Click on the icon and select the polygon to be edited. The vertexes of the selected polygons can now be moved or deleted. It is also possible to add new vertexes. Re-click on the icon to exit from the mode edit.
-* `r epi.icons::icon_mdi('shape-square-remove')` Activate the **Delete polygon** mode. Click on the icon and then click on the polygon (or on the polygons one by one) to be deleted. Re-click on the icon to exit from the mode delete.
-* `r epi.icons::icon_mdi('scissors-cutting')` **Cut a polygon** allows to split a polygon into two by drawing a line throughout the polygon to be split. Make sure that the first and last vertex of the line fall outside the polygon to be split.
+* `r gpssampling:::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
+* `r gpssampling:::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
+* `r gpssampling:::icon_mdi('delete-outline')` **Delete**. This action throw in the bin all polygons imported or created. The application is then set to the initial status.
+* `r gpssampling:::icon_mdi('layers-plus', size = "xs")` **Add a polygon layer** from an external source or file. Follow the pop-up window to do so.
+* `r gpssampling:::icon_mdi('shape-square-plus')` Activate the **Draw a new polygon** mode. Click on the icon and click on the image to start drawing a polygon. At each left-click of the mouse a new vertex is created. The polygon is created when the last click of the mouse will overlap the first vertex.
+* `r gpssampling:::icon_mdi('square-edit-outline')` Activate the **Edit a polygon** mode. Click on the icon and select the polygon to be edited. The vertexes of the selected polygons can now be moved or deleted. It is also possible to add new vertexes. Re-click on the icon to exit from the mode edit.
+* `r gpssampling:::icon_mdi('shape-square-remove')` Activate the **Delete polygon** mode. Click on the icon and then click on the polygon (or on the polygons one by one) to be deleted. Re-click on the icon to exit from the mode delete.
+* `r gpssampling:::icon_mdi('scissors-cutting')` **Cut a polygon** allows to split a polygon into two by drawing a line throughout the polygon to be split. Make sure that the first and last vertex of the line fall outside the polygon to be split.
 
 <div class="green-outline-img">
   <img src="./images/page_delimit_with-polygon.png" />
@@ -99,16 +99,16 @@ In this page the application has created tiles of 150 metres per side to cover t
 
 Tiles are examined one by one, and roofs displayed in the satellite image are pinpointed with the left-click of the mouse. Erroneous marks can be deleted by left-clicking on the mark to be deleted.
 
-When all roofs are marked the tiles can be marked as checked `r epi.icons::icon_mdi('square-rounded', color = "yellow", size = "xs")` or valid `r epi.icons::icon_mdi('square-rounded', color = "green", size = "xs")`.
+When all roofs are marked the tiles can be marked as checked `r gpssampling:::icon_mdi('square-rounded', color = "yellow", size = "xs")` or valid `r gpssampling:::icon_mdi('square-rounded', color = "green", size = "xs")`.
 
 **Edit tools in this page:**
-* `r epi.icons::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
-* `r epi.icons::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
-* `r epi.icons::icon_mdi('delete-outline')` **Delete all points**. This action throw in the bin all points imported or created. The polygon is kept.
-* `r epi.icons::icon_mdi('layers-plus', size = "xs")` **Import points for external source**. Follow the pop-up window to do so.
-* `r epi.icons::icon_mdi('feature-search-outline')` **Search and Identify** Chick to the icon to to select and zoom to the first tile.
-* `r epi.icons::icon_mdi('square-rounded', color = "yellow", size = "xs")` **Checked** Label the tile as “Checked”. Same action can be done by pressing the [SPACE] key on the keyboard.  By pressing again on the [SPACE] key, the focus moves on the nearest tile with white border.
-* `r epi.icons::icon_mdi('square-rounded', color = "green", size = "xs")` **Valid** Label the tile as “Valid”. Same action can be done by pressing the [ENTER] key on the keyboard. By pressing again on the [ENTER] key, the focus moves on the nearest tile with yellow border.
+* `r gpssampling:::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
+* `r gpssampling:::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
+* `r gpssampling:::icon_mdi('delete-outline')` **Delete all points**. This action throw in the bin all points imported or created. The polygon is kept.
+* `r gpssampling:::icon_mdi('layers-plus', size = "xs")` **Import points for external source**. Follow the pop-up window to do so.
+* `r gpssampling:::icon_mdi('feature-search-outline')` **Search and Identify** Chick to the icon to to select and zoom to the first tile.
+* `r gpssampling:::icon_mdi('square-rounded', color = "yellow", size = "xs")` **Checked** Label the tile as “Checked”. Same action can be done by pressing the [SPACE] key on the keyboard.  By pressing again on the [SPACE] key, the focus moves on the nearest tile with white border.
+* `r gpssampling:::icon_mdi('square-rounded', color = "green", size = "xs")` **Valid** Label the tile as “Valid”. Same action can be done by pressing the [ENTER] key on the keyboard. By pressing again on the [ENTER] key, the focus moves on the nearest tile with yellow border.
 
 <div class="green-outline-img">
   <img src="./images/page_identify_white-tiles.png" />
@@ -121,11 +121,11 @@ This page is meant to allow selecting a sample of points within one or more poly
 
 **Edit tools in this page:**
 
-* `r epi.icons::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
-* `r epi.icons::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
-* `r epi.icons::icon_mdi('delete-outline')` **Delete**. This action deletes the selection of the points.
-* `r epi.icons::icon_mdi('layers-plus', size = "xs")` **Add a sample layer** from an external source or file. Follow the pop-up window to do so.
-* `r epi.icons::icon_mdi('map-marker-multiple-outline')` **New Sample**. Follow the pop-up window to select the sampling method and the number of points to be sampled.
+* `r gpssampling:::icon_mdi('check-bold')` **Validate** the tasks in the page and allow to move to the next pages.
+* `r gpssampling:::icon_mdi('undo')` **Undo** the previous action. Only one undo is possible.
+* `r gpssampling:::icon_mdi('delete-outline')` **Delete**. This action deletes the selection of the points.
+* `r gpssampling:::icon_mdi('layers-plus', size = "xs")` **Add a sample layer** from an external source or file. Follow the pop-up window to do so.
+* `r gpssampling:::icon_mdi('map-marker-multiple-outline')` **New Sample**. Follow the pop-up window to select the sampling method and the number of points to be sampled.
 
 <div class="green-outline-img">
   <img src="./images/page_sample_t-square.png" />

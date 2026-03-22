@@ -197,7 +197,7 @@ test_that('OSM fetching constant is defined', {
 
 test_that('All DB operations in class.app.store.R are wrapped with safe_db', {
   source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'epi.geosampler')
+    system.file('R', 'class.app.store.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.app.store.R')
@@ -229,7 +229,7 @@ test_that('All DB operations in class.app.store.R are wrapped with safe_db', {
 
 test_that('All DB operations in class.tile.manager.R are wrapped with safe_db', {
   source_code <- readLines(
-    system.file('R', 'class.tile.manager.R', package = 'epi.geosampler')
+    system.file('R', 'class.tile.manager.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.tile.manager.R')
@@ -254,7 +254,7 @@ test_that('All DB operations in class.tile.manager.R are wrapped with safe_db', 
 
 test_that('All DB operations in class.polygon.manager.R are wrapped with safe_db', {
   source_code <- readLines(
-    system.file('R', 'class.polygon.manager.R', package = 'epi.geosampler')
+    system.file('R', 'class.polygon.manager.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.polygon.manager.R')
@@ -279,7 +279,7 @@ test_that('All DB operations in class.polygon.manager.R are wrapped with safe_db
 
 test_that('All DB operations in class.data.persistence.R are wrapped with safe_db', {
   source_code <- readLines(
-    system.file('R', 'class.data.persistence.R', package = 'epi.geosampler')
+    system.file('R', 'class.data.persistence.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.data.persistence.R')
@@ -306,7 +306,7 @@ test_that('All DB operations in class.data.persistence.R are wrapped with safe_d
 
 test_that('No terra::plot debug calls remain in class.app.store.R', {
   source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'epi.geosampler')
+    system.file('R', 'class.app.store.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.app.store.R')
@@ -318,7 +318,7 @@ test_that('No terra::plot debug calls remain in class.app.store.R', {
 
 test_that('No commented-out shiny::observe blocks remain in class.app.store.R', {
   source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'epi.geosampler')
+    system.file('R', 'class.app.store.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.app.store.R')
@@ -334,7 +334,7 @@ test_that('No commented-out shiny::observe blocks remain in class.app.store.R', 
 
 test_that('No commented-out hintjs or tab module calls remain', {
   source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'epi.geosampler')
+    system.file('R', 'class.app.store.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.app.store.R')
@@ -352,7 +352,7 @@ test_that('No commented-out hintjs or tab module calls remain', {
 
 test_that('No French FIXME/TODO comments remain in class.app.store.R', {
   source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'epi.geosampler')
+    system.file('R', 'class.app.store.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/class.app.store.R')
@@ -368,7 +368,7 @@ test_that('No French FIXME/TODO comments remain in class.app.store.R', {
 
 test_that('No French placeholder keywords remain in utils.R', {
   source_code <- readLines(
-    system.file('R', 'utils.R', package = 'epi.geosampler')
+    system.file('R', 'utils.R', package = 'gpssampling')
   )
   if (length(source_code) == 0L) {
     source_code <- readLines('../../R/utils.R')
@@ -382,7 +382,7 @@ test_that('No French placeholder keywords remain in utils.R', {
 
 test_that('DESCRIPTION has a real package description', {
   desc_lines <- readLines(
-    system.file('DESCRIPTION', package = 'epi.geosampler')
+    system.file('DESCRIPTION', package = 'gpssampling')
   )
   if (length(desc_lines) == 0L) {
     desc_lines <- readLines('../../DESCRIPTION')
@@ -415,7 +415,7 @@ test_that('No FUNCTION_TITLE or FUNCTION_DESCRIPTION placeholders remain', {
 
 test_that('class.app.store.R is under 1000 lines', {
   source_file <- system.file(
-    'R', 'class.app.store.R', package = 'epi.geosampler'
+    'R', 'class.app.store.R', package = 'gpssampling'
   )
   if (source_file == '') {
     source_file <- '../../R/class.app.store.R'
@@ -427,7 +427,7 @@ test_that('class.app.store.R is under 1000 lines', {
 
 test_that('class.polygon.manager.R exists and has content', {
   source_file <- system.file(
-    'R', 'class.polygon.manager.R', package = 'epi.geosampler'
+    'R', 'class.polygon.manager.R', package = 'gpssampling'
   )
   if (source_file == '') {
     source_file <- '../../R/class.polygon.manager.R'
@@ -439,7 +439,7 @@ test_that('class.polygon.manager.R exists and has content', {
 
 test_that('class.data.persistence.R exists and has content', {
   source_file <- system.file(
-    'R', 'class.data.persistence.R', package = 'epi.geosampler'
+    'R', 'class.data.persistence.R', package = 'gpssampling'
   )
   if (source_file == '') {
     source_file <- '../../R/class.data.persistence.R'
@@ -451,7 +451,7 @@ test_that('class.data.persistence.R exists and has content', {
 
 test_that('config.R exists and has content', {
   source_file <- system.file(
-    'R', 'config.R', package = 'epi.geosampler'
+    'R', 'config.R', package = 'gpssampling'
   )
   if (source_file == '') {
     source_file <- '../../R/config.R'
@@ -464,5 +464,5 @@ test_that('config.R exists and has content', {
 # --- 12. Package loads cleanly -----------------------------------------------
 
 test_that('Package loads without errors', {
-  expect_true(requireNamespace('epi.geosampler', quietly = TRUE))
+  expect_true(requireNamespace('gpssampling', quietly = TRUE))
 })

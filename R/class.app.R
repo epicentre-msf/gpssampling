@@ -1,6 +1,7 @@
-#' Application R6 class
+#' GpsSampler R6 class
 #'
-#' This class represents an application with various methods and functionalities.
+#' Main entry point for the GPS sampling Shiny application.
+#' Use the [sampler()] factory function for idiomatic construction.
 #'
 #' @format A list of additional arguments
 #'
@@ -49,8 +50,8 @@
 #'
 #' @export
 #'
-Application <- R6::R6Class(
-  classname = 'Application',
+GpsSampler <- R6::R6Class(
+  classname = 'GpsSampler',
   inherit = AppShiny,
   portable = FALSE,
   active = list(
@@ -68,7 +69,6 @@ Application <- R6::R6Class(
     }
   ),
   public = list(
-
     #' Initializes the object
     #'
     #' This function initializes the object with given arguments.
@@ -104,18 +104,31 @@ Application <- R6::R6Class(
     #'
     #' @return The launch application
     #'
-    launch = function(open = TRUE, port = NULL, options = list(), test = FALSE, test_record = FALSE, authentification = FALSE,
-                      method = NULL,
-                      identify = FALSE,
-                      bbox = c(13.02915, 11.76533, 13.24897, 11.89713)) {
-
+    launch = function(
+      open = TRUE,
+      port = NULL,
+      options = list(),
+      test = FALSE,
+      test_record = FALSE,
+      authentification = FALSE,
+      method = NULL,
+      identify = FALSE,
+      bbox = c(13.02915, 11.76533, 13.24897, 11.89713)
+    ) {
       private$.bbox <- bbox
 
       if (identify == 'identify') {
         authentification <- FALSE
       }
 
-      app <- super$launch(open, port, options, test, test_record, authentification) # nolint: undesirable_function_linter.
+      app <- super$launch(
+        open,
+        port,
+        options,
+        test,
+        test_record,
+        authentification
+      ) # nolint: undesirable_function_linter.
 
       if (!is.null(method)) {
         data$project_method <- method
@@ -150,7 +163,10 @@ Application <- R6::R6Class(
 
       private$.keypress$bind()
 
-      addModule('dlg_method', ModalDialogMethod$new(id = 'dlg_method', parent = self))
+      addModule(
+        'dlg_method',
+        ModalDialogMethod$new(id = 'dlg_method', parent = self)
+      )
 
       if (!is.null(isolate(self$url_params$method))) {
         data$project_method <- method
@@ -163,11 +179,23 @@ Application <- R6::R6Class(
 
       shiny::observeEvent(input$opt_project_current, ignoreInit = TRUE, {
         data$projectSelect(name = input$opt_project_current)
-        shiny::updateTabsetPanel(session, 'app-steps-tbs_steps', selected = 'Delimit')
+        shiny::updateTabsetPanel(
+          session,
+          'app-steps-tbs_steps',
+          selected = 'Delimit'
+        )
       })
 
       shiny::observeEvent(data$project_name, {
-        shinyjs::delay(250L, updatePickerInputEx(session, 'opt_project_current', choices = data$projects, selected = data$project_name))
+        shinyjs::delay(
+          250L,
+          updatePickerInputEx(
+            session,
+            'opt_project_current',
+            choices = data$projects,
+            selected = data$project_name
+          )
+        )
       })
 
       shiny::observeEvent(dlg_method$ok, ignoreInit = TRUE, {
@@ -179,7 +207,6 @@ Application <- R6::R6Class(
         dlg$bind()
         dlg$show()
       })
-
     },
     onChangeLanguage = function() {
       super$onChangeLanguage()
@@ -187,7 +214,9 @@ Application <- R6::R6Class(
     },
     onSessionEnded = function(session) {
       shiny::isolate({
-        .globals$session$tokens <- .globals$session$tokens[.globals$session$tokens != session$token]
+        .globals$session$tokens <- .globals$session$tokens[
+          .globals$session$tokens != session$token
+        ]
       })
       super$onSessionEnded(session)
     },
@@ -197,13 +226,12 @@ Application <- R6::R6Class(
       if (data$project_method == 'UNK') {
         dlg_method$show(ns = shiny::NS(NULL))
       }
-
     }
   )
 )
 
-ApplicationModule <- R6::R6Class(
-  classname = 'ApplicationModule',
+GpsSamplerModule <- R6::R6Class(
+  classname = 'GpsSamplerModule',
   inherit = ModShiny,
   portable = FALSE,
   active = list(
@@ -219,7 +247,7 @@ ApplicationModule <- R6::R6Class(
       super$initialize(id = id, parent = parent)
 
       private$.application <- parent
-      while (class(private$.application)[1L] != 'Application') {
+      while (!inherits(private$.application, 'GpsSampler')) {
         private$.application <- private$.application$parent
       }
     }
@@ -228,3 +256,33 @@ ApplicationModule <- R6::R6Class(
     .application = NULL
   )
 )
+
+#' @rdname GpsSampler
+#' @export
+ApplicationModule <- GpsSamplerModule
+
+#' Create a GPS sampler instance
+#'
+#' Factory function for creating a [GpsSampler] object.
+#' This is the recommended way to instantiate the sampling application.
+#'
+#' @param ... Additional arguments passed to [GpsSampler]`$new()`.
+#' @return A [GpsSampler] R6 object.
+#'
+#' @examples
+#' \dontrun{
+#' samp <- sampler()
+#' samp$launch()
+#' }
+#'
+#' @export
+sampler <- function(...) {
+  GpsSampler$new(...)
+}
+
+#' @rdname GpsSampler
+#' @description
+#' `Application` is a deprecated alias for `GpsSampler`. Use [sampler()]
+#' or `GpsSampler$new()` instead.
+#' @export
+Application <- GpsSampler

@@ -376,7 +376,7 @@ StepResult <- R6::R6Class(
 
         # invalidate(polygon_focused)
 
-        rhandsontable::select_cell(ns('table'), sample$id - 1L, 0L, session)
+        hot_select_cell(ns('table'), sample$id - 1L, 0L, session)
 
         # invalidateState()
       })
@@ -517,7 +517,7 @@ StepResult <- R6::R6Class(
 
       shiny::observeEvent(input$search, ignoreInit = TRUE, ignoreNULL = TRUE, {
         if (input$search != '') {
-          rhandsontable::filter(id = ns('table'), column = 1L, filter = input$search, session = application$session)
+          hot_filter(id = ns('table'), column = 1L, filter = input$search, session = application$session)
         }
       })
 

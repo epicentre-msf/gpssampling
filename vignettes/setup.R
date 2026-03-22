@@ -1,18 +1,17 @@
-pkg_infos <- epi.actions::runTargetInfo()
+pkg_infos <- list(
+  title = "GeoSampler",
+  name = "gpssampling",
+  url_issue = "https://github.com/gpssampling/issues"
+)
 
-pkg_url <- sprintf('%s/%s', pkg_infos$git$organisation, pkg_infos$name)
+pkg_url <- "gpssampling"
 
 uri_shiny_server <- 'https://apps.msf.net'
 
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = '#>',
-  #   cache = FALSE,
-  #   dpi = 96,
-  #   fig.path = 'man/figures/',
-  #   message = FALSE,
   out.width = '100%'
-  #   warning = FALSE
 )
 
 options(

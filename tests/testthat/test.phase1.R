@@ -122,13 +122,13 @@ test_that('IN clause with dynamic placeholders works', {
 # --- 2. zzz.R cleanup -------------------------------------------------------
 
 test_that('Package .onLoad does not call set.seed', {
-  onload_body <- body(epi.geosampler:::.onLoad)
+  onload_body <- body(gpssampling:::.onLoad)
   onload_text <- paste(deparse(onload_body), collapse = '\n')
   expect_false(grepl('set\\.seed', onload_text))
 })
 
 test_that('Package .onLoad does not set stringsAsFactors', {
-  onload_body <- body(epi.geosampler:::.onLoad)
+  onload_body <- body(gpssampling:::.onLoad)
   onload_text <- paste(deparse(onload_body), collapse = '\n')
   expect_false(grepl('stringsAsFactors', onload_text))
 })
@@ -136,7 +136,7 @@ test_that('Package .onLoad does not set stringsAsFactors', {
 # --- 3. Suggests migration ---------------------------------------------------
 
 test_that('Debug packages are in Suggests, not Imports', {
-  desc_path <- system.file('DESCRIPTION', package = 'epi.geosampler')
+  desc_path <- system.file('DESCRIPTION', package = 'gpssampling')
   skip_if(desc_path == '', message = 'Package not installed')
 
   desc <- read.dcf(desc_path)

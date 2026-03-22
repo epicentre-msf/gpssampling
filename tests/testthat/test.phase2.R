@@ -276,14 +276,14 @@ test_that('UserData class.app.store.R is under 2000 lines', {
   store_file <- system.file(
     'R',
     'class.app.store.R',
-    package = 'epi.geosampler'
+    package = 'gpssampling'
   )
 
   # During development, use devtools path
 
   if (store_file == '') {
     store_file <- file.path(
-      find.package('epi.geosampler', lib.loc = .libPaths()),
+      find.package('gpssampling', lib.loc = .libPaths()),
       'R',
       'class.app.store.R'
     )
@@ -426,13 +426,13 @@ test_that('path functions produce correct paths', {
   expect_true(grepl('epicentre', apps_path))
 
   app_path <- getDirApp()
-  expect_true(grepl('epi.geosampler', app_path))
+  expect_true(grepl('gpssampling', app_path))
 })
 
 test_that('getFileCache builds correct cache paths', {
   cache_path <- getFileCache('test_cache', ext = 'rds')
   expect_true(grepl('test_cache\\.rds$', cache_path))
-  expect_true(grepl('epi.geosampler', cache_path))
+  expect_true(grepl('gpssampling', cache_path))
 })
 
 test_that('createDir creates directories and lowercases', {

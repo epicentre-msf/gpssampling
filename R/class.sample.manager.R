@@ -810,7 +810,7 @@ SampleManager <- R6::R6Class(
           sample_quadrat <- data$polygons$samples_quadrat_sf[[i]][m, ]
 
           map |>
-            leafpm::editFeature(
+            pm_edit_feature(
               targetGroup = sprintf('QDR_%s', i),
               targetId = id,
               editOptions = leafpm::pmEditOptions(
@@ -937,12 +937,12 @@ SampleManager <- R6::R6Class(
           )
       }
 
-      rhandsontable::load_data(
+      hot_load_data(
         id = tbl_id,
         data = samples,
         session = data$application$session
       )
-      rhandsontable::render(id = tbl_id, session = data$application$session)
+      hot_render(id = tbl_id, session = data$application$session)
     },
 
     #' @description Toggle selection of a sample point.

@@ -648,7 +648,7 @@ icon <- function(
     lib <- switch(lib, fa = 'font-awesome', mdi = 'mdi')
   }
   if (lib == 'mdi') {
-    epi.icons::icon_mdi(name = name, class = class, size = size, color = color)
+    icon_mdi(name = name, class = class, size = size, color = color)
   } else {
     if (name == 'home') {
       name <- 'house'
@@ -1191,7 +1191,7 @@ useWaiter <- function(particle = FALSE) {
     #           border-radius: 10px;',
     #         shiny::h3('Please wait...')
     #       )
-    #       # waiter::spin_loaders(7L, color = col_spin_waiter),
+    #       # waiter::spin_loaders(7L, color = '#ffffff'),
     #     ),
     #     color = 'white',
     #     image = '',
@@ -1223,7 +1223,7 @@ useWaiter <- function(particle = FALSE) {
       waiter::useWaitress(),
       waiter::waiterShowOnLoad(
         html = shiny::tagList(
-          waiter::spin_loaders(7L, color = col_spin_waiter),
+          waiter::spin_loaders(7L, color = '#ffffff'),
           shiny::h3('Please wait...')
         ),
         color = 'white',

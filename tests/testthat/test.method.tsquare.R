@@ -151,8 +151,7 @@ test_that('TSQuare (Report R.Grais Rapid Population Estimation) ', {
 })
 
 test_that('TSQuare', {
-
-  skip('Disabled')
+  skip_if_not_installed('spatstat.random')
 
   size <- 10000L
 
@@ -179,9 +178,9 @@ test_that('TSQuare', {
     area <- sf::st_area(area_sfg) # 10000
 
     hh_sfg <- switch(tests$type[t],
-      RS_SMP = spatstat::rpoispp(tests$size[t]),
-      AGG = spatstat::rMatClust(tests$size[t] / 10L, 0.05, 10L),
-      RGL = spatstat::rMaternII(tests$size[t], 0.01)
+      RS_SMP = spatstat.random::rpoispp(tests$size[t]),
+      AGG = spatstat.random::rMatClust(tests$size[t] / 10L, 0.05, 10L),
+      RGL = spatstat.random::rMaternII(tests$size[t], 0.01)
     )
     hh_sfg <-
       sf::st_multipoint(
@@ -280,4 +279,12 @@ test_that('TSQuare', {
 
   }
 
+  # Verify all simulations produced valid results
+  expect_true(all(!is.na(tests$t)))
+  expect_true(all(!is.na(tests$z)))
+  expect_true(all(tests$spd %in% c(
+    'not random (aggregated)', 'not random (regular)',
+    'random (homogeneous)', 'random (non-homogeneous)'
+  )))
+  expect_true(all(tests$est_pop > 0L))
 })

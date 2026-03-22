@@ -9,7 +9,7 @@ Polygons: sf not null
 Polygons: sf not null
 }
 \section{Super classes}{
-\code{epi.geosampler::Base} -> \code{epi.geosampler::ModShiny} -> \code{epi.geosampler::ApplicationModule} -> \code{UserData}
+\code{\link[gpssampling:Base]{gpssampling::Base}} -> \code{gpssampling::ModShiny} -> \code{gpssampling::GpsSamplerModule} -> \code{UserData}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -70,6 +70,7 @@ Polygons: sf not null
 \item \href{#method-UserData-addCell}{\code{UserData$addCell()}}
 \item \href{#method-UserData-searchSwipeTile}{\code{UserData$searchSwipeTile()}}
 \item \href{#method-UserData-validAll}{\code{UserData$validAll()}}
+\item \href{#method-UserData-triggerProjectName}{\code{UserData$triggerProjectName()}}
 \item \href{#method-UserData-invalidateGrid}{\code{UserData$invalidateGrid()}}
 \item \href{#method-UserData-clone}{\code{UserData$clone()}}
 }
@@ -77,8 +78,8 @@ Polygons: sf not null
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="epi.geosampler" data-topic="ModShiny" data-id="bind"><a href='../../epi.geosampler/html/ModShiny.html#method-ModShiny-bind'><code>epi.geosampler::ModShiny$bind()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="epi.geosampler" data-topic="ModShiny" data-id="getUI"><a href='../../epi.geosampler/html/ModShiny.html#method-ModShiny-getUI'><code>epi.geosampler::ModShiny$getUI()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="gpssampling" data-topic="ModShiny" data-id="bind"><a href='../../gpssampling/html/ModShiny.html#method-ModShiny-bind'><code>gpssampling::ModShiny$bind()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="gpssampling" data-topic="ModShiny" data-id="getUI"><a href='../../gpssampling/html/ModShiny.html#method-ModShiny-getUI'><code>gpssampling::ModShiny$getUI()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -93,9 +94,6 @@ Initialize Application class for shiny app
 
 \subsection{Returns}{
 A new Application object
-Update Cells
-
-This method updates the cells of a given set of polygons.
 }
 }
 \if{html}{\out{<hr>}}
@@ -106,16 +104,6 @@ This method updates the cells of a given set of polygons.
 \if{html}{\out{<div class="r">}}\preformatted{UserData$updateCells(polygons_sf)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{polygons_sf}}{A sf object containing the polygons to update.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The updated polygons_sf object with the cells information added.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-UserData-drawNewFeature"></a>}}
@@ -665,6 +653,15 @@ The updated polygons_sf object with the cells information added.
 \subsection{Method \code{validAll()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{UserData$validAll(map)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UserData-triggerProjectName"></a>}}
+\if{latex}{\out{\hypertarget{method-UserData-triggerProjectName}{}}}
+\subsection{Method \code{triggerProjectName()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UserData$triggerProjectName()}\if{html}{\out{</div>}}
 }
 
 }

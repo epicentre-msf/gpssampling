@@ -1,6 +1,6 @@
 Step <- R6::R6Class(
   classname = 'Step',
-  inherit = ApplicationModule,
+  inherit = GpsSamplerModule,
   portable = FALSE,
   active = list(
     steps = function() {
@@ -13,7 +13,9 @@ Step <- R6::R6Class(
       ..('Are you sure you want to permanently delete this step?')
     },
     lbl_cancel_info = function() {
-      ..('If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.')
+      ..(
+        'If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.'
+      )
     },
     lbl_ok = function() {
       ..('Are you sure you want to permanently save this step.')
@@ -60,7 +62,6 @@ Step <- R6::R6Class(
   ),
   public = list(
     initialize = function(id = 'mod', index = 1L, steps = NULL) {
-
       super$initialize(id = id, parent = steps)
 
       private$.index <- index
@@ -84,7 +85,6 @@ Step <- R6::R6Class(
       )
 
       private$.tab_icon <- sprintf('numeric-%s-circle-outline', private$.index)
-
     },
     invalidateState = function() {
       self$state <- utils::modifyList(state, list(void = rnorm(1L)))
@@ -105,11 +105,12 @@ Step <- R6::R6Class(
     rollback = function() {
     },
     getUI = function(ns = shiny::NS(NULL)) {
-
       super$getUI(ns = ns)
 
       fillTabPanel(
-        title = shiny::uiOutput(self$ns('title_panel'), inline = TRUE), value = self$ns('tab'), icon = icon(private$.tab_icon, size = NULL),
+        title = shiny::uiOutput(self$ns('title_panel'), inline = TRUE),
+        value = self$ns('tab'),
+        icon = icon(private$.tab_icon, size = NULL),
         shiny::fillCol(
           flex = c(NA, 1L),
           shiny::wellPanel(
@@ -146,11 +147,15 @@ Step <- R6::R6Class(
       NULL
     },
     getUIMap = function() {
-      leaflet::leafletOutput(outputId = self$ns('map'), width = 'auto', height = '100%')
+      leaflet::leafletOutput(
+        outputId = self$ns('map'),
+        width = 'auto',
+        height = '100%'
+      )
     },
     getOutputMap = function(session) {
-
-      lf <- leaflet(session,
+      lf <- leaflet(
+        session,
         fullscreen = TRUE,
         fullscreen_pos = 'topright',
         inputId = 'map',
@@ -173,12 +178,25 @@ Step <- R6::R6Class(
           )
         )
 
-      lf <- leaflet::addEasyButtonBar(lf,
+      lf <- leaflet::addEasyButtonBar(
+        lf,
         id = ns('bar_ok'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_ok'), icon = icon('check-bold'), title = ..('Save')),
-        easyButtonShiny(inputId = ns('act_rollback'), icon = icon('undo'), title = ..('Undo')),
-        easyButtonShiny(inputId = ns('act_clear'), icon = icon('delete-outline'), title = ..('Reset'))
+        easyButtonShiny(
+          inputId = ns('act_ok'),
+          icon = icon('check-bold'),
+          title = ..('Save')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_rollback'),
+          icon = icon('undo'),
+          title = ..('Undo')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_clear'),
+          icon = icon('delete-outline'),
+          title = ..('Reset')
+        )
       )
 
       lf <- lf |>
@@ -192,27 +210,25 @@ Step <- R6::R6Class(
       lf
     },
     getOutputTable = function(session) {
-
       tbl <-
         rhandsontable::rhandsontable(
-          data =
-            tibble::tibble(
-              id_n = integer(),
-              id_user = character(),
-              id_key = integer(),
-              id_key_calc = integer(),
-              id_void = integer(),
-              status = character(),
-              d1 = double(),
-              d2 = double(),
-              pop_u5_1 = integer(),
-              pop_a5_1 = integer(),
-              pop_u5_2 = integer(),
-              pop_a5_2 = integer(),
-              pop_u5 = integer(),
-              pop_a5 = integer(),
-              comment = character()
-            ),
+          data = tibble::tibble(
+            id_n = integer(),
+            id_user = character(),
+            id_key = integer(),
+            id_key_calc = integer(),
+            id_void = integer(),
+            status = character(),
+            d1 = double(),
+            d2 = double(),
+            pop_u5_1 = integer(),
+            pop_a5_1 = integer(),
+            pop_u5_2 = integer(),
+            pop_a5_2 = integer(),
+            pop_u5 = integer(),
+            pop_a5 = integer(),
+            comment = character()
+          ),
           allowInsertColumn = FALSE,
           allowInvalid = FALSE,
           collapsibleColumns = FALSE,
@@ -248,13 +264,19 @@ Step <- R6::R6Class(
             ),
             list(
               ' ',
-              ..('ID'), ..('Key'),
-              ..('Key'), ..('Key'),
+              ..('ID'),
+              ..('Key'),
+              ..('Key'),
+              ..('Key'),
               ' ',
-              '1', '2',
-              '< 5', '>= 5',
-              '< 5', '>= 5',
-              '< 5', '>= 5',
+              '1',
+              '2',
+              '< 5',
+              '>= 5',
+              '< 5',
+              '>= 5',
+              '< 5',
+              '>= 5',
               ' '
             )
           ),
@@ -266,7 +288,23 @@ Step <- R6::R6Class(
           height = '100%'
         ) |>
         rhandsontable::hot_table(
-          colWidths = c(35L, 90L, 25L, 25L, 25L, 50L, 45L, 45L, 30L, 30L, 30L, 30L, 30L, 30L, 100L),
+          colWidths = c(
+            35L,
+            90L,
+            25L,
+            25L,
+            25L,
+            50L,
+            45L,
+            45L,
+            30L,
+            30L,
+            30L,
+            30L,
+            30L,
+            30L,
+            100L
+          ),
           highlightCol = FALSE,
           highlightRow = FALSE,
           stretchH = 'last'
@@ -277,9 +315,23 @@ Step <- R6::R6Class(
           allowColEdit = FALSE,
           allowComments = TRUE
         ) |>
-        rhandsontable::hot_col(col = 'id_n', type = 'numeric', format = '1', readOnly = TRUE) |>
-        rhandsontable::hot_col(col = 'id_key_calc', type = 'numeric', format = '1', readOnly = TRUE) |>
-        rhandsontable::hot_col(col = 'id_key', type = 'numeric', format = '1', renderer = "
+        rhandsontable::hot_col(
+          col = 'id_n',
+          type = 'numeric',
+          format = '1',
+          readOnly = TRUE
+        ) |>
+        rhandsontable::hot_col(
+          col = 'id_key_calc',
+          type = 'numeric',
+          format = '1',
+          readOnly = TRUE
+        ) |>
+        rhandsontable::hot_col(
+          col = 'id_key',
+          type = 'numeric',
+          format = '1',
+          renderer = "
            function (instance, td, row, col, prop, value, cellProperties) {
              Handsontable.renderers.NumericRenderer.apply(this, arguments);
                var a = instance.getDataAtRow(row);
@@ -288,9 +340,12 @@ Step <- R6::R6Class(
                } else {
                  td.style.color = 'red';
                }
-           }") |>
+           }"
+        ) |>
         rhandsontable::hot_col(
-          col = 'status', type = 'dropdown', trimDropdown = FALSE,
+          col = 'status',
+          type = 'dropdown',
+          trimDropdown = FALSE,
           source = df_selectors$label,
           renderer = sprintf(
             '
@@ -317,30 +372,57 @@ Step <- R6::R6Class(
                  td.innerHTML = `<div class=\"htAutocompleteArrow\">&#x25BC;</div><i class="mdi mdi-circle-medium mdi-18px" style="color: %s"></i>`;
               }
            }',
-            df_selectors['C1', 'label'], df_selectors['C1', 'color'],
-            df_selectors['C2', 'label'], df_selectors['C2', 'color'],
-            df_selectors['C3', 'label'], df_selectors['C3', 'color'],
-            df_selectors['C4', 'label'], df_selectors['C4', 'color'],
-            df_selectors['C5', 'label'], df_selectors['C5', 'color'],
-            df_selectors['C6', 'label'], df_selectors['C6', 'color'],
-            df_selectors['C7', 'label'], df_selectors['C7', 'color'],
-            df_selectors['C8', 'label'], df_selectors['C8', 'color'],
+            df_selectors['C1', 'label'],
+            df_selectors['C1', 'color'],
+            df_selectors['C2', 'label'],
+            df_selectors['C2', 'color'],
+            df_selectors['C3', 'label'],
+            df_selectors['C3', 'color'],
+            df_selectors['C4', 'label'],
+            df_selectors['C4', 'color'],
+            df_selectors['C5', 'label'],
+            df_selectors['C5', 'color'],
+            df_selectors['C6', 'label'],
+            df_selectors['C6', 'color'],
+            df_selectors['C7', 'label'],
+            df_selectors['C7', 'color'],
+            df_selectors['C8', 'label'],
+            df_selectors['C8', 'color'],
             df_selectors['C1', 'color']
           )
         ) |>
         rhandsontable::hot_col(col = 'd1', type = 'numeric') |>
         rhandsontable::hot_col(col = 'd2', type = 'numeric') |>
-        rhandsontable::hot_col(col = 'pop_u5_1', type = 'numeric', format = '1') |>
-        rhandsontable::hot_col(col = 'pop_a5_1', type = 'numeric', format = '1') |>
-        rhandsontable::hot_col(col = 'pop_u5_2', type = 'numeric', format = '1') |>
-        rhandsontable::hot_col(col = 'pop_a5_2', type = 'numeric', format = '1') |>
-        rhandsontable::hot_col(col = 'pop_u5', type = 'numeric', format = '1') |>
+        rhandsontable::hot_col(
+          col = 'pop_u5_1',
+          type = 'numeric',
+          format = '1'
+        ) |>
+        rhandsontable::hot_col(
+          col = 'pop_a5_1',
+          type = 'numeric',
+          format = '1'
+        ) |>
+        rhandsontable::hot_col(
+          col = 'pop_u5_2',
+          type = 'numeric',
+          format = '1'
+        ) |>
+        rhandsontable::hot_col(
+          col = 'pop_a5_2',
+          type = 'numeric',
+          format = '1'
+        ) |>
+        rhandsontable::hot_col(
+          col = 'pop_u5',
+          type = 'numeric',
+          format = '1'
+        ) |>
         rhandsontable::hot_col(col = 'pop_a5', type = 'numeric', format = '1')
 
       tbl
     },
     getServer = function(input, output, session) {
-
       super$getServer(input, output, session)
 
       # --------------------------------------------------------------------------------------
@@ -397,8 +479,11 @@ Step <- R6::R6Class(
       observeEventMap(session, input, private$.map_vars, 'map')
 
       shiny::observeEvent(input$map_rendered, {
-
-        insertSelectBasemaps(inputId = self$ns('map'), selected = 'sat.google', position = 'bottomright')
+        insertSelectBasemaps(
+          inputId = self$ns('map'),
+          selected = 'sat.google',
+          position = 'bottomright'
+        )
 
         shinyjs::show(id = 'sidebar')
 
@@ -420,24 +505,38 @@ Step <- R6::R6Class(
           )
 
         private$renderMap()
-
       })
 
-      shiny::observeEvent(data$polygons_changed, ignoreNULL = FALSE, ignoreInit = TRUE, {
-        invalidatePolygons()
-      })
+      shiny::observeEvent(
+        data$polygons_changed,
+        ignoreNULL = FALSE,
+        ignoreInit = TRUE,
+        {
+          invalidatePolygons()
+        }
+      )
 
       shiny::observeEvent(map_changed(), ignoreInit = TRUE, {
         invalidatePolygons()
       })
 
-      shiny::observeEvent(data$guide_polygon_changed, ignoreNULL = FALSE, ignoreInit = TRUE, {
-        invalidateGuidePolygon()
-      })
+      shiny::observeEvent(
+        data$guide_polygon_changed,
+        ignoreNULL = FALSE,
+        ignoreInit = TRUE,
+        {
+          invalidateGuidePolygon()
+        }
+      )
 
-      shiny::observeEvent(data$guide_point_changed, ignoreNULL = FALSE, ignoreInit = TRUE, {
-        invalidateGuidePoint()
-      })
+      shiny::observeEvent(
+        data$guide_point_changed,
+        ignoreNULL = FALSE,
+        ignoreInit = TRUE,
+        {
+          invalidateGuidePoint()
+        }
+      )
 
       shiny::observeEvent(input$map_zoom, ignoreInit = TRUE, {
         self$map_zoom <- input$map_zoom
@@ -452,13 +551,22 @@ Step <- R6::R6Class(
       output$title_panel <- shiny::renderText({
         data$project_method_changed
         if (self$data$project_method %in% c('SP_QDR', 'SP_TSQ')) {
-          shinyjs::hide(selector = sprintf('li:has(a[data-value=%s])', 'app-steps-step_identify-tab'))
+          shinyjs::hide(
+            selector = sprintf(
+              'li:has(a[data-value=%s])',
+              'app-steps-step_identify-tab'
+            )
+          )
         } else {
-          shinyjs::show(selector = sprintf('li:has(a[data-value=%s])', 'app-steps-step_identify-tab'))
+          shinyjs::show(
+            selector = sprintf(
+              'li:has(a[data-value=%s])',
+              'app-steps-step_identify-tab'
+            )
+          )
         }
         return(as.character(tab_title))
       })
-
     },
     guide = function(steps) {
       closeSidebar()

@@ -26,13 +26,13 @@ For information about available communication channels please refer to the [READ
 
 The application is licensed under the [License: AGPL v3](https://www.gnu.org/licenses/agpl-3.0). As a summary, the AGPLv3 license requires, attribution, including copyright and license information in copies of the software, stating changes if the code is modified, and disclosure of all source code.
 
-If you encounter any problem with GeoSampler, or you would like to give suggestions, please use the GitHub issue tracker at <a href=https://github.com/epicentre-field-epidemiology-training/epi.geosampler/issues target="_blank">https://github.com/epicentre-field-epidemiology-training/epi.geosampler/issues</a>.
+If you encounter any problem with GeoSampler, or you would like to give suggestions, please use the GitHub issue tracker at <a href=https://github.com/epicentre-field-epidemiology-training/gpssampling/issues target="_blank">https://github.com/epicentre-field-epidemiology-training/gpssampling/issues</a>.
 
 ## Learn GeoSampler [![logo-gfdl](./images/gfdl-logo-tiny.png)](https://www.gnu.org/licenses/fdl-1.3.html)
 
 The contents of the **Learn GeoSampler** website comes from the field experience of Epicentre and MSF epidemiologists, and is licensed under the Terms and Conditions of the [GNU Free Documentation License v1.3](https://www.gnu.org/licenses/fdl-1.3.html) .
 
-If you encounter any problem while using this website GeoSampler, or you would like to give suggestions, please feel free to contact the Epicentre Training Unit (<Elise.RODARY@epicentre.msf.org>).
+If you encounter any problem while using this website GeoSampler, or you would like to give suggestions, please refer to the [official GeoSampler website](https://apps.msf.net/geosampler/site/index.html).
 
 ## Code of conduct
 

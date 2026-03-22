@@ -1,4 +1,4 @@
 library(testthat)
-library(epi.geosampler)
+library(gpssampling)
 
-test_check('epi.geosampler')
+test_check('gpssampling')

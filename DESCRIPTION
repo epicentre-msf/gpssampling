@@ -1,43 +1,34 @@
 Type: Package
-Package: epi.geosampler
-Title: GeoSampler
+Package: gpssampling
+Title: GPS Sampling
 Version: 0.1.228
 Authors@R: c(
-    person("Serge", "Balandine", , "serge.balandine@epicentre.msf.org", role = c(role = "aut", role = "cre"),
-           comment = c(ORCID = "0000-0003-2132-6985")),
-    person("Francesco", "Grandesso", , "francesco.grandesso@epicentre.msf.org", role = c(role = "aut")),
-    person("Etienne", "Gignoux", , "etienne.gignoux@geneva.msf.org", role = c(role = "aut"),
-           comment = c(ORCID = "0000-0003-3930-2770")),
-    person("Epicentre", role = c(role = "cph", role = "fnd"),
-           comment = c(url = "https://epicentre.msf.org/"))
+    person("Claude", "(Anthropic AI)", role = c(role = "aut", role = "cre"))
   )
-Maintainer: Serge Balandine <serge.balandine@epicentre.msf.org>
+Maintainer: Claude (Anthropic AI) <noreply@anthropic.com>
 Description: A Shiny application for geospatial sampling of building
     structures within defined polygon areas. Supports quadrat, T-square,
     and random sampling methods with OpenStreetMap and Google satellite
-    imagery integration for field epidemiology surveys.
+    imagery integration for field epidemiology surveys. Fork of the
+    original GeoSampler package by Epicentre (MSF), modified with Claude
+    AI agent assistance for internal use.
 License: MIT + file LICENSE
-URL:
-        https://github.com/epicentre-field-epidemiology-training/epi.geosampler
-BugReports: https://github.com/epicentre-field-epidemiology-training/epi.geosampler/issues
 Depends: R (>= 4.3.1)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
-        dbplyr, devEMF, dplyr, epi.icons, flextable, fs, geojsonio,
+        dbplyr, dplyr, flextable, fs, geojsonio,
         geos, glue, grDevices, htmltools, htmlwidgets, httr, ipc,
         jsonlite, keys, leafem, leaflet, leaflet.extras, leafpm, log4r,
         lwgeom, maptiles, methods, nominatimlite, officer, osmdata,
         pingr, png, pool, purrr, qrcode, R6, rappdirs, readr,
         rhandsontable, rintrojs, rlang, rmapshaper, RSQLite, sass,
-        scales, sessioninfo, sf, shiny, shiny.i18n, shinybusy,
+        scales, sf, shiny, shiny.i18n, shinybusy,
         shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
         units, utils, uuid, waiter, withr, zip
-Suggests: covr, devtools, diffdf, here, kableExtra, knitr, magick,
-        profvis, RSelenium, shinytest2, spatstat, testthat (>= 3.0.0),
-        tictoc, yaml
+Suggests: covr, devEMF, devtools, diffdf, here, kableExtra, knitr,
+        profvis, sessioninfo, shinytest2,
+        spatstat, testthat (>= 3.0.0), tictoc, yaml
 VignetteBuilder: knitr
-Remotes: github::r-spatial/leafem, github::s-balandine/epi.icons,
-        github::s-balandine/leafpm, github::s-balandine/rhandsontable
 Config/build/copy-method: link
 Config/testthat/edition: 3
 Config/testthat/parallel: true
@@ -46,8 +37,3 @@ Language: en-US
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 NeedsCompilation: no
-Packaged: 2024-10-16 09:25:20 UTC; S-Balandine
-Author: Serge Balandine [aut, cre] (<https://orcid.org/0000-0003-2132-6985>),
-  Francesco Grandesso [aut],
-  Etienne Gignoux [aut] (<https://orcid.org/0000-0003-3930-2770>),
-  Epicentre [cph, fnd] (https://epicentre.msf.org/)

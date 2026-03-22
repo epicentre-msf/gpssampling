@@ -192,7 +192,7 @@ StepDelimit <- R6::R6Class(
       #   easyButtonShiny(inputId = session$ns('act_ungroup'), icon = icon('select-group'), title = .('Ungroup polygon'))
       # )
 
-      lf <- leafpm::attachDependencies(lf,
+      lf <- pm_attach_dependencies(lf,
         targetGroup = 'polygons',
         drawOptions = leafpm::pmDrawOptions(
           snappable = TRUE,
@@ -231,23 +231,23 @@ StepDelimit <- R6::R6Class(
       # Actions
 
       shiny::observeEvent(input$act_cut_polygon, {
-        leafpm::toggleDrawMode(map, shape = 'Line')
+        pm_toggle_draw_mode(map, shape = 'Line')
       })
 
       shiny::observeEvent(input$act_draw_polygon_side, {
-        leafpm::toggleDrawMode(map, shape = 'Polygon')
+        pm_toggle_draw_mode(map, shape = 'Polygon')
       })
 
       shiny::observeEvent(input$act_draw_polygon, {
-        leafpm::toggleDrawMode(map, shape = 'Polygon')
+        pm_toggle_draw_mode(map, shape = 'Polygon')
       })
 
       shiny::observeEvent(input$act_edit_polygon, {
-        leafpm::toggleEditMode(map, targetGroup = 'polygons')
+        pm_toggle_edit_mode(map, targetGroup = 'polygons')
       })
 
       shiny::observeEvent(input$act_remove_polygon, {
-        leafpm::toggleRemovalMode(map, targetGroup = 'polygons')
+        pm_toggle_removal_mode(map, targetGroup = 'polygons')
       })
 
       shiny::observeEvent(input$act_select_invert, {
@@ -488,7 +488,7 @@ StepDelimit <- R6::R6Class(
           data$togglePolygonSelected(map, id = input$map_shape_click$id)
         } else {
           map |>
-            leafpm::editFeature(
+            pm_edit_feature(
               targetGroup = 'polygons',
               targetId = input$map_shape_click$id,
               editOptions = leafpm::pmEditOptions(

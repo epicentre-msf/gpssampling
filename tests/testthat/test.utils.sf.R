@@ -1,5 +1,7 @@
 # styler: block
 
+source(testthat::test_path('prepare.R'), local = TRUE)
+
 expect_layer <- function(file, layer, classes, type, n, key) {
 
   layer <- readSpatialLayer(file = file, layer = layer)
@@ -20,7 +22,10 @@ expect_layer <- function(file, layer, classes, type, n, key) {
 test_that('ReadSpatialLayer SHP POLYGON', {
 
   shp_files <- unzip(f_uga_admbnda_shp)
-  shp_file <- fs::path(fs::path_dir(path = shp_files$files[1L]), 'uga_admbnda_adm1_ubos_20200824.shp')
+  shp_file <- fs::path(
+    fs::path_dir(path = shp_files$files[1L]),
+    'uga_admin1.shp'
+  )
 
   layer <- readSpatialLayer(file = shp_file, verbose = FALSE)
 
@@ -31,23 +36,23 @@ test_that('ReadSpatialLayer SHP POLYGON', {
 
 test_that('ReadSpatialLayer ZIP SHP POLYGON', {
 
-  layer <- readSpatialLayer(file = f_uga_admbnda_shp, layer = 'uga_admbnda_adm1_ubos_20200824', verbose = FALSE)
+  layer <- readSpatialLayer(
+    file = f_uga_admbnda_shp,
+    layer = 'uga_admin1',
+    verbose = FALSE
+  )
 
   expect_s3_class(layer$layer, c('sf', 'data.frame'))
   expect_identical(nrow(layer$layer), 4L)
   expect_identical(layer$layer_geometry_types, c(POLYGON = 4L))
 })
 
-# test_that('ReadSpatialLayer ZIP SHP MULTIPOLYGON (BIG)', {
-#   skip('Disabled')
-#   layer <- readSpatialLayer(file = f_uga_east_buildings_shp, layer = 'hotosm_uga_east_buildings_polygons')
-#   expect_s3_class(layer$layer, c('sf', 'data.frame'))
-#   expect_identical(nrow(layer$layer), 1213621)
-#   expect_identical(layer$layer_geometry_types, c(MULTIPOLYGON = 1213621))
-# })
-
 test_that('ReadSpatialLayer ZIP KMZ', {
-  layer <- readSpatialLayer(file = f_uga_admbnda_shp, layer = 'uga_admbnda_adm1_ubos_20200824', verbose = FALSE)
+  layer <- readSpatialLayer(
+    file = f_uga_admbnda_shp,
+    layer = 'uga_admin1',
+    verbose = FALSE
+  )
 
   expect_s3_class(layer$layer, c('sf', 'data.frame'))
   expect_identical(nrow(layer$layer), 4L)

@@ -1,10 +1,9 @@
 #' @docType _PACKAGE
-#' 
+#'
 NULL
 #'
 #' @importFrom shiny absolutePanel
 #' @importFrom shiny actionButton
-#' @importFrom shiny actionLink
 #' @importFrom shiny addResourcePath
 #' @importFrom shiny bootstrapPage
 #' @importFrom shiny br
@@ -13,7 +12,6 @@ NULL
 #' @importFrom shiny div
 #' @importFrom shiny downloadButton
 #' @importFrom shiny downloadHandler
-#' @importFrom shiny fileInput
 #' @importFrom shiny fillCol
 #' @importFrom shiny fillPage
 #' @importFrom shiny fillRow
@@ -24,7 +22,6 @@ NULL
 #' @importFrom shiny h6
 #' @importFrom shiny hideTab
 #' @importFrom shiny HTML
-#' @importFrom shiny icon
 #' @importFrom shiny img
 #' @importFrom shiny includeScript
 #' @importFrom shiny insertUI
@@ -32,7 +29,6 @@ NULL
 #' @importFrom shiny isolate
 #' @importFrom shiny mainPanel
 #' @importFrom shiny modalButton
-#' @importFrom shiny modalDialog
 #' @importFrom shiny moduleServer
 #' @importFrom shiny navbarMenu
 #' @importFrom shiny navbarPage
@@ -56,7 +52,6 @@ NULL
 #' @importFrom shiny renderUI
 #' @importFrom shiny restoreInput
 #' @importFrom shiny runApp
-#' @importFrom shiny selectInput
 #' @importFrom shiny selectizeInput
 #' @importFrom shiny setBookmarkExclude
 #' @importFrom shiny shinyApp
@@ -72,11 +67,10 @@ NULL
 #' @importFrom shiny tagList
 #' @importFrom shiny tags
 #' @importFrom shiny textAreaInput
-#' @importFrom shiny textInput
 #' @importFrom shiny titlePanel
 #' @importFrom shiny uiOutput
 #' @importFrom shiny updateQueryString
 #' @importFrom shiny updateTabsetPanel
 #' @importFrom shiny verbatimTextOutput
-#' @importFrom shiny wellPanel
 #' @importFrom shiny withProgress
+NULL

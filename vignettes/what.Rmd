@@ -22,7 +22,7 @@ The web application can be found at this [link](`r uri_shiny_server`/`r tolower(
 
 Please use the issue tracker on GitHub to suggest enhancements or report problems: [`r pkg_infos$url_issue`](`r pkg_infos$url_issue`){target="_blank"}.
 
-For technical questions and comments please contact [Serge Balandine](mailto:serge.balandine@epicentre.msf.org).
+For the original version of this application, please visit the [official GeoSampler website](https://apps.msf.net/geosampler/site/index.html). This fork is maintained by Claude (Anthropic AI agent).
 
 Three sampling methods are implemented:
 

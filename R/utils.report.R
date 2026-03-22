@@ -43,7 +43,12 @@ addFlextable <- function(doc, tbl, width = 100L) {
   doc <- officer::body_add_par(doc, value = ' ', style = 'Normal')
 }
 
-addHyperRef <- function(x, target = 'http://www.google.de', style = NULL, pos = 'after') {
+addHyperRef <- function(
+  x,
+  target = 'http://www.google.de',
+  style = NULL,
+  pos = 'after'
+) {
   if (is.null(style)) {
     style <- x$default_styles$table
   }
@@ -51,9 +56,11 @@ addHyperRef <- function(x, target = 'http://www.google.de', style = NULL, pos = 
 
   refID <- sprintf('rId%d', x$doc_obj$relationship()$get_next_id())
 
-  x$doc_obj$relationship()$add(refID,
+  x$doc_obj$relationship()$add(
+    refID,
     type = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
-    target = target, target_mode = 'External'
+    target = target,
+    target_mode = 'External'
   )
 
   xml_elt <- sprintf(
@@ -61,14 +68,25 @@ addHyperRef <- function(x, target = 'http://www.google.de', style = NULL, pos = 
     refID
   )
   xml_elt <- paste0(
-    '<w:p>', '<w:pPr><w:pStyle w:val="',
-    style_id, '"/></w:pPr>', xml_elt, '</w:p>'
+    '<w:p>',
+    '<w:pPr><w:pStyle w:val="',
+    style_id,
+    '"/></w:pPr>',
+    xml_elt,
+    '</w:p>'
   )
 
   officer::body_add_xml(x = x, str = xml_elt, pos = pos)
 }
 
-addImage <- function(doc, image, width = 100L, height = 100L, add_para = FALSE, landscape = FALSE) {
+addImage <- function(
+  doc,
+  image,
+  width = 100L,
+  height = 100L,
+  add_para = FALSE,
+  landscape = FALSE
+) {
   doc_dims <- getDocDims(doc)
   if (landscape) {
     plot_width <- width / 100L * doc_dims$height
@@ -78,12 +96,23 @@ addImage <- function(doc, image, width = 100L, height = 100L, add_para = FALSE, 
     plot_height <- height / 100L * doc_dims$height
   }
   doc <- doc |>
-    officer::body_add_img(src = image, width = plot_width, height = plot_height) |>
+    officer::body_add_img(
+      src = image,
+      width = plot_width,
+      height = plot_height
+    ) |>
     officer::body_add_par(value = '', style = 'Normal')
   doc
 }
 
-addMap <- function(doc, plot, width = 100L, height = 100L, add_para = FALSE, landscape = FALSE) {
+addMap <- function(
+  doc,
+  plot,
+  width = 100L,
+  height = 100L,
+  add_para = FALSE,
+  landscape = FALSE
+) {
   doc_dims <- getDocDims(doc)
   if (landscape) {
     plot_width <- width / 100L * doc_dims$height
@@ -93,7 +122,13 @@ addMap <- function(doc, plot, width = 100L, height = 100L, add_para = FALSE, lan
     plot_height <- height / 100L * doc_dims$height
   }
   # plot <- plot + theme_map(width = plot_width, height = plot_height)
-  doc <- addPlotDefault(doc, plot = plot, width = plot_width, height = plot_height, add_para = add_para)
+  doc <- addPlotDefault(
+    doc,
+    plot = plot,
+    width = plot_width,
+    height = plot_height,
+    add_para = add_para
+  )
   doc
 }
 
@@ -118,7 +153,14 @@ addParagraphe <- function(doc, text, style = 'Paragraphe') {
   doc
 }
 
-addPlot <- function(doc, plot, width = 100L, height = 100L, add_para = FALSE, landscape = FALSE) {
+addPlot <- function(
+  doc,
+  plot,
+  width = 100L,
+  height = 100L,
+  add_para = FALSE,
+  landscape = FALSE
+) {
   doc_dims <- getDocDims(doc)
   if (landscape) {
     plot_width <- width / 100L * doc_dims$height
@@ -128,26 +170,53 @@ addPlot <- function(doc, plot, width = 100L, height = 100L, add_para = FALSE, la
     plot_height <- height / 100L * doc_dims$height
   }
   # plot <- plot + theme_plot(width = plot_width, height = plot_height)
-  doc <- addPlotDefault(doc, plot = plot, width = plot_width, height = plot_height, add_para = add_para)
+  doc <- addPlotDefault(
+    doc,
+    plot = plot,
+    width = plot_width,
+    height = plot_height,
+    add_para = add_para
+  )
   doc
 }
 
-addPlotDefault <- function(doc, plot, width, height, title = NULL, add_para = FALSE) {
+addPlotDefault <- function(
+  doc,
+  plot,
+  width,
+  height,
+  title = NULL,
+  add_para = FALSE
+) {
   if (methods::is(doc, 'rdocx')) {
     if (!is.null(title)) {
       doc |>
         officer::body_add_par(value = title, style = 'graphic title') |>
-        officer::slip_in_text(' : ', style = 'Default Paragraph Font', pos = 'before') |>
+        officer::slip_in_text(
+          ' : ',
+          style = 'Default Paragraph Font',
+          pos = 'before'
+        ) |>
         officer::slip_in_seqfield(
           str = 'SEQ graph \\* Arabic \\s 1 \\* MERGEFORMAT',
-          style = 'Default Paragraph Font', pos = 'before'
+          style = 'Default Paragraph Font',
+          pos = 'before'
         ) |>
-        officer::slip_in_text('.', style = 'Default Paragraph Font', pos = 'before') |>
+        officer::slip_in_text(
+          '.',
+          style = 'Default Paragraph Font',
+          pos = 'before'
+        ) |>
         officer::slip_in_seqfield(
           str = sprintf('STYLEREF %.0f \\s', 1L),
-          style = 'Default Paragraph Font', pos = 'before'
+          style = 'Default Paragraph Font',
+          pos = 'before'
         ) |>
-        officer::slip_in_text('Figure ', style = 'Default Paragraph Font', pos = 'before')
+        officer::slip_in_text(
+          'Figure ',
+          style = 'Default Paragraph Font',
+          pos = 'before'
+        )
     }
 
     if (add_para) {
@@ -183,38 +252,66 @@ addText <- function(doc, text) {
 
 addTitle <- function(doc, title, level = 1L) {
   if (methods::is(doc, 'rdocx')) {
-    doc <- officer::body_add_par(doc, title, style = sprintf('heading %d', level))
+    doc <- officer::body_add_par(
+      doc,
+      title,
+      style = sprintf('heading %d', level)
+    )
   } else {
     doc <- paste0(doc, sprintf('%s %s\n', strrep('#', level), title))
   }
   doc
 }
 
-body_add_gg <- function(doc, plot, width = 6L, height = 5L, style = NULL, res = 600L, emf = TRUE) {
+body_add_gg <- function(
+  doc,
+  plot,
+  width = 6L,
+  height = 5L,
+  style = NULL,
+  res = 600L,
+  emf = TRUE
+) {
   stopifnot(inherits(plot, 'gg'))
-  if (emf) {
+  if (emf && requireNamespace("devEMF", quietly = TRUE)) {
     file <- tempfile(fileext = '.emf')
     devEMF::emf(file = file, width = width, height = height, coordDPI = res)
   } else {
     file <- fs::file_temp(ext = 'png')
-    grDevices::png(filename = file, width = width, height = height, units = 'in', res = res, type = 'cairo')
+    grDevices::png(
+      filename = file,
+      width = width,
+      height = height,
+      units = 'in',
+      res = res,
+      type = 'cairo'
+    )
   }
   print(plot)
   grDevices::dev.off()
   doc |>
-    officer::body_add_img(src = file, style = style, width = width, height = height) |>
+    officer::body_add_img(
+      src = file,
+      style = style,
+      width = width,
+      height = height
+    ) |>
     officer::body_add_par(value = '', style = 'Normal')
   fs::file_delete(file)
   doc
 }
 
-createDocument <- function(template = 'report (template)',
-                           type = 'doc',
-                           title = NULL,
-                           subtitle = NULL,
-                           authors = NULL) {
+createDocument <- function(
+  template = 'report (template)',
+  type = 'doc',
+  title = NULL,
+  subtitle = NULL,
+  authors = NULL
+) {
   if (type == 'doc') {
-    doc <- officer::read_docx(path = getPackagePath(sprintf('res/%s.docx', template)))
+    doc <- officer::read_docx(
+      path = getPackagePath(sprintf('res/%s.docx', template))
+    )
     doc <- officer::cursor_begin(doc)
     if (!is.null(title)) {
       doc <- officer::body_add_par(doc, value = title, style = 'Title')
@@ -223,7 +320,10 @@ createDocument <- function(template = 'report (template)',
       doc <- officer::body_add_par(doc, value = subtitle, style = 'Subtitle')
     }
     if (!is.null(authors)) {
-      doc <- officer::body_add_par(doc, value = sprintf('%s. Edited. %s', authors, Sys.Date()))
+      doc <- officer::body_add_par(
+        doc,
+        value = sprintf('%s. Edited. %s', authors, Sys.Date())
+      )
     }
   } else {
     doc <- '---\n'
@@ -259,7 +359,11 @@ generateReport <- function(doc, filename = NULL, open = TRUE) {
       shell.exec(filename)
     }
   } else {
-    f_in <- fs::file_temp(pattern = 'report', tmpdir = getDirAppTemp(), ext = 'Rmd')
+    f_in <- fs::file_temp(
+      pattern = 'report',
+      tmpdir = getDirAppTemp(),
+      ext = 'Rmd'
+    )
 
     f_con <- file(f_in, 'w', encoding = 'UTF-8')
     cat(doc, file = f_con)
@@ -308,7 +412,13 @@ reportMap <- function(gg, width = 100L, height = 100L) {
 
 reportPlot <- function(gg, width = 100L, height = 100L) {
   doc <- createDocument(type = 'doc')
-  doc <- addPlot(doc, plot = gg, width = width, height = height, add_para = TRUE)
+  doc <- addPlot(
+    doc,
+    plot = gg,
+    width = width,
+    height = height,
+    add_para = TRUE
+  )
   doc_file <- generateReport(doc)
   doc_file
 }
@@ -334,19 +444,39 @@ saveDocument <- function(doc, target = NULL, open = TRUE) {
   target
 }
 
-slip_in_gg <- function(doc, plot, width = 6L, height = 5L, style = NULL, res = 600L, emf = TRUE) {
+slip_in_gg <- function(
+  doc,
+  plot,
+  width = 6L,
+  height = 5L,
+  style = NULL,
+  res = 600L,
+  emf = TRUE
+) {
   stopifnot(inherits(plot, 'gg'))
-  if (emf) {
+  if (emf && requireNamespace("devEMF", quietly = TRUE)) {
     file <- tempfile(fileext = '.emf')
     devEMF::emf(file = file, width = width, height = height, coordDPI = res)
   } else {
     file <- fs::file_temp(ext = 'png')
-    grDevices::png(filename = file, width = width, height = height, units = 'in', res = res, type = 'cairo')
+    grDevices::png(
+      filename = file,
+      width = width,
+      height = height,
+      units = 'in',
+      res = res,
+      type = 'cairo'
+    )
   }
   print(plot)
   grDevices::dev.off()
   doc |>
-    officer::slip_in_img(src = file, style = style, width = width, height = height)
+    officer::slip_in_img(
+      src = file,
+      style = style,
+      width = width,
+      height = height
+    )
   if (file_exists(file)) {
     fs::file_delete(file)
   }

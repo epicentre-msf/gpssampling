@@ -139,8 +139,6 @@ addRoofsGoogle <- function(
       sparse = FALSE
     )
 
-    tile_polygons <- tibble::tibble(sf_polygon_roofs = list())
-
     tiles <- tibble::as_tibble(tile_grid$tiles)
     tiles$building <- NA
 
@@ -159,174 +157,144 @@ addRoofsGoogle <- function(
       )
     }
 
-    imgs <- list()
+    # -- Phase 1: Batch download all missing tile images in parallel ----------
+    url_template <- paste0(
+      'https://mt%s.google.com/vt/lyrs=m@169000000',
+      '&x=%s',
+      '&y=%s',
+      '&z=%s',
+      '&s=Gal',
+      '&apistyle=s.t%%3A0|s.e%%3Al|p.v%%3Aoff,s.t%%3A3|s.e%%3Ag|p.v%%3Aoff',
+      ',s.t%%3A1297|s.e%%3Ag.s|p.c%%3A%%23ffffff00|p.w%%3A2',
+      ',s.t%%3A1297|s.e%%3Ag.f|p.c%%3A%%23ffff0000'
+    )
+
+    download_urls <- character(0L)
+    download_destfiles <- character(0L)
+    download_tile_idx <- integer(0L)
 
     for (t in seq_len(tiles_n)) {
+      if (!tile_grid_intersect[t]) next
+
+      query_png <- sprintf('%s/18_%s_%s.png', tiles_dir, tiles$x[t], tiles$y[t])
+
+      if (!fs::file_exists(query_png)) {
+        url <- sprintf(
+          url_template,
+          round(stats::runif(1L, 0L, 3L)),
+          tiles$x[t],
+          tiles$y[t],
+          18L
+        )
+        download_urls <- c(download_urls, url)
+        download_destfiles <- c(download_destfiles, query_png)
+        download_tile_idx <- c(download_tile_idx, t)
+      }
+    }
+
+    if (length(download_urls) > 0L) {
+      tryCatch(
+        curl::multi_download(
+          urls = download_urls,
+          destfiles = download_destfiles,
+          progress = FALSE
+        ),
+        error = function(e) {
+          logWarn(sprintf("addRoofsGoogle batch download: %s", e$message))
+        }
+      )
+    }
+
+    # -- Phase 2: Process downloaded tile images sequentially ------------------
+    for (t in seq_len(tiles_n)) {
+      if (!tile_grid_intersect[t]) next
+
+      tile <- tiles[t, ]
+      query_png <- sprintf('%s/18_%s_%s.png', tiles_dir, tile$x, tile$y)
+
+      if (!fs::file_exists(query_png)) next
+
       progress_value <- 100L *
         ((i - 1L) / length(polygons) + t / tiles_n / length(polygons))
 
-      print(round(progress_value, 2L))
+      tile_bbox <- slippymath::tile_bbox(tile$x, tile$y, 18L)
 
-      tile <- tiles[t, ]
+      img <- suppressWarnings(terra::rast(query_png))
 
-      # https://developers.google.com/maps/documentation/javascript/style-reference
-      # https://stackoverflow.com/questions/29692737/customizing-google-map-tile-server-url
-      # https://mts0.google.com/vt/lyrs=m&x=140655&y=122385&z=18&s=Gal&apistyle=s.t%3A0|s.e%3Al|p.v%3Aoff,s.t%3A3|s.e%3Ag|p.v%3Aoff
+      terra::crs(img) <- 'epsg:3857'
+      terra::ext(img) <- as.vector(tile_bbox)[c(1L, 3L, 2L, 4L)]
 
-      # query <- sprintf('https://mt%s.google.com/vt/
-      # lyrs=m@169000000&
-      # x=%s&
-      # y=%s&
-      # z=%s&
-      # s=Gal&
-      # apistyle=s.t%%3A0|s.e%%3Al|p.v%%3Aoff,s.t%%3A3|s.e%%3Ag|p.v%%3Aoff,s.t%%3A1297|s.e%%3Ag.s|p.c%%3A%%23ffffff00|p.w%%3A2,s.t%%3A1297|s.e%%3Ag.f|p.c%%3A%%23ffff0000',
-      # round(stats::runif(1, 0, 3)), 140655, 122385, 18)
-
-      query <- sprintf(
-        paste0(
-          'https://mt%s.google.com/vt/lyrs=m@169000000',
-          '&x=%s',
-          '&y=%s',
-          '&z=%s',
-          '&s=Gal',
-          '&apistyle=s.t%%3A0|s.e%%3Al|p.v%%3Aoff,s.t%%3A3|s.e%%3Ag|p.v%%3Aoff,s.t%%3A1297|s.e%%3Ag.s|p.c%%3A%%23ffffff00|p.w%%3A2,s.t%%3A1297|s.e%%3Ag.f|p.c%%3A%%23ffff0000'
-        ),
-        round(stats::runif(1L, 0L, 3L)),
-        tile$x,
-        tile$y,
-        18L
-      )
-      query_png <- sprintf('%s/18_%s_%s.png', tiles_dir, tile$x, tile$y)
-
-      if (tile_grid_intersect[t]) {
-        if (!fs::file_exists(query_png)) {
-          result <- safe_download(
-            url = query,
-            destfile = query_png,
-            quiet = TRUE,
-            msg = "addRoofsGoogle"
+      if (!is.null(async_queue)) {
+        async_queue$producer$fireEval(
+          expr = progress_tile(progress = progress, tile = tile),
+          env = list(
+            progress = progress_value,
+            tile = tile
           )
-          if (is.null(result)) next
-        }
+        )
+      }
 
-        tile_bbox <- slippymath::tile_bbox(tile$x, tile$y, 18L)
+      img_ct <- terra::coltab(img)[[1L]]
+      img_ct_red <- img_ct$value[
+        img_ct$red == 255L &
+          img_ct$green == 0L &
+          img_ct$blue == 0L
+      ]
 
-        img <- suppressWarnings(terra::rast(query_png))
+      if (length(img_ct_red) && (img_ct_red %in% terra::values(img))) {
+        terra::values(img)[terra::values(img) != img_ct_red] <- NA
 
-        terra::crs(img) <- 'epsg:3857'
-        terra::ext(img) <- as.vector(tile_bbox)[c(1L, 3L, 2L, 4L)]
+        sf_tile_roof <- terra::as.polygons(img)
+        sf_tile_roof <- sf_tile_roof |>
+          sf::st_as_sf() |>
+          sf::st_set_agr('constant') |>
+          sf::st_set_crs(3857L) |>
+          sf::st_make_valid() |>
+          sf::st_cast('POLYGON') |>
+          st_add_coordinates()
 
-        if (!is.null(async_queue)) {
-          async_queue$producer$fireEval(
-            expr = progress_tile(progress = progress, tile = tile),
-            env = list(
-              progress = progress_value,
-              tile = tile
-            )
+        sf_tile_roof <- sf_tile_roof[, -1L]
+        sf_tile_roof$x <- tile$x
+        sf_tile_roof$y <- tile$y
+        sf_tile_roof$polygon <- i
+
+        sf_tile_roof_cell_x <- floor(
+          ((sf_tile_roof$centroid_lon - tile_bbox$xmin) /
+            (tile_bbox$xmax - tile_bbox$xmin)) *
+            3L
+        )
+        sf_tile_roof_cell_y <- floor(
+          ((sf_tile_roof$centroid_lat - tile_bbox$ymin) /
+            (tile_bbox$ymax - tile_bbox$ymin)) *
+            3L
+        )
+        sf_tile_roof_cell_xy <- sf_tile_roof_cell_y *
+          3L +
+          sf_tile_roof_cell_x +
+          1L
+
+        cells <- rep('0', 9L)
+        cells[sort(unique(sf_tile_roof_cell_xy))] <- '1'
+
+        tiles[t, 'cells'] <- paste(cells, collapse = '')
+
+        sf_tile_roof_border <-
+          st_bbox_polygon(tile_bbox) |>
+          sf::st_cast('MULTILINESTRING')
+
+        sf_tile_roof$within <- !sf::st_intersects(
+          sf_tile_roof,
+          sf_tile_roof_border,
+          sparse = FALSE
+        )
+
+        if (is.null(sf_polygon_roofs)) {
+          sf_polygon_roofs <- sf_tile_roof
+        } else {
+          sf_polygon_roofs <- dplyr::bind_rows(
+            sf_polygon_roofs,
+            sf_tile_roof
           )
-        }
-
-        img_ct <- terra::coltab(img)[[1L]]
-        img_ct_red <- img_ct$value[
-          img_ct$red == 255L &
-            img_ct$green == 0L &
-            img_ct$blue == 0L
-        ]
-
-        if (length(img_ct_red) && (img_ct_red %in% terra::values(img))) {
-          terra::values(img)[terra::values(img) != img_ct_red] <- NA
-
-          sf_tile_roof <- terra::as.polygons(img)
-          sf_tile_roof <- sf_tile_roof |>
-            sf::st_as_sf() |>
-            sf::st_set_agr('constant') |>
-            sf::st_set_crs(3857L) |>
-            sf::st_make_valid() |>
-            sf::st_cast('POLYGON') |>
-            st_add_coordinates()
-
-          sf_tile_roof <- sf_tile_roof[, -1L]
-          sf_tile_roof$x <- tile$x
-          sf_tile_roof$y <- tile$y
-          sf_tile_roof$polygon <- i
-          # sf_tile_roof$area <- as.double(sf::st_area(sf_tile_roof))
-
-          sf_tile_roof_cell_x <- floor(
-            ((sf_tile_roof$centroid_lon - tile_bbox$xmin) /
-              (tile_bbox$xmax - tile_bbox$xmin)) *
-              3L
-          )
-          sf_tile_roof_cell_y <- floor(
-            ((sf_tile_roof$centroid_lat - tile_bbox$ymin) /
-              (tile_bbox$ymax - tile_bbox$ymin)) *
-              3L
-          )
-          sf_tile_roof_cell_xy <- sf_tile_roof_cell_y *
-            3L +
-            sf_tile_roof_cell_x +
-            1L
-
-          cells <- rep('0', 9L)
-          cells[sort(unique(sf_tile_roof_cell_xy))] <- '1'
-
-          tiles[t, 'cells'] <- paste(cells, collapse = '')
-
-          sf_tile_roof_border <-
-            st_bbox_polygon(tile_bbox) |>
-            sf::st_cast('MULTILINESTRING')
-
-          sf_tile_roof$within <- !sf::st_intersects(
-            sf_tile_roof,
-            sf_tile_roof_border,
-            sparse = FALSE
-          )
-
-          if (t == 1L) {
-            sf_polygon_roofs <- sf_tile_roof
-          } else {
-            # sf_polygon_roofs_around <- dplyr::filter(sf_polygon_roofs,
-            #   (x %in% c(tile$x + c(-1:1)) & y == tile$y -1) |
-            #   (x %in% c(tile$x + c(-1:1)) & y == tile$y +1) |
-            #   (x %in% c(tile$x + c(-1:1)) & y == tile$y)
-            # )
-            # sf_polygon_roofs <- dplyr::filter(sf_polygon_roofs,
-            #   !((x %in% c(tile$x + c(-1:1)) & y == tile$y -1) |
-            #    (x %in% c(tile$x + c(-1:1)) & y == tile$y +1) |
-            #    (x %in% c(tile$x + c(-1:1)) & y == tile$y))
-            # )
-
-            # sf_intersect_bool <- sf::st_intersects(sf_polygon_roofs_around, sf_tile_roof, sparse = FALSE)
-            # sf_intersect_bool_outside <- rowSums(sf_intersect_bool) >= 1
-            # sf_intersect_bool_inside  <- colSums(sf_intersect_bool) >= 1
-
-            # sf_outside <- sf_polygon_roofs_around[!sf_intersect_bool_outside, ]
-            # sf_outside_intersect <- sf_polygon_roofs_around[sf_intersect_bool_outside, ]
-            # sf_inside  <- sf_tile_roof[!sf_intersect_bool_inside, ]
-            # sf_inside_intersect  <- sf_tile_roof[sf_intersect_bool_inside, ]
-            # sf_intersect  <- dplyr::bind_rows(
-            #   sf_inside_intersect,
-            #   sf_outside_intersect
-            # )
-
-            # sf_intersect <- sf_intersect |>
-            #   sf::st_make_valid() |>
-            #   sf::st_union() |>
-            #   sf::st_cast('POLYGON')
-
-            # sf::st_geometry(sf_inside_intersect) <- sf_intersect
-
-            sf_polygon_roofs <- dplyr::bind_rows(
-              sf_polygon_roofs,
-              sf_tile_roof
-            )
-          }
-
-          # tile_sf <- tile_to_sf(x = tile$x, y = tile$y, zoom = 18, divide = 3)
-          # tile_sf <- tile_sf |>
-          #   sf::st_set_crs(4326) |>
-          #   sf::st_transform(3857)
-
-          # tiles[t, 'cells'] <- paste0(as.integer(sapply(sf::st_intersects(tile_sf, sf_tile_roof), length) > 0), collapse = '')
         }
       }
     }
@@ -361,9 +329,6 @@ addRoofsGoogle <- function(
 
       polygon_roofs_geos <- polygon_roofs_geos[polygon_roofs_geos_inside]
 
-      # terra::plot(sf::st_transform(polygon, 3857))
-      # terra::plot(polygon_roofs_geos, add=TRUE)
-
       sf_polygon_roofs <- polygon_roofs_geos |>
         sf::st_as_sf() |>
         dplyr::mutate(polygon = i) |>
@@ -377,10 +342,12 @@ addRoofsGoogle <- function(
     }
   }
 
-  roofs_sf <- roofs_sf |>
-    sf::st_set_agr('constant') |>
-    sf::st_centroid() |>
-    sf::st_transform(4326L)
+  if (!is.null(roofs_sf)) {
+    roofs_sf <- roofs_sf |>
+      sf::st_set_agr('constant') |>
+      sf::st_centroid() |>
+      sf::st_transform(4326L)
+  }
 
   list(
     tiles = tiles,
@@ -405,10 +372,6 @@ addRoofsOpenBuilding <- function(
     checkmate::checkTRUE(sf::st_is(polygons, type = 'MULTIPOLYGON'))
   )
 
-  s2_intersect <- sf::st_intersects(s2$layer, polygons, sparse = FALSE)
-
-  s2_tile_urls <- s2$layer[s2_intersect, ]$tile_url
-
   roofs_sf <- NULL
 
   for (i in seq_len(length(polygons))) {
@@ -419,15 +382,7 @@ addRoofsOpenBuilding <- function(
     s2_intersect <- sf::st_intersects(s2$layer, polygon, sparse = FALSE)
     s2_intersect_tile_urls <- s2$layer[s2_intersect, ]$tile_url
 
-    tile_polygons <- tibble::tibble(sf_polygon_roofs = list())
-
-    tiles <- tibble::as_tibble(tile_grid$tiles)
-    tiles$building <- NA
-
     sf_polygon_roofs <- NULL
-
-    tiles_dir <- dir
-    tiles_n <- nrow(tiles)
 
     if (!is.null(async_queue)) {
       async_queue$producer$fireEval(
@@ -440,17 +395,10 @@ addRoofsOpenBuilding <- function(
     }
 
     for (t in seq_along(s2_intersect_tile_urls)) {
-      # progress_value <- 100L * ((i - 1L) / length(polygons) + t / tiles_n / length(polygons))
-
-      # print(round(progress_value, 2L))
-
       s2_intersect_tile_url <- s2_intersect_tile_urls[t]
-      s2_intersect_tile_dir <- getDirAppTemp()
+      s2_intersect_tile_dir <- dir
       s2_intersect_tile_filename <- fs::path_file(s2_intersect_tile_url)
-      s2_intersect_tile_path <- fs::path(
-        getDirAppTemp(),
-        fs::path_file(s2_intersect_tile_url)
-      )
+      s2_intersect_tile_path <- fs::path(dir, s2_intersect_tile_filename)
 
       download(
         url = s2_intersect_tile_url,
@@ -458,12 +406,13 @@ addRoofsOpenBuilding <- function(
         destdir = s2_intersect_tile_dir
       )
 
-      s2_intersect_tile <- readSpatialLayer(file = s2_intersect_tile_path)
+      if (!fs::file_exists(s2_intersect_tile_path)) next
+
       s2_intersect_tile <- arrow::open_csv_dataset(
         sources = s2_intersect_tile_path
       )
 
-      sf_polygon_roofs <- s2_intersect_tile |>
+      tile_roofs <- s2_intersect_tile |>
         dplyr::filter(
           latitude >= bbox$ymin,
           latitude <= bbox$ymax,
@@ -471,51 +420,45 @@ addRoofsOpenBuilding <- function(
           longitude <= bbox$xmax
         ) |>
         dplyr::collect()
+
+      if (nrow(tile_roofs) > 0L) {
+        if (is.null(sf_polygon_roofs)) {
+          sf_polygon_roofs <- tile_roofs
+        } else {
+          sf_polygon_roofs <- dplyr::bind_rows(sf_polygon_roofs, tile_roofs)
+        }
+      }
     }
 
-    if (!is.null(sf_polygon_roofs)) {
-      polygon_roofs_geos_1 <- sf_polygon_roofs |>
-        geos::as_geos_geometry('geometry)') |>
-        geos::geos_make_collection() |>
-        geos::geos_make_valid() |>
-        geos::geos_unary_union()
-
-      polygon_roofs_geos_1 <- sf_polygon_roofs[sf_polygon_roofs$within, ] |>
+    if (!is.null(sf_polygon_roofs) && nrow(sf_polygon_roofs) > 0L) {
+      # Parse WKT geometry strings from CSV column
+      polygon_roofs_geos <- sf_polygon_roofs$geometry |>
         geos::as_geos_geometry() |>
         geos::geos_make_collection() |>
         geos::geos_make_valid() |>
         geos::geos_unary_union()
-
-      polygon_roofs_geos_2 <- sf_polygon_roofs[!sf_polygon_roofs$within, ] |>
-        geos::as_geos_geometry() |>
-        geos::geos_make_collection() |>
-        geos::geos_make_valid()
-
-      polygon_roofs_geos <- c(
-        polygon_roofs_geos_1,
-        polygon_roofs_geos_2
-      )
 
       polygon_roofs_geos <- geos::geos_unnest(
         polygon_roofs_geos,
         keep_multi = FALSE
       )
+
+      # Keep only roofs whose centroid falls inside the polygon (both WGS 84)
+      polygon_roofs_geos <- wk::wk_set_crs(polygon_roofs_geos, 4326L)
       polygon_roofs_geos_inside <-
         polygon_roofs_geos |>
         geos::geos_centroid() |>
         geos::geos_intersects(
-          sf::st_transform(polygon, 3857L) |> geos::as_geos_geometry()
+          geos::as_geos_geometry(polygon)
         )
 
       polygon_roofs_geos <- polygon_roofs_geos[polygon_roofs_geos_inside]
 
-      # terra::plot(sf::st_transform(polygon, 3857))
-      # terra::plot(polygon_roofs_geos, add=TRUE)
-
       sf_polygon_roofs <- polygon_roofs_geos |>
         sf::st_as_sf() |>
-        dplyr::mutate(polygon = i) |>
-        add_tilenum()
+        dplyr::mutate(polygon = i)
+    } else {
+      sf_polygon_roofs <- NULL
     }
 
     if (i == 1L) {
@@ -525,13 +468,15 @@ addRoofsOpenBuilding <- function(
     }
   }
 
-  roofs_sf <- roofs_sf |>
-    sf::st_set_agr('constant') |>
-    sf::st_centroid() |>
-    sf::st_transform(4326L)
+  if (!is.null(roofs_sf)) {
+    roofs_sf <- roofs_sf |>
+      sf::st_make_valid() |>
+      sf::st_set_agr('constant') |>
+      sf::st_centroid() |>
+      sf::st_transform(4326L)
+  }
 
   list(
-    tiles = tiles,
     roofs = roofs_sf
   )
 }
@@ -1401,6 +1346,3 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
 sf_empty <- function() {
   sf::st_sf(sf::st_sfc(crs = 'epsg:4326'))
 }
-
-
-

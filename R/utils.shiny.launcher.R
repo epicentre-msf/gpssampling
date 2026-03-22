@@ -87,8 +87,8 @@ win_launcher <- function() {
 
       library(%s);
 
-      app <- Application$new();
-      app$launch()"',
+      samp <- gpssampling::sampler();
+      samp$launch()"',
       Sys.which('R'),
       getPackageDescription()$Package,
       getPackageDescription()$Package,

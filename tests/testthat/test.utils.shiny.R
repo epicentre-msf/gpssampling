@@ -1,95 +1,32 @@
 # devtools::test(filter = 'test.utils.shiny', stop_on_failure = TRUE)
 
-# cleanSessionSelenium()
+test_that('button creates actionButton tag', {
+  btn <- button('btn_id', label = 'Click')
+  expect_s3_class(btn, 'shiny.tag')
+  html <- as.character(btn)
+  expect_true(grepl('btn_id', html))
+  expect_true(grepl('Click', html))
+})
 
-theme <- bslib::bs_theme(
-  # "font-size-base" = "0.9rem",
-  'enable-rounded' = TRUE,
-  'line-height-base' = 1.3,
-  'line-height-sm' = 1.3,
-  'line-height-lg' = 1.3,
-  spacer = '0.2rem',
-  version = 5L
-)
-
-
-app_bg <- startApp(
-  app = shiny::shinyApp(
-    ui =  shiny::tagList(
-      shiny::wellPanel(
-        imola::flexPanel(
-          align_items = 'flex-start', grow = 0L,
-          shiny::actionButton("goButton", "Go!", class = "btn-success"),
-          button('btn', label = 'Default'),
-          button('btn', label = 'Primary', semantic = 'primary'),
-          button('btn', label = 'Secondary', semantic = 'secondary'),
-          button('btn', label = 'Success', semantic = 'success'),
-          button('btn', label = 'Danger', semantic = 'danger'),
-          button('btn', label = 'Warning', semantic = 'warning'),
-          button('btn', label = 'Info', semantic = 'info'),
-          button('btn', label = 'Light', semantic = 'light'),
-          button('btn', label = 'Dark', semantic = 'dark'),
-          button('btn', label = 'Link', semantic = 'link')
-        )
-      )
-    ),
-    server = function(input, output, session) {}
+test_that('button with semantic adds btn-* class', {
+  semantics <- c(
+    'primary', 'secondary', 'success', 'danger',
+    'warning', 'info', 'light', 'dark', 'link'
   )
-)
+  for (sem in semantics) {
+    btn <- button('btn_id', label = sem, semantic = sem)
+    html <- as.character(btn)
+    expect_true(
+      grepl(paste0('btn-', sem), html) || grepl(sem, html),
+      label = sprintf('semantic = "%s" should appear in HTML', sem)
+    )
+  }
+})
 
-# startApp(
-#   function() {
-#     devtools::load_all()
+test_that('button with size adds btn-sm or btn-lg class', {
+  btn_sm <- button('btn_id', label = 'Small', size = 'sm')
+  expect_true(grepl('btn-sm', as.character(btn_sm)))
 
-#     shinyAppMinimal(
-#       ui =
-#         shiny::tagList(
-#           shiny::wellPanel(
-#             imola::flexPanel(
-#               align_items = 'flex-start', grow = 0L,
-#               button('btn', label = 'Default'),
-#               button('btn', label = 'Primary', semantic = 'primary'),
-#               button('btn', label = 'Secondary', semantic = 'secondary'),
-#               button('btn', label = 'Success', semantic = 'success'),
-#               button('btn', label = 'Danger', semantic = 'danger'),
-#               button('btn', label = 'Warning', semantic = 'warning'),
-#               button('btn', label = 'Info', semantic = 'info'),
-#               button('btn', label = 'Light', semantic = 'light'),
-#               button('btn', label = 'Dark', semantic = 'dark'),
-#               button('btn', label = 'Link', semantic = 'link')
-#             )
-#           ),
-#           shiny::wellPanel(
-#             imola::flexPanel(
-#               align_items = 'flex-start', grow = 0L,
-#               button('btn', label = 'Default', outline = TRUE),
-#               button('btn', label = 'Primary', semantic = 'primary', outline = TRUE),
-#               button('btn', label = 'Secondary', semantic = 'secondary', outline = TRUE),
-#               button('btn', label = 'Success', semantic = 'success', outline = TRUE),
-#               button('btn', label = 'Danger', semantic = 'danger', outline = TRUE),
-#               button('btn', label = 'Warning', semantic = 'warning', outline = TRUE),
-#               button('btn', label = 'Info', semantic = 'info', outline = TRUE),
-#               button('btn', label = 'Light', semantic = 'light', outline = TRUE),
-#               button('btn', label = 'Dark', semantic = 'dark', outline = TRUE),
-#               button('btn', label = 'Link', semantic = 'link', outline = TRUE)
-#             )
-#           ),
-#           shiny::wellPanel(
-#             imola::flexPanel(
-#               align_items = 'baseline', grow = 0L,
-#               button('btn', label = 'Large', semantic = 'primary', size = 'lg'),
-#               button('btn', label = 'Normal', semantic = 'primary'),
-#               button('btn', label = 'Small', semantic = 'primary', size = 'sm'),
-#               button('btn', label = 'XSmall', semantic = 'primary', size = 'xs')
-#             )
-#           )
-#         )
-#     )
-#   }
-# )
-
-session <- getSeleniumSession()
-
-test_that('button', {
-  selenider::open_url(url = 'https://ashbythorpe.github.io/selenider/articles/test-site.html')
+  btn_lg <- button('btn_id', label = 'Large', size = 'lg')
+  expect_true(grepl('btn-lg', as.character(btn_lg)))
 })

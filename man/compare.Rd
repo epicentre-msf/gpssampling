@@ -19,4 +19,3 @@ compare('sourcefile', 'targetfile')
 
 }
 \keyword{internal}
-\keyword{truc}

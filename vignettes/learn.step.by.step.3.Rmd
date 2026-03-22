@@ -88,7 +88,7 @@ There are 2 options :
 
 **A. Find the Masai Lodge**
 
-1. Click on the button **Search** (`r epi.icons::icon_mdi('magnify')`) on the bottom-left. You can now type a location.<br>
+1. Click on the button **Search** (`r gpssampling:::icon_mdi('magnify')`) on the bottom-left. You can now type a location.<br>
 ![](./images/search-1.webp) >> ![](./images/search-2.webp)
 
 2. Type in "Masai Lodge". You find two proposals.<br>
@@ -103,7 +103,7 @@ There are 2 options :
 
 1. Use the mouse to place the Masai Lodge in the centre of the app window
 
-2. Click on the button **Draw a polygon** (`r epi.icons::icon_mdi('shape-square-plus')`).
+2. Click on the button **Draw a polygon** (`r gpssampling:::icon_mdi('shape-square-plus')`).
 
 3. Click on the map to draw the polygon
     - Move the pointer to the image and left-click on the image just outside the refugee camp to mark the first vertex of the polygon
@@ -114,13 +114,13 @@ There are 2 options :
 
 4. Click on the polygon to select it.
 
-5. Click on the button **Save** (`r epi.icons::icon_mdi('check-bold')`). Confirm with **OK**.
+5. Click on the button **Save** (`r gpssampling:::icon_mdi('check-bold')`). Confirm with **OK**.
 
 6. Now, you can go to the next step **Identify**
 
 ### Uploading an existing polygone
 
-1. Click on the button **Add a polygon layer...** (`r epi.icons::icon_mdi('layers-plus')`). This dialog box popup.<br>
+1. Click on the button **Add a polygon layer...** (`r gpssampling:::icon_mdi('layers-plus')`). This dialog box popup.<br>
 ![](./images/upload-delimit-1.webp)
 
 2. Click on the button **Upload...** and in the file dialog, navigate in your folders and select the appropriate file ([masai-lodge.kmz](./data/psp/2022.nairobi/masai-lodge.kmz)).<br>
@@ -130,11 +130,11 @@ There are 2 options :
 
 4. Click on the polygon to select it.
 
-5. Click on the button **Save** (`r epi.icons::icon_mdi('check-bold')`). Confirm with **OK**.
+5. Click on the button **Save** (`r gpssampling:::icon_mdi('check-bold')`). Confirm with **OK**.
 
 6. Now, you can go to the next step **Identify**
 
-[As in the other method above, do not forget to validate `r epi.icons::icon_mdi('check-bold')` to be able to proceed to step 2 (tab "Identify")  !]{.red-text}
+[As in the other method above, do not forget to validate `r gpssampling:::icon_mdi('check-bold')` to be able to proceed to step 2 (tab "Identify")  !]{.red-text}
 
 ## Step 2: Shrink
 
@@ -150,7 +150,7 @@ The polygon has been divided into "tiles" by the `r pkg_infos$title` app (these 
 
 1. To inspect a tile, you can:
 
-    * Click on the button **Search and identify** (`r epi.icons::icon_mdi('feature-search-outline')`).
+    * Click on the button **Search and identify** (`r gpssampling:::icon_mdi('feature-search-outline')`).
     * Click on the map inside the polygon.
     * Use the arrows keys<br>
 
@@ -162,7 +162,7 @@ The polygon has been divided into "tiles" by the `r pkg_infos$title` app (these 
 
 3. When all urban zones have been marked in a tile, you can
 
-      * Click on the button **Check** (`r epi.icons::icon_mdi('square-rounded', color = "yellow")`).
+      * Click on the button **Check** (`r gpssampling:::icon_mdi('square-rounded', color = "yellow")`).
       * Type [**SPACE**]
 
     ![](./images/shrink.webp)
@@ -171,13 +171,13 @@ The polygon has been divided into "tiles" by the `r pkg_infos$title` app (these 
 
 4. For each tile, continue the same way ...
 
-5. When all tiles of the polygone have been done : click on the button **Valid All** (`r epi.icons::icon_mdi('checkbox-multiple-marked')`) to validate the pointing of building zones.
+5. When all tiles of the polygone have been done : click on the button **Valid All** (`r gpssampling:::icon_mdi('checkbox-multiple-marked')`) to validate the pointing of building zones.
 
 ::: {.alert .alert-info}
 **Notes**:
 
 * In case of mistakes : re-clicking on a building zone allows to remove it.
-* It is possible to change the size and color of marks by clicking the button **Settings** (`r epi.icons::icon_mdi('cog')`).
+* It is possible to change the size and color of marks by clicking the button **Settings** (`r gpssampling:::icon_mdi('cog')`).
 * For the next tile, if some contiguous shelters  were already pointed previously, their point is highlighted so that the user does not identify (click on it) again.
 :::
 
@@ -191,11 +191,11 @@ In this page, you will randomly select a sample of waypoints from the ensemble o
 
 1. Select the polygon to sample
 
-2. Click the button **New Sample...** (`r epi.icons::icon_mdi('map-marker-radius-outline')`). The map zoom to the random sample point with a radius zone.
+2. Click the button **New Sample...** (`r gpssampling:::icon_mdi('map-marker-radius-outline')`). The map zoom to the random sample point with a radius zone.
 
     ![](./images/generate_sss_04.webp)
 
-3. Click on the button  **Save** (`r epi.icons::icon_mdi('map-marker-check-outline')`) if you choose to keep the point.
+3. Click on the button  **Save** (`r gpssampling:::icon_mdi('map-marker-check-outline')`) if you choose to keep the point.
 
     ![](./images/generate_sss_04_ok.webp)
 
@@ -203,7 +203,7 @@ In this page, you will randomly select a sample of waypoints from the ensemble o
 
     ![](./images/generate_sss.webp)
 
-5. Click on the button **Save** (`r epi.icons::icon_mdi('check-bold')`). Confirm with **OK**.
+5. Click on the button **Save** (`r gpssampling:::icon_mdi('check-bold')`). Confirm with **OK**.
 
 6. Now, you can go to the last step **Result**
 
@@ -213,7 +213,7 @@ In this page, you will randomly select a sample of waypoints from the ensemble o
 The precision of the estimate will be increased by increasing the sample size : as much as the sampling units (here, the households) are numerous in the sample, the precision will increase. Outside of these exercises where we do not have enough time to go for a big sample, in real situation, a sample size that would allow sufficient accuracy would rather be around 300-400 households.
 :::
 
-[To be allowed to proceed to the next step, after points have been randomly sampled (by any of the two methods above), click on the icon `r epi.icons::icon_mdi('check-bold')` ]{.red-text}
+[To be allowed to proceed to the next step, after points have been randomly sampled (by any of the two methods above), click on the icon `r gpssampling:::icon_mdi('check-bold')` ]{.red-text}
 
 These sampled points (and coordinates) will be exported in the next section (tab "Results").
 
@@ -230,7 +230,7 @@ These sampled points (and coordinates) will be exported in the next section (tab
 
     **Offline** with a GPS  device (Garmin _eTrex_):
 
-    1. Click on the button **GPX** (`r epi.icons::icon_mdi('download')`) and save the file in your computer's disk.
+    1. Click on the button **GPX** (`r gpssampling:::icon_mdi('download')`) and save the file in your computer's disk.
     2. Connect the GPS device to the computer with the adapted USB cable. The GPS device should appear an an accessory/peripheric of the computer in the file explorer of the computer.
     3. Using Windows Explorer (file explorer) ago to the roots of the computer ( C: or D:) and open the _Garmin eTrex_ folder, up to the   .../GPX/... folder.
     4. Copy and paste the .gpx from the hard disk to the folder .../GPX/... folder in  _Garmin eTrex_
@@ -238,14 +238,14 @@ These sampled points (and coordinates) will be exported in the next section (tab
 
     **Online** with a smartphone without camera:
 
-    1. Click on the button **GPX** (`r epi.icons::icon_mdi('download')`) and save the file in your computer's disk.
+    1. Click on the button **GPX** (`r gpssampling:::icon_mdi('download')`) and save the file in your computer's disk.
     2. Sent the **.gpx** file from the computer to an email address which can be accessed from the smarphone.
     3. Open the e-mail app in the smartphone and download the file.
     4. Go to the downloads folder of the smartphone and share the **.gpx** file with Osmand app.
 
     **Online** with a smartphone with camera:
 
-    1. Click on the button **GPX** (`r epi.icons::icon_mdi('qrcode-scan')`). A window opens with a QR code
+    1. Click on the button **GPX** (`r gpssampling:::icon_mdi('qrcode-scan')`). A window opens with a QR code
     2. Scan this QR code with the smartphone and accept the download.
     3. Go to the downloads folder of the smartphone and share the **.gpx** file with Osmand app.
 

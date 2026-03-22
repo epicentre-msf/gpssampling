@@ -35,24 +35,16 @@ for the top and bottom, while the second value will be used for left and
 right. If three, then the first will be used for top, the second will be
 left and right, and the third will be bottom. If four, then the values will
 be interpreted as top, right, bottom, and left respectively.}
-    \item{\code{position}}{Determines whether the navbar should be displayed at the top
-of the page with normal scrolling behavior (\code{"static-top"}), pinned at
-the top (\code{"fixed-top"}), or pinned at the bottom
-(\code{"fixed-bottom"}). Note that using \code{"fixed-top"} or
-\code{"fixed-bottom"} will cause the navbar to overlay your body content,
-unless you add padding, e.g.: \code{tags$style(type="text/css", "body
-  {padding-top: 70px;}")}}
     \item{\code{header}}{UI element(s) (\link[htmltools:builder]{htmltools::tags}) to display \emph{above} the nav
-content.}
+content. For \code{card}-based navsets, these elements are implicitly wrapped in
+a \code{card_body()}. To control things like \code{padding}, \code{fill}, etc., wrap the
+elements in an explicit \code{\link[bslib:card_body]{card_body()}}.}
     \item{\code{footer}}{UI element(s) (\link[htmltools:builder]{htmltools::tags}) to display \emph{below} the nav
-content.}
-    \item{\code{bg}}{a CSS color to use for the navbar's background color.}
-    \item{\code{inverse}}{Either \code{TRUE} for a light text color or \code{FALSE} for a dark
-text color. If \code{"auto"} (the default), the best contrast to \code{bg} is chosen.}
-    \item{\code{underline}}{Whether or not to add underline styling to page links when
-active or focused.}
-    \item{\code{collapsible}}{\code{TRUE} to automatically collapse the navigation
-elements into an expandable menu on mobile devices or narrow window widths.}
+content. For \code{card}-based navsets, these elements are implicitly wrapped in
+a \code{card_body()}. To control things like \code{padding}, \code{fill}, etc., wrap the
+elements in an explicit \code{\link[bslib:card_body]{card_body()}}.}
+    \item{\code{navbar_options}}{Options to control the appearance and behavior of the
+navbar. Use \code{\link[bslib:navbar_options]{navbar_options()}} to create the list of options.}
     \item{\code{fluid}}{\code{TRUE} to use fluid layout; \code{FALSE} to use fixed
 layout.}
     \item{\code{theme}}{A \code{\link[bslib:bs_theme]{bs_theme()}} object.}
@@ -62,6 +54,16 @@ host URL of the page is displayed by default).}
     \item{\code{lang}}{ISO 639-1 language code for the HTML page, such as "en" or "ko".
 This will be used as the lang in the \code{<html>} tag, as in \code{<html lang="en">}.
 The default (NULL) results in an empty string.}
+    \item{\code{position}}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Please use
+\code{\link[bslib:navbar_options]{navbar_options = navbar_options(position=)}} instead.}
+    \item{\code{bg}}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Please use
+\code{\link[bslib:navbar_options]{navbar_options = navbar_options(bg=)}} instead.}
+    \item{\code{inverse}}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Please use
+\code{\link[bslib:navbar_options]{navbar_options = navbar_options(inverse=)}} instead.}
+    \item{\code{underline}}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Please use
+\code{\link[bslib:navbar_options]{navbar_options = navbar_options(underline=)}} instead.}
+    \item{\code{collapsible}}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Please use
+\code{\link[bslib:navbar_options]{navbar_options = navbar_options(collapsible=)}} instead.}
   }}
 }
 \value{

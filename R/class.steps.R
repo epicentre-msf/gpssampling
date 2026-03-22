@@ -1,6 +1,6 @@
 Steps <- R6::R6Class(
   classname = 'Steps',
-  inherit = ApplicationModule,
+  inherit = GpsSamplerModule,
   portable = FALSE,
   active = list(
     step_delimit = function() {
@@ -26,7 +26,6 @@ Steps <- R6::R6Class(
       private$.step_result <- StepResult$new(steps = self, index = 4L)
     },
     getUI = function(ns = shiny::NS(NULL)) {
-
       super$getUI(ns = ns)
 
       # if (getOption('identify')) {
@@ -42,7 +41,9 @@ Steps <- R6::R6Class(
       # } else {
 
       fillPanel(
-        title = '', self$ns('pan_steps'), icon = icon('home-outline'),
+        title = '',
+        self$ns('pan_steps'),
+        icon = icon('home-outline'),
         fillTabset(
           id = self$ns('tbs_steps'),
           private$.step_delimit$getUI(ns = self$ns),
@@ -60,7 +61,6 @@ Steps <- R6::R6Class(
     .step_sample = NULL,
     .step_result = NULL,
     getServer = function(input, output, session) {
-
       super$getServer(input, output, session)
 
       shiny::observe({
@@ -83,11 +83,19 @@ Steps <- R6::R6Class(
               disableTabPanel(value = self$data$step_sample$ns('tab'))
               disableTabPanel(value = self$data$step_result$ns('tab'))
             } else {
-              if ((sum(self$data$polygons_selected$roofs_count, na.rm = TRUE) > 0L) |
-                (sum(self$data$polygons_selected$cells_count, na.rm = TRUE) > 0L) |
-                (self$data$project_method %in% c('SP_TSQ', 'SP_QDR'))) {
+              if (
+                (sum(self$data$polygons_selected$roofs_count, na.rm = TRUE) >
+                  0L) |
+                  (sum(self$data$polygons_selected$cells_count, na.rm = TRUE) >
+                    0L) |
+                  (self$data$project_method %in% c('SP_TSQ', 'SP_QDR'))
+              ) {
                 enableTabPanel(value = self$data$step_sample$ns('tab'))
-                if (!self$data$step_sample$state$modified & sum(sapply(self$data$polygons_selected$samples_sf, nrow)) > 0L) {
+                if (
+                  !self$data$step_sample$state$modified &
+                    sum(sapply(self$data$polygons_selected$samples_sf, nrow)) >
+                      0L
+                ) {
                   enableTabPanel(value = self$data$step_result$ns('tab'))
                 } else {
                   disableTabPanel(value = self$data$step_result$ns('tab'))
@@ -99,16 +107,27 @@ Steps <- R6::R6Class(
             }
           }
         }
-
       })
 
       shiny::observeEvent(input$tbs_steps, {
-        data$step <- stringr::str_match(self$ns(input$tbs_steps), '(step_.*)-tab')[1L, 2L]
+        data$step <- stringr::str_match(
+          self$ns(input$tbs_steps),
+          '(step_.*)-tab'
+        )[1L, 2L]
       })
 
-      shiny::observeEvent(data$guide_polygon_changed, ignoreNULL = FALSE, ignoreInit = TRUE, {
-        shiny::updateTabsetPanel(session, 'pan_steps', selected = paste0('panel', input$controller))
-      })
+      shiny::observeEvent(
+        data$guide_polygon_changed,
+        ignoreNULL = FALSE,
+        ignoreInit = TRUE,
+        {
+          shiny::updateTabsetPanel(
+            session,
+            'pan_steps',
+            selected = paste0('panel', input$controller)
+          )
+        }
+      )
 
       # if (getOption('identify')) {
       # private$.step_identify$bind()

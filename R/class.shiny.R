@@ -57,7 +57,7 @@ AppShinyBase <- R6::R6Class(
         levelLogger('DEBUG')
         options(shiny.trace = debug_trace)
         options(shiny.fullstacktrace = debug_trace_full)
-        options(shiny.error = browser)
+        if (interactive()) options(shiny.error = browser)
         options(error = NULL)
       } else {
         levelLogger('INFO')
@@ -130,7 +130,7 @@ AppShinyBase <- R6::R6Class(
         waiter::useWaitress(),
         waiter::waiterShowOnLoad(
           html = shiny::tagList(
-            waiter::spin_loaders(7L, color = col_spin_waiter),
+            waiter::spin_loaders(7L, color = '#ffffff'),
             shiny::h3('Please wait...')
           ),
           color = 'white'
@@ -652,7 +652,19 @@ AppShiny <- R6::R6Class(
           path = fs::path(getDirAssets(), fs::path('css', 'shiny-custom.css'))
         ),
 
-        epi.icons::html_dependency_mdi(),
+        html_dependency_mdi(),
+        htmltools::htmlDependency(
+          name = "hot-bridge",
+          version = "0.1.0",
+          src = system.file("js", package = "gpssampling"),
+          script = "hot-bridge.js"
+        ),
+        htmltools::htmlDependency(
+          name = "leafpm-bridge",
+          version = "0.1.0",
+          src = system.file("js", package = "gpssampling"),
+          script = "leafpm-bridge.js"
+        ),
         useGoogle()
       )
     },

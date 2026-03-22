@@ -1,6 +1,6 @@
 #' @title Application Configuration Constants
 #' @description Centralizes magic numbers, default values, and configuration
-#'   constants used throughout the epi.geosampler package.
+#'   constants used throughout the gpssampling package.
 #' @noRd
 
 # Zoom Levels

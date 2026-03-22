@@ -21,5 +21,3 @@ getPackageTitleL()
 
 }
 \keyword{internal}
-\keyword{machin}
-\keyword{truc}

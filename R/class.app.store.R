@@ -1,6 +1,6 @@
 UserData <- R6::R6Class(
   classname = 'UserData',
-  inherit = ApplicationModule,
+  inherit = GpsSamplerModule,
   portable = FALSE,
   active = list(
     # Creating a function that will return the bounding box of the polygons.
@@ -271,6 +271,10 @@ UserData <- R6::R6Class(
 
       private$.selector <- 'none'
 
+      # PolygonManager must be created before makeValidPolygons() is called,
+      # since portable = FALSE resolves bare makeValidPolygons to self$polygon_mgr
+      private$.polygon_mgr <- PolygonManager$new(data = self)
+
       private$.polygons <- makeValidPolygons(NULL)
       private$.polygons_trigger <- reactiveTrigger()
 
@@ -368,11 +372,13 @@ UserData <- R6::R6Class(
       private$.exporter <- DocumentExporter$new(data = self)
       private$.tile_mgr <- TileManager$new(data = self)
       private$.sample_mgr <- SampleManager$new(data = self)
-      private$.polygon_mgr <- PolygonManager$new(data = self)
+      # polygon_mgr already created above (before makeValidPolygons call)
       private$.persistence <- DataPersistence$new(data = self)
 
       if (load) {
-        self$load()
+        # isolate: load() accesses reactive bindings (project_name, etc.)
+        # but during initialization there is no reactive context
+        shiny::isolate(self$load())
       }
     },
     updateCells = function(polygons_sf) {
@@ -486,147 +492,7 @@ UserData <- R6::R6Class(
       self$tile_mgr$removeRoof(map, roof_id, ...)
     },
     roofsAddOSM = function(map, progress, ...) {
-      roofs_sf <- NULL
-
-      map |>
-        leaflet::clearGroup('tiles')
-
-      polygons <- self$polygons
-
-      for (i in seq_len(nrow(self$polygons))) {
-        polygon_sf <- self$polygons[i, ]
-
-        map |>
-          fitToSpatialFeatureBounds(polygon_sf)
-
-        bbox <- sf::st_bbox(polygon_sf)
-
-        tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = ZOOM_OSM)
-        tile_grid_sf <- tile_grid_to_sf(tile_grid)
-        tile_grid_intersect <- sf::st_intersects(
-          tile_grid_sf,
-          polygon_sf,
-          sparse = FALSE
-        )
-
-        tile_polygons <- tibble::tibble(sf_polygon_roofs = list())
-
-        tiles <- tibble::as_tibble(tile_grid$tiles)
-        tiles$building <- NA
-
-        sf_polygon_roofs <- NULL
-
-        tiles_dir <- fs::path(self$cache, 'imageries')
-
-        for (t in seq_len(OSM_MAX_TILES)) {
-          progress(
-            value = 100L *
-              ((i - 1L) /
-                nrow(self$polygons) +
-                t / nrow(tiles) / nrow(self$polygons))
-          )
-
-          tile <- tiles[t, ]
-
-          if (tile_grid_intersect[t]) {
-            tile_sfc <- st_bbox_polygon(tile_bbox_ll(tile$x, tile$y, ZOOM_OSM))
-
-            leaflet::addPolygons(
-              map,
-              data = tile_sfc,
-              color = 'yellow',
-              fill = TRUE,
-              group = 'tiles',
-              weight = 0.5
-            )
-
-            osm <-
-              osmdata::opq(bbox = sf::st_bbox(tile_sfc)) |>
-              osmdata::add_osm_feature(key = 'building') |>
-              osmdata::osmdata_sf() |>
-              cleanOSM()
-
-            sf_tile_roof <- osm$osm_polygons |>
-              dplyr::select(osm_id, building)
-
-            if (t == 1L) {
-              sf_polygon_roofs <- sf_tile_roof
-            } else {
-              sf_polygon_roofs <- rbind(sf_polygon_roofs, sf_tile_roof)
-            }
-          }
-        }
-
-        polygon_roofs_intersect <- sf::st_intersects(
-          sf_polygon_roofs,
-          sf_polygon_roofs,
-          sparse = FALSE
-        )
-
-        sf_polygon_roofs_intersect <- sf_polygon_roofs[
-          rowSums(polygon_roofs_intersect) > 1L,
-        ]
-        sf_polygon_roofs_intersect <- sf::st_union(sf_polygon_roofs_intersect)
-        sf_polygon_roofs_intersect <- sf::st_cast(
-          sf_polygon_roofs_intersect,
-          'POLYGON'
-        )
-
-        sf_polygon_roofs <- sf_polygon_roofs[
-          rowSums(polygon_roofs_intersect) == 1L,
-        ]
-        sf_polygon_roofs <- dplyr::bind_rows(
-          sf_polygon_roofs,
-          sf::st_sf(sf_polygon_roofs_intersect)
-        )
-        # sf_polygon_roofs <- sf::st_union(sf_polygon_roofs)
-
-        if (i == 1L) {
-          roofs_sf <- sf_polygon_roofs
-        } else {
-          roofs_sf <- rbind(roofs_sf, sf_polygon_roofs)
-        }
-      }
-
-      for (i in seq_len(nrow(self$polygons))) {
-        progress(value = 100L * (i - 1L) / nrow(self$polygons))
-
-        polygon_sf <- self$polygons[i, ]
-
-        map |>
-          fitToSpatialFeatureBounds(polygon_sf)
-
-        osm <-
-          osmdata::opq(bbox = sf::st_bbox(polygon_sf)) |>
-          osmdata::add_osm_feature(key = 'building') |>
-          osmdata::osmdata_sf() |>
-          cleanOSM()
-
-        sf_polygon_roofs <-
-          sf::st_intersection(osm$osm_polygons, sf::st_geometry(polygon_sf)) |>
-          dplyr::mutate(
-            polygons = i
-          )
-
-        if (i == 1L) {
-          roofs_sf <- sf_polygon_roofs
-        } else {
-          roofs_sf <- rbind(roofs_sf, sf_polygon_roofs)
-        }
-      }
-
-      progress(value = 100L)
-
-      map |>
-        fitToSpatialFeatureBounds(self$polygons)
-
-      roofs_sf <- roofs_sf |>
-        sf::st_set_crs('EPSG:3857') |>
-        sf::st_set_agr('constant') |>
-        sf::st_centroid() |>
-        sf::st_transform(4326L)
-
-      private$roofs_uploaded <- NULL
+      roofs_sf <- self$tile_mgr$roofsAddOSM(map, progress, ...)
       private$roofs_uploaded <- roofs_sf
     },
     addRoofs = function(map, roofs, ...) {

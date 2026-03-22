@@ -1,14 +1,25 @@
 # styler: block Leaflet
 
 addIndicator <- function(lf, level, indicator, indicator.var) {
-  tbl <- switch(level,
-    adm.0 = dplyr::select(surveillance$lvl.0$data, week.n, dplyr::one_of(indicator.var)),
-    adm.1 = dplyr::select(surveillance$lvl.1$data, adm.1, week.n, dplyr::one_of(indicator.var))
+  tbl <- switch(
+    level,
+    adm.0 = dplyr::select(
+      surveillance$lvl.0$data,
+      week.n,
+      dplyr::one_of(indicator.var)
+    ),
+    adm.1 = dplyr::select(
+      surveillance$lvl.1$data,
+      adm.1,
+      week.n,
+      dplyr::one_of(indicator.var)
+    )
   )
 
   tbl <- tidyr::spread(tbl, 'week.n', indicator.var)
 
-  spdf <- switch(level,
+  spdf <- switch(
+    level,
     adm.0 = surveillance$lvl.0$spdf,
     adm.1 = surveillance$lvl.1$spdf
   )
@@ -30,12 +41,26 @@ addIndicator <- function(lf, level, indicator, indicator.var) {
     weight = 1L,
     fillOpacity = 0.8,
     popupProperty = 'popup',
-    highlightOptions = leaflet::highlightOptions(weight = 2L, color = 'yellow', fillOpacity = 1L, opacity = 1L, bringToFront = TRUE, sendToBack = TRUE),
+    highlightOptions = leaflet::highlightOptions(
+      weight = 2L,
+      color = 'yellow',
+      fillOpacity = 1L,
+      opacity = 1L,
+      bringToFront = TRUE,
+      sendToBack = TRUE
+    ),
     labelProperty = 'adm.1.name'
   )
 }
 
-addLegend <- function(map, title = NULL, subtitle = NULL, width = 120L, position = 'bottomleft', ...) {
+addLegend <- function(
+  map,
+  title = NULL,
+  subtitle = NULL,
+  width = 120L,
+  position = 'bottomleft',
+  ...
+) {
   if (!is.null(width)) {
     width <- sprintf('%spx', width)
   } else {
@@ -43,13 +68,20 @@ addLegend <- function(map, title = NULL, subtitle = NULL, width = 120L, position
   }
 
   if (!is.null(subtitle)) {
-    title_html <- sprintf(paste0(
-      '<p class="info-title" style="width: %s">%s</p>',
-      '<p class="info-subtitle">%s</p>'
-    ), width, title, subtitle)
+    title_html <- sprintf(
+      paste0(
+        '<p class="info-title" style="width: %s">%s</p>',
+        '<p class="info-subtitle">%s</p>'
+      ),
+      width,
+      title,
+      subtitle
+    )
   } else {
     title_html <- sprintf(
-      '<p class="info-title" style="width: %s">%s</p>', width, title
+      '<p class="info-title" style="width: %s">%s</p>',
+      width,
+      title
     )
   }
 
@@ -61,11 +93,31 @@ addLegend <- function(map, title = NULL, subtitle = NULL, width = 120L, position
   )
 }
 
-addLegendCircle <- function(map, colors, labels, sizes, title, position, opacity = 0.5) {
+addLegendCircle <- function(
+  map,
+  colors,
+  labels,
+  sizes,
+  title,
+  position,
+  opacity = 0.5
+) {
   sizes_margin <- round((max(sizes) - sizes) / 2L)
 
-  css_colors <- sprintf('%s; width: %spx; height: %spx; margin: 0 %spx 0 %spx', colors, sizes, sizes, sizes_margin, sizes_margin)
-  css_labels <- sprintf("<div style='display: inline-block; height: %spx; margin-bottom: 4px; line-height: %spx;'>%s</div>", sizes, sizes, labels)
+  css_colors <- sprintf(
+    '%s; width: %spx; height: %spx; margin: 0 %spx 0 %spx',
+    colors,
+    sizes,
+    sizes,
+    sizes_margin,
+    sizes_margin
+  )
+  css_labels <- sprintf(
+    "<div style='display: inline-block; height: %spx; margin-bottom: 4px; line-height: %spx;'>%s</div>",
+    sizes,
+    sizes,
+    labels
+  )
 
   leaflet::addLegend(
     map = map,
@@ -77,19 +129,45 @@ addLegendCircle <- function(map, colors, labels, sizes, title, position, opacity
   )
 }
 
-addLegendCustom <- function(map, title, subtitle = NULL, colors = NULL, labels = NULL, sizes = NULL, ...) {
+addLegendCustom <- function(
+  map,
+  title,
+  subtitle = NULL,
+  colors = NULL,
+  labels = NULL,
+  sizes = NULL,
+  ...
+) {
   if (!is.null(subtitle)) {
-    title <- sprintf('%s<br><div style="font-weight: normal">%s</div>', title, subtitle)
+    title <- sprintf(
+      '%s<br><div style="font-weight: normal">%s</div>',
+      title,
+      subtitle
+    )
   }
   title <- sprintf('%s', title)
   if (!is.null(colors)) {
     colors <- paste0(colors, '; width:', sizes, 'px; height:', sizes, 'px;')
   }
   if (!is.null(labels)) {
-    labels <- paste0("<div style='display: inline-block;height: ", sizes, 'px;margin-top: 4px;line-height: ', sizes, "px;'>", labels, '</div>')
+    labels <- paste0(
+      "<div style='display: inline-block;height: ",
+      sizes,
+      'px;margin-top: 4px;line-height: ',
+      sizes,
+      "px;'>",
+      labels,
+      '</div>'
+    )
   }
   if (!is.null(colors)) {
-    lf_legend <- leaflet::addLegend(map, title = title, colors = colors, labels = labels, ...)
+    lf_legend <- leaflet::addLegend(
+      map,
+      title = title,
+      colors = colors,
+      labels = labels,
+      ...
+    )
   } else {
     lf_legend <- leaflet::addLegend(map, title = title, ...)
   }
@@ -99,23 +177,32 @@ addLegendCustom <- function(map, title, subtitle = NULL, colors = NULL, labels =
 
 addLegendSubtitle <- function(map, title, subtitle = NULL, ...) {
   if (!is.null(subtitle)) {
-    title <- sprintf('%s<br><div style="font-weight: normal">%s</div>', title, subtitle)
+    title <- sprintf(
+      '%s<br><div style="font-weight: normal">%s</div>',
+      title,
+      subtitle
+    )
   }
   title <- sprintf('%s', title)
   legend <- leaflet::addLegend(map, title = title, ...)
   legend
 }
 
-addPolygonsAdm <- function(map, data, group, layer_ids,
-                           fill = TRUE,
-                           fill_color = 'white',
-                           fill_opacity = 0.2,
-                           stroke = TRUE,
-                           stroke_colour = '#888888',
-                           stroke_opacity = 0.2,
-                           stroke_width = 1L,
-                           highlight = TRUE,
-                           ...) {
+addPolygonsAdm <- function(
+  map,
+  data,
+  group,
+  layer_ids,
+  fill = TRUE,
+  fill_color = 'white',
+  fill_opacity = 0.2,
+  stroke = TRUE,
+  stroke_colour = '#888888',
+  stroke_opacity = 0.2,
+  stroke_width = 1L,
+  highlight = TRUE,
+  ...
+) {
   leaflet::addPolygons(
     map = map,
     data = data,
@@ -124,17 +211,16 @@ addPolygonsAdm <- function(map, data, group, layer_ids,
     fillColor = 'white',
     fillOpacity = fill_opacity,
     group = group,
-    highlightOptions =
-      if (highlight) {
-        leaflet::highlightOptions(
-          color = col_blue,
-          weight = 3L,
-          bringToFront = TRUE,
-          sendToBack = TRUE
-        )
-      } else {
-        highlight_options <- NULL
-      },
+    highlightOptions = if (highlight) {
+      leaflet::highlightOptions(
+        color = col_blue,
+        weight = 3L,
+        bringToFront = TRUE,
+        sendToBack = TRUE
+      )
+    } else {
+      highlight_options <- NULL
+    },
     label = layer_ids,
     layerId = layer_ids,
     labelOptions = leaflet::labelOptions(
@@ -194,19 +280,20 @@ addPolygonsAdm <- function(map, data, group, layer_ids,
 #' }
 #'
 addStarsImage <- function(
-    map,
-    x,
-    band = 1L,
-    colors = 'Spectral',
-    opacity = 1L,
-    attribution = NULL,
-    layerId = NULL,
-    group = NULL,
-    project = FALSE,
-    method = c('auto', 'bilinear', 'ngb'),
-    maxBytes = 4L * 1024L * 1024L,
-    data = leaflet::getMapData(map),
-    ...) {
+  map,
+  x,
+  band = 1L,
+  colors = 'Spectral',
+  opacity = 1L,
+  attribution = NULL,
+  layerId = NULL,
+  group = NULL,
+  project = FALSE,
+  method = c('auto', 'bilinear', 'ngb'),
+  maxBytes = 4L * 1024L * 1024L,
+  data = leaflet::getMapData(map),
+  ...
+) {
   # this allows using `addStarsImage` directly on a leaflet pipe, without
   # specifying `x` (e.g., leaflet(read_stars(tif)) |>
   # addProviderTiles("OpenStreetMap") |> addStarsImage())
@@ -217,8 +304,10 @@ addStarsImage <- function(
 
   stopifnot(inherits(x, 'stars'))
 
-  if (any(attr(attr(x, 'dimensions'), 'raster')$affine != 0L) ||
-    attr(attr(x, 'dimensions'), 'raster')$curvilinear) {
+  if (
+    any(attr(attr(x, 'dimensions'), 'raster')$affine != 0L) ||
+      attr(attr(x, 'dimensions'), 'raster')$curvilinear
+  ) {
     warning(
       'cannot handle curvilinear or sheared stars images. Rendering regular grid.',
       call. = FALSE
@@ -262,7 +351,7 @@ addStarsImage <- function(
   if (length(dim(projected)) == 2L) {
     layer <- projected[[1L]]
   } else {
-    layer <- projected[[1L]][, , band]
+    layer <- projected[[1L]][,, band]
   }
 
   if (!is.function(colors)) {
@@ -270,13 +359,17 @@ addStarsImage <- function(
       # 'factors'
       colors <- leaflet::colorFactor(
         colors,
-        domain = NULL, na.color = '#00000000', alpha = TRUE
+        domain = NULL,
+        na.color = '#00000000',
+        alpha = TRUE
       )
     } else {
       # 'numeric'
       colors <- leaflet::colorNumeric(
         colors,
-        domain = NULL, na.color = '#00000000', alpha = TRUE
+        domain = NULL,
+        na.color = '#00000000',
+        alpha = TRUE
       )
     }
   }
@@ -295,8 +388,11 @@ addStarsImage <- function(
   pngData <- png::writePNG(tileData)
   if (length(pngData) > maxBytes) {
     stop(
-      'Raster image too large; ', length(pngData),
-      ' bytes is greater than maximum ', maxBytes, ' bytes'
+      'Raster image too large; ',
+      length(pngData),
+      ' bytes is greater than maximum ',
+      maxBytes,
+      ' bytes'
     )
   }
   encoded <- base64enc::base64encode(pngData)
@@ -308,7 +404,14 @@ addStarsImage <- function(
   )
 
   map <- leaflet::invokeMethod(
-    map, data, 'addRasterImage', uri, latlng, layerId, group)
+    map,
+    data,
+    'addRasterImage',
+    uri,
+    latlng,
+    layerId,
+    group
+  )
 
   leaflet::expandLimits(
     map,
@@ -340,8 +443,12 @@ colorBin <- function(scale, alpha = NA) {
 
 easyButtonShiny <- function(inputId, ...) {
   leaflet::easyButton(
-    id = paste0(inputId, '_btn'), ...,
-    onClick = htmlwidgets::JS(sprintf('function(btn, map){ Shiny.onInputChange(\'%s\' , [1,Math.random()]); }', inputId))
+    id = paste0(inputId, '_btn'),
+    ...,
+    onClick = htmlwidgets::JS(sprintf(
+      'function(btn, map){ Shiny.onInputChange(\'%s\' , [1,Math.random()]); }',
+      inputId
+    ))
   )
 }
 
@@ -390,7 +497,8 @@ flyToSPDFBounds <- function(lf, spdf) {
 
 flyToSpatialFeature <- function(map, sf, zoom) {
   if (is.defined(sf)) {
-    leaflet::flyTo(map,
+    leaflet::flyTo(
+      map,
       lng = sf$centroid_lon,
       lat = sf$centroid_lat,
       zoom = zoom,
@@ -414,7 +522,8 @@ flyToSpatialFeatureBounds <- function(map, sf) {
 }
 
 flyToSpatialLL <- function(map, lng, lat, zoom) {
-  leaflet::flyTo(map,
+  leaflet::flyTo(
+    map,
     lng = lng,
     lat = lat,
     zoom = zoom,
@@ -436,22 +545,31 @@ getMapBbox <- function(bounds) {
 
 getMapBounds <- function(bbox) {
   list(
-    west  = bbox$xmin,
+    west = bbox$xmin,
     south = bbox$ymin,
-    east  = bbox$xmax,
+    east = bbox$xmax,
     north = bbox$ymax
   )
 }
 
-insertSelectBasemaps <- function(inputId, selected = NULL, position = 'topleft') {
+insertSelectBasemaps <- function(
+  inputId,
+  selected = NULL,
+  position = 'topleft'
+) {
   shiny::insertUI(
-    selector = paste0('#', inputId, '_hollow-', position), where = 'beforeEnd', ui =
-      pickerInputBasemaps(inputId = inputId, selected = selected)
+    selector = paste0('#', inputId, '_hollow-', position),
+    where = 'beforeEnd',
+    ui = pickerInputBasemaps(inputId = inputId, selected = selected)
   )
 }
 
 insertUIInMap <- function(inputId, position = 'topleft', ui) {
-  shiny::insertUI(selector = paste0('#', inputId, '_hollow-', position), where = 'beforeEnd', ui = ui)
+  shiny::insertUI(
+    selector = paste0('#', inputId, '_hollow-', position),
+    where = 'beforeEnd',
+    ui = ui
+  )
 }
 
 leafletProxy <- function(map_id = 'map', deferUntilFlush = FALSE) {
@@ -459,31 +577,33 @@ leafletProxy <- function(map_id = 'map', deferUntilFlush = FALSE) {
 }
 
 leaflet <- function(
-    session, inputId,
-    boxZoom = TRUE,
-    dragging = TRUE,
-    fullscreen = TRUE,
-    fullscreen_pos = 'bottomleft',
-    keyboard = TRUE,
-    prefer_canvas = NULL,
-    searchbar = TRUE,
-    searchbar_pos = 'bottomright',
-    scalebar = TRUE,
-    scalebar_pos = 'bottomright',
-    zoom = TRUE,
-    zoom_min = NULL,
-    zoom_max = NULL,
-    zoom_position = 'bottomleft',
-    zoom_snap = 1L,
-    zoom_delta = zoom_snap,
-    attribution = TRUE,
-    rendering = TRUE,
-    view = list(
-      lng = -93.65,
-      lat = 42.0285,
-      zoom = 17L
-    ),
-    ...) {
+  session,
+  inputId,
+  boxZoom = TRUE,
+  dragging = TRUE,
+  fullscreen = TRUE,
+  fullscreen_pos = 'bottomleft',
+  keyboard = TRUE,
+  prefer_canvas = NULL,
+  searchbar = TRUE,
+  searchbar_pos = 'bottomright',
+  scalebar = TRUE,
+  scalebar_pos = 'bottomright',
+  zoom = TRUE,
+  zoom_min = NULL,
+  zoom_max = NULL,
+  zoom_position = 'bottomleft',
+  zoom_snap = 1L,
+  zoom_delta = zoom_snap,
+  attribution = TRUE,
+  rendering = TRUE,
+  view = list(
+    lng = -93.65,
+    lat = 42.0285,
+    zoom = 17L
+  ),
+  ...
+) {
   id <- session$ns(inputId)
 
   f <- getDirAssets('js', 'leaflet', 'shiny', 'render.js')
@@ -499,64 +619,80 @@ leaflet <- function(
   # s <- gsub('%margin.pad', margin.pad, s)
 
   lf <- leaflet::leaflet(
-    options =
-      leaflet::leafletOptions(
-        attributionControl = attribution,
-        boxZoom = boxZoom,
-        doubleClickZoom = FALSE,
-        dragging = dragging,
-        keyboard = keyboard,
-        minZoom = zoom_min,
-        maxZoom = zoom_max,
-        preferCanvas = prefer_canvas,
-        zoomControl = FALSE,
-        zoomSnap = zoom_snap,
-        zoomDelta = zoom_delta,
-        ...
-      )
+    options = leaflet::leafletOptions(
+      attributionControl = attribution,
+      boxZoom = boxZoom,
+      doubleClickZoom = FALSE,
+      dragging = dragging,
+      keyboard = keyboard,
+      minZoom = zoom_min,
+      maxZoom = zoom_max,
+      preferCanvas = prefer_canvas,
+      zoomControl = FALSE,
+      zoomSnap = zoom_snap,
+      zoomDelta = zoom_delta,
+      ...
+    )
   )
 
   lf <- lf |>
-    addCustomControl(id = paste0(id, '_hollow-topright'), position = 'topright') |>
-    addCustomControl(id = paste0(id, '_hollow-topleft'), position = 'topleft') |>
-    addCustomControl(id = paste0(id, '_hollow-bottomright'), position = 'bottomright')
+    addCustomControl(
+      id = paste0(id, '_hollow-topright'),
+      position = 'topright'
+    ) |>
+    addCustomControl(
+      id = paste0(id, '_hollow-topleft'),
+      position = 'topleft'
+    ) |>
+    addCustomControl(
+      id = paste0(id, '_hollow-bottomright'),
+      position = 'bottomright'
+    )
 
   if (zoom) {
     lf <-
-      leaflet::addEasyButtonBar(lf,
+      leaflet::addEasyButtonBar(
+        lf,
         position = zoom_position,
-        easyButtonShiny(inputId = paste0(id, '_zoom_in'), icon = icon(name = 'plus'), title = 'Zoom In'),
-        easyButtonShiny(inputId = paste0(id, '_zoom_extent'), icon = icon(name = 'home'), title = 'Zoom Extent'),
-        easyButtonShiny(inputId = paste0(id, '_zoom_out'), icon = icon(name = 'minus'), title = 'Zoom Out')
+        easyButtonShiny(
+          inputId = paste0(id, '_zoom_in'),
+          icon = icon(name = 'plus'),
+          title = 'Zoom In'
+        ),
+        easyButtonShiny(
+          inputId = paste0(id, '_zoom_extent'),
+          icon = icon(name = 'home'),
+          title = 'Zoom Extent'
+        ),
+        easyButtonShiny(
+          inputId = paste0(id, '_zoom_out'),
+          icon = icon(name = 'minus'),
+          title = 'Zoom Out'
+        )
       )
   }
   if (fullscreen) {
     lf <- leaflet.extras::addFullscreenControl(lf, position = fullscreen_pos)
   }
   if (scalebar) {
-
     lf <- leaflet::addScaleBar(lf, position = scalebar_pos)
   }
   if (searchbar) {
-    lf <- leaflet.extras::addSearchOSM(lf,
-      options =
-        leaflet.extras::searchOptions(
-          autoType = TRUE,
-          # autoCollapse = TRUE,
-          # firstTipSubmit = TRUE,
-          hideMarkerOnCollapse = TRUE,
-          minLength = 2L,
-          tipAutoSubmit = FALSE,
-          position = searchbar_pos
-        )
+    lf <- leaflet.extras::addSearchOSM(
+      lf,
+      options = leaflet.extras::searchOptions(
+        autoType = TRUE,
+        # autoCollapse = TRUE,
+        # firstTipSubmit = TRUE,
+        hideMarkerOnCollapse = TRUE,
+        minLength = 2L,
+        tipAutoSubmit = FALSE,
+        position = searchbar_pos
+      )
     )
   }
 
-  lf <- leaflet::setView(lf,
-    lng = view$lng,
-    lat = view$lat,
-    zoom = view$zoom
-  )
+  lf <- leaflet::setView(lf, lng = view$lng, lat = view$lat, zoom = view$zoom)
 
   if (rendering) {
     lf <- htmlwidgets::onRender(lf, s)
@@ -588,7 +724,8 @@ observeEventBasemaps <- function(session, input, vars, inputId) {
     vars$map.tile.type <- input[[paste0(inputId, '_basemap')]]
 
     shiny::isolate(
-      switch(vars$map.tile.type,
+      switch(
+        vars$map.tile.type,
         road.mapbox = vars$map.tile.provider.road <- vars$map.tile.type,
         road.google = vars$map.tile.provider.road <- vars$map.tile.type,
         road.osm.hot = vars$map.tile.provider.road <- vars$map.tile.type,
@@ -611,44 +748,174 @@ observeEventBasemaps <- function(session, input, vars, inputId) {
   })
 
   shiny::observeEvent(input[[paste0(inputId, '_basemap_toggle_type')]], {
-    switch(vars$map.tile.type,
-      road.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.sat),
-      road.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.sat),
-      road.osm.hot = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.sat),
-      road.osm = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.sat),
-      sat.bing = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.terrain),
-      sat.esri = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.terrain),
-      sat.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.terrain),
-      sat.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.terrain),
-      sat.maxar = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.terrain),
-      terrain.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.dark),
-      terrain.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.dark),
-      dark.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.gray),
-      gray.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.light),
-      gray.osm = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.light),
-      light.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.road),
-      light.mapbox.blue = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = vars$map.tile.provider.road)
+    switch(
+      vars$map.tile.type,
+      road.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.sat
+      ),
+      road.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.sat
+      ),
+      road.osm.hot = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.sat
+      ),
+      road.osm = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.sat
+      ),
+      sat.bing = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.terrain
+      ),
+      sat.esri = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.terrain
+      ),
+      sat.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.terrain
+      ),
+      sat.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.terrain
+      ),
+      sat.maxar = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.terrain
+      ),
+      terrain.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.dark
+      ),
+      terrain.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.dark
+      ),
+      dark.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.gray
+      ),
+      gray.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.light
+      ),
+      gray.osm = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.light
+      ),
+      light.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.road
+      ),
+      light.mapbox.blue = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = vars$map.tile.provider.road
+      )
     )
   })
 
   shiny::observeEvent(input[[paste0(inputId, '_basemap_toggle_provider')]], {
-    switch(vars$map.tile.type,
-      road.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'road.mapbox'),
-      road.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'road.osm'),
-      road.osm = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'road.osm.hot'),
-      road.osm.hot = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'road.google'),
-      sat.bing = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'sat.esri'),
-      sat.esri = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'sat.google'),
-      sat.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'sat.mapbox'),
-      sat.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'sat.maxar'),
-      sat.maxar = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'sat.bing'),
-      terrain.google = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'terrain.mapbox'),
-      terrain.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'terrain.google'),
-      dark.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'dark.mapbox'),
-      gray.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'gray.osm'),
-      gray.osm = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'gray.mapbox'),
-      light.mapbox = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'light.mapbox.blue'),
-      light.mapbox.blue = shinyWidgets::updatePickerInput(session, inputId = paste0(inputId, '_basemap'), selected = 'light.mapbox')
+    switch(
+      vars$map.tile.type,
+      road.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'road.mapbox'
+      ),
+      road.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'road.osm'
+      ),
+      road.osm = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'road.osm.hot'
+      ),
+      road.osm.hot = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'road.google'
+      ),
+      sat.bing = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'sat.esri'
+      ),
+      sat.esri = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'sat.google'
+      ),
+      sat.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'sat.mapbox'
+      ),
+      sat.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'sat.maxar'
+      ),
+      sat.maxar = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'sat.bing'
+      ),
+      terrain.google = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'terrain.mapbox'
+      ),
+      terrain.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'terrain.google'
+      ),
+      dark.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'dark.mapbox'
+      ),
+      gray.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'gray.osm'
+      ),
+      gray.osm = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'gray.mapbox'
+      ),
+      light.mapbox = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'light.mapbox.blue'
+      ),
+      light.mapbox.blue = shinyWidgets::updatePickerInput(
+        session,
+        inputId = paste0(inputId, '_basemap'),
+        selected = 'light.mapbox'
+      )
     )
   })
 
@@ -667,10 +934,11 @@ observeEventMap <- function(session, input, vars, inputId) {
 
     proxy <- leafletProxy(inputId, deferUntilFlush = FALSE)
 
-    leaflet::setView(proxy,
-      lat  = (map_bounds$north + map_bounds$south) / 2L,
-      lng  = (map_bounds$east + map_bounds$west) / 2L,
-      zoom =  map_zoom - 1L
+    leaflet::setView(
+      proxy,
+      lat = (map_bounds$north + map_bounds$south) / 2L,
+      lng = (map_bounds$east + map_bounds$west) / 2L,
+      zoom = map_zoom - 1L
     )
   })
 
@@ -680,10 +948,11 @@ observeEventMap <- function(session, input, vars, inputId) {
 
     proxy <- leafletProxy(inputId, deferUntilFlush = FALSE)
 
-    leaflet::setView(proxy,
-      lat  = (map_bounds$north + map_bounds$south) / 2L,
-      lng  = (map_bounds$east + map_bounds$west) / 2L,
-      zoom =  map_zoom + 1L
+    leaflet::setView(
+      proxy,
+      lat = (map_bounds$north + map_bounds$south) / 2L,
+      lng = (map_bounds$east + map_bounds$west) / 2L,
+      zoom = map_zoom + 1L
     )
   })
 
@@ -728,31 +997,31 @@ pickerInputBasemaps <- function(inputId, selected = NULL) {
     width = 200L,
     choices = list(
       Road = list(
-        'Road: Google'        = 'road.google',
-        'Road: Mapbox'        = 'road.mapbox',
-        'Road: OSM'           = 'road.osm',
-        'Road: OSM (HOT)'     = 'road.osm.hot'
+        'Road: Google' = 'road.google',
+        'Road: Mapbox' = 'road.mapbox',
+        'Road: OSM' = 'road.osm',
+        'Road: OSM (HOT)' = 'road.osm.hot'
       ),
       Satellite = list(
-        'Sat.: Bing'          = 'sat.bing',
-        'Sat.: ESRI'          = 'sat.esri',
-        'Sat.: Google'        = 'sat.google',
-        'Sat.: Mapbox'        = 'sat.mapbox',
-        'Sat.: Maxar'         = 'sat.maxar'
+        'Sat.: Bing' = 'sat.bing',
+        'Sat.: ESRI' = 'sat.esri',
+        'Sat.: Google' = 'sat.google',
+        'Sat.: Mapbox' = 'sat.mapbox',
+        'Sat.: Maxar' = 'sat.maxar'
       ),
       Terrain = list(
-        'Terrain: Google'        = 'terrain.google',
-        'Terrain: Mapbox'        = 'terrain.mapbox'
+        'Terrain: Google' = 'terrain.google',
+        'Terrain: Mapbox' = 'terrain.mapbox'
       ),
       Dark = list(
         'Dark: Mapbox' = 'dark.mapbox'
       ),
       Gray = list(
-        'Gray: Mapbox'        = 'gray.mapbox',
-        'Gray: OSM'           = 'gray.osm'
+        'Gray: Mapbox' = 'gray.mapbox',
+        'Gray: OSM' = 'gray.osm'
       ),
       Light = list(
-        'Light: Mapbox'        = 'light.mapbox',
+        'Light: Mapbox' = 'light.mapbox',
         'Light: Mapbox (Blue)' = 'light.mapbox.blue'
       )
     ),
@@ -769,10 +1038,11 @@ pickerInputBasemaps <- function(inputId, selected = NULL) {
 }
 
 setBasemap <- function(
-    lf,
-    basemap,
-    api.key.bing = Sys.getenv('MAPS_API_KEY_BING'),
-    api.key.mapbox = Sys.getenv('MAPS_API_KEY_MAPBOX')) {
+  lf,
+  basemap,
+  api.key.bing = Sys.getenv('MAPS_API_KEY_BING'),
+  api.key.mapbox = Sys.getenv('MAPS_API_KEY_MAPBOX')
+) {
   lf <- leaflet::removeTiles(lf, layerId = 'base')
 
   if (grepl('google', basemap, fixed = TRUE)) {
@@ -781,94 +1051,208 @@ setBasemap <- function(
     shinyjs::show(selector = '.leaflet-control-attribution')
   }
 
-  lf <- switch(basemap,
-    road.osm = leaflet::addProviderTiles(lf, leaflet::providers$OpenStreetMap,
+  lf <- switch(
+    basemap,
+    road.osm = leaflet::addProviderTiles(
+      lf,
+      leaflet::providers$OpenStreetMap,
       layerId = 'base',
-      options = leaflet::tileOptions(maxNativeZoom = 19L, maxZoom = 22L, zIndex = 200L)
+      options = leaflet::tileOptions(
+        maxNativeZoom = 19L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    road.osm.hot = leaflet::addProviderTiles(lf, leaflet::providers$OpenStreetMap.HOT,
+    road.osm.hot = leaflet::addProviderTiles(
+      lf,
+      leaflet::providers$OpenStreetMap.HOT,
       layerId = 'base',
-      options = leaflet::tileOptions(maxNativeZoom = 19L, maxZoom = 22L, zIndex = 200L)
+      options = leaflet::tileOptions(
+        maxNativeZoom = 19L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    road.google = addGoogleTiles(lf,
+    road.google = addGoogleTiles(
+      lf,
       layerId = 'base',
       attribution = '',
       type = 'road',
-      options = leaflet::tileOptions(maxZoom = 22L, zIndex = 200L, updateWhenZooming = TRUE)
+      options = leaflet::tileOptions(
+        maxZoom = 22L,
+        zIndex = 200L,
+        updateWhenZooming = TRUE
+      )
     ),
-    road.mapbox = leaflet::addTiles(lf,
+    road.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L)
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    sat.bing = leaflet.extras::addBingTiles(lf,
+    sat.bing = leaflet.extras::addBingTiles(
+      lf,
       layerId = 'base',
       apikey = api.key.bing,
       imagerySet = 'Aerial',
-      options = leaflet::tileOptions(maxNativeZoom = 19L, maxZoom = 22L, zIndex = 200L)
+      options = leaflet::tileOptions(
+        maxNativeZoom = 19L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    sat.maxar = leaflet::addTiles(lf,
+    sat.maxar = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://wiki.openstreetmap.org/wiki/Maxar\" target=\"_blank\">&copy; Maxar</a>',
-      urlTemplate = sprintf('https://services.digitalglobe.com/earthservice/tmsaccess/tms/1.0.0/DigitalGlobe:ImageryTileService@EPSG:3857@jpg/{z}/{x}/{-y}.jpg?connectId=552c824a-5d4b-4bea-969f-06c8b50b80bc&foo=premium', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 19L, maxZoom = 22L, zIndex = 200L)
+      urlTemplate = sprintf(
+        'https://services.digitalglobe.com/earthservice/tmsaccess/tms/1.0.0/DigitalGlobe:ImageryTileService@EPSG:3857@jpg/{z}/{x}/{-y}.jpg?connectId=552c824a-5d4b-4bea-969f-06c8b50b80bc&foo=premium',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 19L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    sat.mapbox = leaflet::addTiles(lf,
+    sat.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"http://www.openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a> <a href=\"https://www.digitalglobe.com/\" target=\"_blank\">&copy; DigitalGlobe</a>',
-      urlTemplate = sprintf('https://{s}.tiles.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L, subdomains = 'abcd')
+      urlTemplate = sprintf(
+        'https://{s}.tiles.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L,
+        subdomains = 'abcd'
+      )
     ),
-    sat.esri = leaflet::addProviderTiles(lf, leaflet::providers$Esri.WorldImagery,
+    sat.esri = leaflet::addProviderTiles(
+      lf,
+      leaflet::providers$Esri.WorldImagery,
       layerId = 'base',
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L)
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    sat.google = addGoogleTiles(lf,
+    sat.google = addGoogleTiles(
+      lf,
       layerId = 'base',
       attribution = '',
       type = 'satellite',
-      options = leaflet::tileOptions(maxZoom = 22L, zIndex = 200L, updateWhenZooming = TRUE)
+      options = leaflet::tileOptions(
+        maxZoom = 22L,
+        zIndex = 200L,
+        updateWhenZooming = TRUE
+      )
     ),
-    terrain.google = addGoogleTiles(lf,
+    terrain.google = addGoogleTiles(
+      lf,
       layerId = 'base',
       attribution = '',
       type = 'terrain',
-      options = leaflet::tileOptions(maxZoom = 22L, zIndex = 200L, updateWhenZooming = TRUE)
+      options = leaflet::tileOptions(
+        maxZoom = 22L,
+        zIndex = 200L,
+        updateWhenZooming = TRUE
+      )
     ),
-    terrain.mapbox = leaflet::addTiles(lf,
+    terrain.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuy0eb402p41atdjafcgugv/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L, subdomains = 'abcd')
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuy0eb402p41atdjafcgugv/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L,
+        subdomains = 'abcd'
+      )
     ),
-    dark.mapbox = leaflet::addTiles(lf,
+    dark.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuyic56058j19miysj7yldz/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L)
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyic56058j19miysj7yldz/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    light.mapbox = leaflet::addTiles(lf,
+    light.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuyiros055n19poe6mj52s1/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L, subdomains = 'abcd')
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyiros055n19poe6mj52s1/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L,
+        subdomains = 'abcd'
+      )
     ),
-    light.mapbox.blue = leaflet::addTiles(lf,
+    light.mapbox.blue = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuyjqcw059p19o4wqqaw46z/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = 200L, subdomains = 'abcd')
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyjqcw059p19o4wqqaw46z/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = 200L,
+        subdomains = 'abcd'
+      )
     ),
-    gray.osm = leaflet::addProviderTiles(lf, leaflet::providers$OpenStreetMap.BlackAndWhite,
+    gray.osm = leaflet::addProviderTiles(
+      lf,
+      leaflet::providers$OpenStreetMap.BlackAndWhite,
       layerId = 'base',
-      options = leaflet::tileOptions(maxNativeZoom = 19L, maxZoom = 22L, zIndex = 200L)
+      options = leaflet::tileOptions(
+        maxNativeZoom = 19L,
+        maxZoom = 22L,
+        zIndex = 200L
+      )
     ),
-    gray.mapbox = leaflet::addTiles(lf,
+    gray.mapbox = leaflet::addTiles(
+      lf,
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
-      urlTemplate = sprintf('https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s', api.key.mapbox),
-      options = leaflet::tileOptions(maxNativeZoom = 18L, maxZoom = 22L, zIndex = , subdomains = 'abcd')
+      urlTemplate = sprintf(
+        'https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        api.key.mapbox
+      ),
+      options = leaflet::tileOptions(
+        maxNativeZoom = 18L,
+        maxZoom = 22L,
+        zIndex = ,
+        subdomains = 'abcd'
+      )
     ),
   )
 }
@@ -910,16 +1294,19 @@ setMaxBounds <- function(map, sf) {
 #' }
 #'
 addCustomControl <- function(
-    map,
-    position = 'bottomright',
-    id = 'hollow',
-    title = '',
-    classes = '',
-    content = '') {
+  map,
+  position = 'bottomright',
+  id = 'hollow',
+  title = '',
+  classes = '',
+  content = ''
+) {
   map$dependencies <- c(map$dependencies, customControlDependency())
 
   leaflet::invokeMethod(
-    map, leaflet::getMapData(map), 'addCustomControl',
+    map,
+    leaflet::getMapData(map),
+    'addCustomControl',
     leaflet::filterNULL(list(
       position = position,
       id = id,
@@ -947,7 +1334,8 @@ customControlDependency <- function() {
 # styler: block Leaflet Draw Toolbar
 
 addDrawToolbar <- function(map) {
-  map <- leafpm::addPmToolbar(map,
+  map <- leafpm::addPmToolbar(
+    map,
     toolbarOptions = leafpm::pmToolbarOptions(
       drawMarker = FALSE,
       drawPolygon = TRUE,
@@ -1006,15 +1394,23 @@ addDrawToolbar <- function(map) {
 #' }
 #'
 addGoogleTiles <- function(
-    map,
-    type = c('roadmap', 'satellite', 'terrain'),
-    layerId = NULL,
-    group = NULL,
-    ...) {
+  map,
+  type = c('roadmap', 'satellite', 'terrain'),
+  layerId = NULL,
+  group = NULL,
+  ...
+) {
   type <- match.arg(type)
 
   map$dependencies <- c(map$dependencies, googleLayerDependencies())
-  leaflet::invokeMethod(map, leaflet::getMapData(map), 'addGoogleTiles', layerId, group, list(type = type, ...))
+  leaflet::invokeMethod(
+    map,
+    leaflet::getMapData(map),
+    'addGoogleTiles',
+    layerId,
+    group,
+    list(type = type, ...)
+  )
 }
 
 googleLayerDependencies <- function() {
@@ -1038,13 +1434,22 @@ googleLayerDependencies <- function() {
 #' @return a tags$head that will be usefull to load the references js/css
 #'
 useGoogle <- function(
-    apikey = Sys.getenv('MAPS_API_KEY_GOOGLE')) {
+  apikey = Sys.getenv('MAPS_API_KEY_GOOGLE')
+) {
   if (apikey == '') {
-    stop('Google Map API need a key.')
+    logWarn(
+      'Google Map API key not set (MAPS_API_KEY_GOOGLE). Google layers disabled.'
+    )
+    return(tags$head())
   }
 
   tags$head(
-    tags$script(src = sprintf('https://maps.googleapis.com/maps/api/js?key=%s', as.character(apikey)))
+    tags$script(
+      src = sprintf(
+        'https://maps.googleapis.com/maps/api/js?key=%s',
+        as.character(apikey)
+      )
+    )
   )
 }
 
@@ -1082,15 +1487,16 @@ addEasyToolbar <- function(map) {
 #' @param menu Logical, whether to display the menu options (default is TRUE).
 #'
 addPaintPolygonControl <- function(
-    map,
-    position = 'bottomright',
-    radius = 30L,
-    minRadius = 10L,
-    maxRadius = 50L,
-    layerOptions = list(),
-    drawOptions = list(weight = 1L),
-    eraseOptions = list(color = '#ff324a', weight = 1L),
-    menu = TRUE) {
+  map,
+  position = 'bottomright',
+  radius = 30L,
+  minRadius = 10L,
+  maxRadius = 50L,
+  layerOptions = list(),
+  drawOptions = list(weight = 1L),
+  eraseOptions = list(color = '#ff324a', weight = 1L),
+  menu = TRUE
+) {
   map$dependencies <- c(map$dependencies, paintPolygonDependencies())
 
   if (menu) {
@@ -1102,7 +1508,9 @@ addPaintPolygonControl <- function(
   }
 
   leaflet::invokeMethod(
-    map, leaflet::getMapData(map), 'addPaintPolygonControl',
+    map,
+    leaflet::getMapData(map),
+    'addPaintPolygonControl',
     leaflet::filterNULL(
       list(
         position = position,
@@ -1145,7 +1553,12 @@ setRadiusPolygon <- function(map, radius) {
 }
 
 startDrawPolygon <- function(map, color) {
-  leaflet::invokeMethod(map, leaflet::getMapData(map), 'startDraw', list(color = color))
+  leaflet::invokeMethod(
+    map,
+    leaflet::getMapData(map),
+    'startDraw',
+    list(color = color)
+  )
 }
 
 startErasePolygon <- function(map) {
@@ -1179,11 +1592,14 @@ stopDrawPolygon <- function(map) {
 #'   '/sidebar_app.R'
 #' ))
 #' }
-addSidebar <- function(map, options = list(
-                         container = 'sidebar',
-                         position = 'left',
-                         fit = TRUE
-                       )) {
+addSidebar <- function(
+  map,
+  options = list(
+    container = 'sidebar',
+    position = 'left',
+    fit = TRUE
+  )
+) {
   map$dependencies <- c(map$dependencies, sidebar_deps())
   leaflet::invokeMethod(map, NULL, 'addSidebar', options)
 }
@@ -1246,16 +1662,21 @@ sidebar_deps <- function(mini = FALSE) {
 #' library(shiny)
 #' sidebar_pane(id = 'id', icon = icon('cars'), tags$div())
 #' }
-sidebar_pane <- function(title = 'Sidebar Title',
-                         id = NULL,
-                         icon = icon('caret-right'), ...) {
+sidebar_pane <- function(
+  title = 'Sidebar Title',
+  id = NULL,
+  icon = icon('caret-right'),
+  ...
+) {
   if (is.null(id)) {
     stop('The sidebar pane needs an id.')
   }
   tags$div(
-    class = 'sidebar-pane', id = id,
+    class = 'sidebar-pane',
+    id = id,
     tags$h3(
-      class = 'sidebar-header', title,
+      class = 'sidebar-header',
+      title,
       tags$span(class = 'sidebar-close', icon)
     ),
     ...
@@ -1286,13 +1707,18 @@ sidebar_tabs <- function(id = 'sidebar', iconList = NULL, ...) {
     stop('The number of icons needs to match the number of sidebar panes.')
   }
   tags$div(
-    id = id, class = 'sidebar collapsed',
+    id = id,
+    class = 'sidebar collapsed',
     tags$div(
       class = 'sidebar-tabs',
       tags$ul(
         role = 'tablist',
         tagList(lapply(seq_along(ids), function(x) {
-          tags$li(tags$a(href = paste0('#', ids[[x]]), role = 'tab', iconList[[x]]))
+          tags$li(tags$a(
+            href = paste0('#', ids[[x]]),
+            role = 'tab',
+            iconList[[x]]
+          ))
         }))
       )
     ),
@@ -1340,9 +1766,43 @@ addStyleFast <- function(map) {
 #' }
 #'
 setStyle <- function(map, group, styles, label = NULL, offset = 0L) {
-  leaflet::invokeMethod(map, NULL, 'setStyle', group, styles, label, offset - 1L)
+  leaflet::invokeMethod(
+    map,
+    NULL,
+    'setStyle',
+    group,
+    styles,
+    label,
+    offset - 1L
+  )
 }
 
-setStyleFast <- function(map, group, colors = NULL, weights = NULL, labels = NULL, popups = NULL, strokes = NULL, fills = NULL, fill_opacities = NULL, radiuses = NULL, visibilities = NULL) {
-  leaflet::invokeMethod(map, NULL, 'setStyleFast', group, colors, weights, labels, popups, strokes, fills, fill_opacities, radiuses, visibilities)
+setStyleFast <- function(
+  map,
+  group,
+  colors = NULL,
+  weights = NULL,
+  labels = NULL,
+  popups = NULL,
+  strokes = NULL,
+  fills = NULL,
+  fill_opacities = NULL,
+  radiuses = NULL,
+  visibilities = NULL
+) {
+  leaflet::invokeMethod(
+    map,
+    NULL,
+    'setStyleFast',
+    group,
+    colors,
+    weights,
+    labels,
+    popups,
+    strokes,
+    fills,
+    fill_opacities,
+    radiuses,
+    visibilities
+  )
 }

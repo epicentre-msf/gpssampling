@@ -28,7 +28,14 @@ getMergeCells <- function(tbl, cols) {
       dplyr::summarize(n = dplyr::n()) |>
       dplyr::pull(n)
     rc <- cumsum(r)
-    l <- append(l, purrr::map2((rc - r), r, ~ list(row = .x, col = cols[i] - 1L, rowspan = .y, colspan = 1L)))
+    l <- append(
+      l,
+      purrr::map2(
+        (rc - r),
+        r,
+        ~ list(row = .x, col = cols[i] - 1L, rowspan = .y, colspan = 1L)
+      )
+    )
   }
   l
 }
@@ -86,6 +93,53 @@ rhandsontableSetData <- function(id, data, session) {
 
   data[is.na(data)] <- ''
 
-  rhandsontable::load_data(id = id, data = data, session = session)
-  rhandsontable::render(id = id, session = session)
+  hot_load_data(id = id, data = data, session = session)
+  hot_render(id = id, session = session)
+}
+
+#' Push new data to an existing Handsontable widget
+#' @noRd
+hot_load_data <- function(
+  id,
+  data,
+  session = shiny::getDefaultReactiveDomain()
+) {
+  session$sendCustomMessage(
+    "hot-load-data",
+    list(id = id, data = jsonlite::toJSON(data, dataframe = "rows"))
+  )
+}
+
+#' Force a Handsontable widget to re-render
+#' @noRd
+hot_render <- function(id, session = shiny::getDefaultReactiveDomain()) {
+  session$sendCustomMessage("hot-render", list(id = id))
+}
+
+#' Scroll to and highlight a specific cell
+#' @noRd
+hot_select_cell <- function(
+  id,
+  row,
+  col,
+  session = shiny::getDefaultReactiveDomain()
+) {
+  session$sendCustomMessage(
+    "hot-select-cell",
+    list(id = id, row = row, col = col)
+  )
+}
+
+#' Apply a text filter to a column
+#' @noRd
+hot_filter <- function(
+  id,
+  column,
+  filter,
+  session = shiny::getDefaultReactiveDomain()
+) {
+  session$sendCustomMessage(
+    "hot-filter",
+    list(id = id, column = column, filter = filter)
+  )
 }

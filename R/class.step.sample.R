@@ -136,7 +136,7 @@ StepSample <- R6::R6Class(
         easyButtonShiny(inputId = ns('act_sample_save'), icon = icon('map-marker-check-outline'), title = ..('Save [ENTER]'))
       )
 
-      map <- leafpm::attachDependencies(map,
+      map <- pm_attach_dependencies(map,
         targetGroup = 'sample_quadrat',
         drawOptions = leafpm::pmDrawOptions(
           snappable = TRUE,

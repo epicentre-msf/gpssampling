@@ -1,6 +1,6 @@
 TabPanel <- R6::R6Class(
   'TabPanel',
-  inherit = ApplicationModule,
+  inherit = GpsSamplerModule,
   portable = FALSE,
   active = list(
     dialog = function() {
@@ -15,7 +15,9 @@ TabPanel <- R6::R6Class(
     getUI = function(ns = shiny::NS(NULL)) {
       super$getUI(ns)
       fillTabPanel(
-        value = ns('tab'), title = private$.lbl_title, height = NULL,
+        value = ns('tab'),
+        title = private$.lbl_title,
+        height = NULL,
         shiny::fillPage(
           self$getUIPanel()
         )
