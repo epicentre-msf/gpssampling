@@ -775,7 +775,7 @@ AppShiny <- R6::R6Class(
       } else {
         # app is online
         uri <- sprintf(
-          'https://yves-amevoin.github.io/gpssampling/%s',
+          'https://epicentre-msf.github.io/gpssampling/%s',
           page
         )
       }

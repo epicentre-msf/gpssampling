@@ -38,13 +38,13 @@ brew install gdal geos proj udunits
 
 ```r
 install.packages("remotes")
-remotes::install_github("yves-amevoin/gpssampling")
+remotes::install_github("epicentre-msf/gpssampling")
 ```
 
 ### Install from a local clone
 
 ```bash
-git clone https://github.com/yves-amevoin/gpssampling.git
+git clone https://github.com/epicentre-msf/gpssampling.git
 R CMD INSTALL gpssampling
 ```
 
@@ -133,7 +133,7 @@ samp <- sampler(.trace = TRUE)
 Development happens on the `dev` branch:
 
 ```bash
-git clone https://github.com/yves-amevoin/gpssampling.git
+git clone https://github.com/epicentre-msf/gpssampling.git
 cd gpssampling
 git checkout dev
 ```

@@ -80,9 +80,9 @@ About <- R6::R6Class(
                   htmltools::p(
                     'Source code and issue tracker: ',
                     a(
-                      href = 'https://github.com/yves-amevoin/gpssampling',
+                      href = 'https://github.com/epicentre-msf/gpssampling',
                       target = '_blank',
-                      'github.com/yves-amevoin/gpssampling'
+                      'github.com/epicentre-msf/gpssampling'
                     )
                   )
                 ),

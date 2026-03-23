@@ -3,7 +3,7 @@ Package: gpssampling
 Title: GPS Sampling
 Version: 0.2.0
 Authors@R: c(
-    person("Yves", "Amevoin", email = "yves-amevoin@users.noreply.github.com",
+    person("Yves", "Amevoin", email = "epicentre-msf@users.noreply.github.com",
            role = c("aut", "cre")),
     person("Claude", "(Anthropic AI)", role = "aut")
   )
@@ -14,9 +14,9 @@ Description: A Shiny application for geospatial sampling of building
     original GeoSampler package by Epicentre (MSF), modified with Claude
     AI agent assistance for internal use.
 License: file LICENSE
-URL: https://yves-amevoin.github.io/gpssampling/,
-    https://github.com/yves-amevoin/gpssampling
-BugReports: https://github.com/yves-amevoin/gpssampling/issues
+URL: https://epicentre-msf.github.io/gpssampling/,
+    https://github.com/epicentre-msf/gpssampling
+BugReports: https://github.com/epicentre-msf/gpssampling/issues
 Depends: R (>= 4.3.0)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         dbplyr, dplyr, flextable, fs, geojsonio,
