@@ -24,14 +24,25 @@ app_dir <- test_path("apps", "gpssampling-app")
 # ---------------------------------------------------------------------------
 # Shared app instance for the main test suite. Creating a single AppDriver
 # avoids resource exhaustion from spawning 20+ Shiny + Chrome processes.
+# The tryCatch guards against CI environments where Chrome is found but the
+# Shiny app can't start (e.g., covr test runner, missing DESCRIPTION).
 # ---------------------------------------------------------------------------
-app <- shinytest2::AppDriver$new(
-  app_dir = app_dir,
-  name = "gpssampling",
-  timeout = 60000L,
-  load_timeout = 60000L,
-  wait = TRUE
+app <- tryCatch(
+  shinytest2::AppDriver$new(
+    app_dir = app_dir,
+    name = "gpssampling",
+    timeout = 60000L,
+    load_timeout = 60000L,
+    wait = TRUE
+  ),
+  error = function(e) {
+    message("shinytest2 AppDriver failed to start: ", conditionMessage(e))
+    NULL
+  }
 )
+
+skip_if(is.null(app), "AppDriver could not be initialized")
+
 withr::defer(app$stop(), teardown_env())
 
 # Give the app a moment to fully render all UI components

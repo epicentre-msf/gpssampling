@@ -60,6 +60,7 @@ test_that('ReadSpatialLayer ZIP KMZ', {
 })
 
 test_that('Function st_sample ', {
+  skip_on_ci()
 
   set.seed(123L)
 

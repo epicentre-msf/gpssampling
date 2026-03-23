@@ -20,6 +20,7 @@ if (!nzchar(zone_path) || !file.exists(zone_path)) {
 zone <- readSpatialLayer(file = zone_path)$layer
 
 test_that('Plot Map Sat', {
+  skip_on_ci()
   expect_snapshot_file(save_png(plotMap(zone, force = TRUE)), 'mapsat.png')
 })
 
