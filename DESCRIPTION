@@ -3,9 +3,10 @@ Package: gpssampling
 Title: GPS Sampling
 Version: 0.2.0
 Authors@R: c(
-    person("Claude", "(Anthropic AI)", role = c(role = "aut", role = "cre"))
+    person("Yves", "Amevoin", email = "yves-amevoin@users.noreply.github.com",
+           role = c("aut", "cre")),
+    person("Claude", "(Anthropic AI)", role = "aut")
   )
-Maintainer: Claude (Anthropic AI) <noreply@anthropic.com>
 Description: A Shiny application for geospatial sampling of building
     structures within defined polygon areas. Supports quadrat, T-square,
     and random sampling methods with OpenStreetMap and Google satellite
