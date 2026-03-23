@@ -1,0 +1,69 @@
+# Credits
+
+------------------------------------------------------------------------
+
+## GPS Sampling
+
+**GPS Sampling** is a fork of
+[GeoSampler](https://apps.msf.net/geosampler/site/index.html),
+originally created by [Epicentre](https://epicentre.msf.org/) (MSF). The
+original application and its sampling methodology would not be possible
+without [R](https://cran.r-project.org/) and
+[Shiny](http://shiny.rstudio.com/).
+
+This fork is maintained independently for internal use and released
+under the [WTFPL](http://www.wtfpl.net/) license.
+
+Contributions are welcome in a number of ways:
+
+- Code patches via pull requests
+- Documentation improvements
+- Bug reports and patch reviews
+- Testing
+
+If you encounter any problem with GPS Sampling, or you would like to
+give suggestions, please use the GitHub issue tracker at
+[https://github.com/epicentre-msf/gpssampling/issues](https://github.com/epicentre-msf/gpssampling/issues).
+
+## Learn GPS Sampling [![logo-gfdl](./images/gfdl-logo-tiny.png)](https://www.gnu.org/licenses/fdl-1.3.html)
+
+The contents of the **Learn GPS Sampling** tutorials are based on the
+field experience of Epicentre and MSF epidemiologists from the original
+GeoSampler project, and are licensed under the Terms and Conditions of
+the [GNU Free Documentation License
+v1.3](https://www.gnu.org/licenses/fdl-1.3.html).
+
+For the original version of this application, please visit the [official
+GeoSampler website](https://apps.msf.net/geosampler/site/index.html).
+
+## Code of conduct
+
+As contributors of either the GPS Sampling application or the Learn GPS
+Sampling website, we pledge to respect all people who contribute through
+reporting issues, posting feature requests, updating documentation,
+submitting pull requests or patches, and other activities.
+
+We are committed to making participation in this project a
+harassment-free experience for everyone, regardless of level of
+experience, gender, gender identity and expression, sexual orientation,
+disability, personal appearance, body size, race, ethnicity, age, or
+religion.
+
+Examples of unacceptable behaviour by participants include the use of
+sexual language or imagery, derogatory comments or personal attacks,
+trolling, public or private harassment, insults, or other unprofessional
+conduct.
+
+Project maintainers have the right and responsibility to remove, edit,
+or reject comments, commits, code, wiki edits, issues, and other
+contributions that are not aligned to this Code of Conduct. Project
+maintainers who do not follow the Code of Conduct may be removed from
+the project team.
+
+Instances of abusive, harassing, or otherwise unacceptable behaviour may
+be reported by opening an issue or contacting one or more of the project
+maintainers.
+
+This Code of Conduct is adapted from the [Contributor
+Covenant](http://contributor-covenant.org), version 1.0.0, available at
+<http://contributor-covenant.org/version/1/0/0/>.
