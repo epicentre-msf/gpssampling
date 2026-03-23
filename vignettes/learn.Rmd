@@ -21,7 +21,7 @@ If you are not familiar with `r pkg_infos$title`, have a look at the [Getting st
 
 # Tutorials
 
-We have created step-by-step tutorials of how to use `r pkg_infos$title`. These are in a form of case study. These tutorials are also used during training held by Epicentre.
+Step-by-step tutorials of how to use `r pkg_infos$title`, in the form of case studies. These tutorials are adapted from training materials originally developed by Epicentre (MSF).
 
 * Prepare a geographic sample
 
@@ -29,4 +29,4 @@ We have created step-by-step tutorials of how to use `r pkg_infos$title`. These 
   * [By spatial sampling](learn.step.by.step.2.html)
   * [By spatial sampling supervised](learn.step.by.step.3.html)
 
-For any questions or suggestions about this website, please contact the Epicentre training unit (mailto:Elise.RODARY@epicentre.msf.org).
+For any questions or suggestions, please use the issue tracker: [`r pkg_infos$url_issue`](`r pkg_infos$url_issue`){target="_blank"}.

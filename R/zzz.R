@@ -7,15 +7,8 @@
     return()
   }
 
-  # if (.Platform$OS.type == 'windows') {
-  #   if (interactive()) {
-  #     packageStartupMessage('Registering Windows fonts with R')
-  #   }
-  #   windowsFonts <- grDevices::windowsFonts
-  # }
-
   packageStartupMessage(sprintf(
-    '%s (v%s)',
+    "%s (v%s)",
     getPackageName(),
     getPackageVersion()
   ))
@@ -23,8 +16,8 @@
 
 .onLoad <- function(libname, pkgname) {
   op <- list(
-    epi.log = TRUE,
-    epi.user.default.name = 'default'
+    gpssampling.trace = FALSE,
+    gpssampling.default_user = "default"
   )
 
   toset <- !(names(op) %in% names(options()))
@@ -35,6 +28,9 @@
   options(scipen = 999L)
   options(digits = 12L)
   options(digits.secs = 4L)
+
+  # Re-initialize logger with env var settings (if changed after package load)
+  .logger <<- init_logger()
 }
 
 .onUnload <- function(libpath) {
@@ -43,19 +39,19 @@
 # styler: block
 
 # R CMD check complains about . in magrittr pipelines
-if (getRversion() >= '2.15.1') {
+if (getRversion() >= "2.15.1") {
   # bindings for global variables
   utils::globalVariables(c(
-    '.globals',
-    'pt',
-    'x',
-    'xmin',
-    'xmax',
-    'y',
-    'ymin',
-    'ymax'
+    ".globals",
+    "pt",
+    "x",
+    "xmin",
+    "xmax",
+    "y",
+    "ymin",
+    "ymax"
   ))
 }
-if (getRversion() >= '3.1.0') {
-  utils::suppressForeignCheck('localvariable')
+if (getRversion() >= "3.1.0") {
+  utils::suppressForeignCheck("localvariable")
 }

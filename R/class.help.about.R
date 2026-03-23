@@ -64,77 +64,27 @@ About <- R6::R6Class(
                   overflow = TRUE,
                   shiny::br(),
                   htmltools::p(.(
-                    'The application is based on the Shiny package and can be run locally or on a server. It was developed by Serge Balandine.'
-                  )),
-                  htmltools::h5(.('Google analytics')),
-                  htmltools::p(.(
-                    'This site uses Google Analytics to track user behavior while on the site. These data will be used for educational purposes only.'
+                    'This application is based on the Shiny package and can be run locally or on a server. It is a fork of GeoSampler, originally developed by Epicentre (MSF).'
                   )),
                   htmltools::h5(.('License')),
                   htmltools::p(
-                    '
-                    This dashboard is licensed under the',
+                    'This application is released under the ',
                     a(
-                      href = 'https://tldrlegal.com/license/gnu-affero-general-public-license-v3-(agpl-3.0)',
+                      href = 'http://www.wtfpl.net/',
                       target = '_blank',
-                      'AGPLv3'
+                      'WTFPL'
                     ),
-                    '. The
-                    documentation on this site as well as the Dashboard help files are licensed under the creative commons attribution, non-commercial,
-                    share-alike license ',
-                    a(
-                      href = 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
-                      target = '_blank',
-                      'CC-NC-SA'
-                    ),
-                    '.'
+                    ' license.'
                   ),
-                  htmltools::p(.(
-                    '
-                    As a summary, the AGPLv3 license requires, attribution, including copyright and license information in copies of the software, stating changes
-                    if the code is modified, and disclosure of all source code. Details are in the COPYING file.'
-                  )),
+                  htmltools::h5(.('Source code')),
                   htmltools::p(
-                    .(
-                      'If you are interested in using this application please email me at '
-                    ),
+                    'Source code and issue tracker: ',
                     a(
-                      href = 'serge.balandine@epicentre.msg.org',
-                      'serge.balandine@epicentre.msg.org'
+                      href = 'https://github.com/yves-amevoin/gpssampling',
+                      target = '_blank',
+                      'github.com/yves-amevoin/gpssampling'
                     )
                   )
-
-                  # <ul>
-                  #   <li>The <a href='https://plot.ly/r'>Plotly R Library</a> was used for the interactive plot.<li>
-                  # </ul>
-
-                  # <h4>Sources</h4>
-
-                  # <p style='text-align:justify'>
-                  #   Surveillance data is taken from ... More information about the data is available here.
-                  # </p>
-
-                  # <h4>Credits</h4>
-
-                  # <ul>
-                  #   <li>The <a href='https://plot.ly/r'>Plotly R Library</a> was used for the interactive plot.<li>
-                  # </ul>
-
-                  # <h4>Developers</h4>
-
-                  # <p style='text-align:justify'>
-                  #   This dashboard was developed using Shiny, an open-source web development framework powered by R (this project is
-                  #   not affiliated with The Comprehensive R Archive Network or The R Foundation).
-                  # </p>
-
-                  # <div style='clear: left;'><img src='assets/img/s-balandine.jpg' alt='' style='float: left; margin-right:5px' /></div><br>
-
-                  # <p style='text-align:justify'>
-                  #   <b>Serge Balandine</b><br/>
-                  #   Data Scientist | useR<br/>
-                  #   <a href='http://epicentre.msf.org/', target='_blank'>Epicentre</a>
-                  # </p>
-                  # '
                 ),
                 fillTabPanel(
                   title = .('System'),

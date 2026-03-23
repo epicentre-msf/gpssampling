@@ -13,7 +13,6 @@ Project <- R6::R6Class(
   ),
   public = list(
     initialize = function(parent = NULL) {
-
       super$initialize(parent = parent)
 
       private$.state$can_commit <- FALSE
@@ -44,9 +43,6 @@ Project <- R6::R6Class(
       # }
 
       private$step_trigger <- reactiveTrigger()
-
-    },
-    finalize = function() {
     },
     load = function() {
       logDebug('Load project')
@@ -65,12 +61,12 @@ Project <- R6::R6Class(
       load()
       private$.project_name <- name
 
-      saveRDS(list(project = private$.project_name), fs::path(fs::path_dir(path = data$cache), 'project.rds'))
+      saveRDS(
+        list(project = private$.project_name),
+        fs::path(fs::path_dir(path = data$cache), 'project.rds')
+      )
     },
-    add = function(status,
-                   priority,
-                   name,
-                   description = NA) {
+    add = function(status, priority, name, description = NA) {
       private$.project_status <- status
       private$.project_priority <- priority
       private$.project_name <- name
@@ -78,10 +74,7 @@ Project <- R6::R6Class(
       private$setProject(project = private$project, copy = TRUE)
       save()
     },
-    edit = function(status,
-                    priority,
-                    name,
-                    description = NA) {
+    edit = function(status, priority, name, description = NA) {
       private$.project_status <- status
       private$.project_priority <- priority
       private$.project_name <- name
@@ -102,10 +95,7 @@ Project <- R6::R6Class(
       )
       data$saveToCache(project, file = 'project.rds')
     },
-    save_as = function(status,
-                       priority,
-                       name,
-                       description = NA) {
+    save_as = function(status, priority, name, description = NA) {
       fs::file_copy(
         path = fs::dir_ls(
           getDirAppUsers(user$email, private$.project_name),
@@ -201,7 +191,6 @@ Project <- R6::R6Class(
       private$checkState()
     },
     checkState = function() {
-
       private$.state$can_commit <- private$.state$modified
       private$.state$can_rollback <- private$.state$modified
       private$.state$can_clear <- !private$.state$modified

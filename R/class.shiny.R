@@ -225,15 +225,15 @@ AppShinyBase <- R6::R6Class(
       options
     },
     onSessionStart = function(session) {
-      logDebug(
+      logInfo(
         'Session started (%s users connected)',
         shiny::isolate(self$user_count) + 1L
       )
       self$user_count <- shiny::isolate(self$user_count) + 1L
     },
     onSessionEnded = function(session) {
-      logDebug(
-        'Session ended (%s  users connected)',
+      logInfo(
+        'Session ended (%s users connected)',
         shiny::isolate(self$user_count) - 1L
       )
       self$user_count <- shiny::isolate(self$user_count) - 1L
@@ -274,7 +274,7 @@ AppShinyWithAuthentification <- R6::R6Class(
       if (logged) {
         return(self$domain$user)
       } else {
-        username <- getOption('epi.user.default.name')
+        username <- getOption('gpssampling.default_user')
         return(
           list(
             email_verified = TRUE,
@@ -775,9 +775,7 @@ AppShiny <- R6::R6Class(
       } else {
         # app is online
         uri <- sprintf(
-          'https://apps.msf.net/%s/site%s/%s',
-          tolower(getPackageDescription()$Title),
-          ifelse(isDevPackage(), '-dev', ''),
+          'https://yves-amevoin.github.io/gpssampling/%s',
           page
         )
       }
@@ -980,9 +978,6 @@ ModDatabase <- R6::R6Class(
       private$.pool <- pool::dbPool(drv = RSQLite::SQLite(), dbname = dbname)
       private$.pool_changed <- shiny::reactiveVal(0L)
     },
-    finalize = function() {
-      pool::poolClose(private$.pool)
-    },
     dbAppendTable = function(name, value, ..., row.names = NULL) {
       pool::dbAppendTable(
         conn = self$pool,
@@ -1025,7 +1020,10 @@ ModDatabase <- R6::R6Class(
   ),
   private = list(
     .pool = NULL,
-    .pool_changed = NULL
+    .pool_changed = NULL,
+    finalize = function() {
+      pool::poolClose(private$.pool)
+    }
   )
 )
 

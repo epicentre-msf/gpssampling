@@ -19,7 +19,7 @@ page_navbar(
   theme = bslib::bs_theme(),
   window_title = NA,
   lang = NULL,
-  h100 = getOption("epi.h100", TRUE),
+  h100 = getOption("gpssampling.h100", TRUE),
   shadow = TRUE
 )
 }

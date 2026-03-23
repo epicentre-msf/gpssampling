@@ -1296,7 +1296,7 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
           2L
         )
 
-        print(progress_value)
+        logDebug("Tile progress: %s%%", progress_value)
 
         tile <- tiles[t, ]
 

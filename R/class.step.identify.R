@@ -14,24 +14,34 @@ StepIdentify <- R6::R6Class(
       if (data$project_method == 'RS_SMP') {
         return(..('Are you sure you want to permanently delete this roofs?'))
       } else {
-        return(..('Are you sure you want to permanently delete this urbans areas?'))
+        return(..(
+          'Are you sure you want to permanently delete this urbans areas?'
+        ))
       }
     },
     lbl_cancel_info = function() {
-      ..('If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.')
+      ..(
+        'If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.'
+      )
     },
     lbl_ok = function() {
       if (data$project_method == 'RS_SMP') {
         return(..('Are you sure you want to permanently save this roofs?'))
       } else {
-        return(..('Are you sure you want to permanently save this urbans areas?'))
+        return(..(
+          'Are you sure you want to permanently save this urbans areas?'
+        ))
       }
     },
     lbl_ok_info = function() {
       if (data$project_method == 'RS_SMP') {
-        return(..('Saved roofs will be overwritten. You can\'t undo this action.'))
+        return(..(
+          'Saved roofs will be overwritten. You can\'t undo this action.'
+        ))
       } else {
-        return(..('Saved urbans areas will be overwritten. You can\'t undo this action.'))
+        return(..(
+          'Saved urbans areas will be overwritten. You can\'t undo this action.'
+        ))
       }
     }
   ),
@@ -61,7 +71,11 @@ StepIdentify <- R6::R6Class(
       super$invalidatePolygons()
     },
     invalidateGridIdentifyStatus = function(force = FALSE) {
-      data$displayGridIdentifyStatus(map = map, token = shiny::getDefaultReactiveDomain()$token, force = force)
+      data$displayGridIdentifyStatus(
+        map = map,
+        token = shiny::getDefaultReactiveDomain()$token,
+        force = force
+      )
     }
   ),
   private = list(
@@ -76,7 +90,9 @@ StepIdentify <- R6::R6Class(
       shiny::tagList(
         super$getUIMap(),
         shiny::absolutePanel(
-          bottom = 18L, left = 78L, fixed = TRUE,
+          bottom = 18L,
+          left = 78L,
+          fixed = TRUE,
           shiny::uiOutput(outputId = self$ns('legend'))
         )
       )
@@ -96,7 +112,9 @@ StepIdentify <- R6::R6Class(
             id = ns('pnl_step'),
             icon = icon('menu', size = 's'),
             shiny::br(),
-            p(.('The second step is to identify each building in the polygons of interest.')),
+            p(.(
+              'The second step is to identify each building in the polygons of interest.'
+            )),
             p(.('You can select all the polygons directly.')),
             p(
               button(
@@ -124,49 +142,78 @@ StepIdentify <- R6::R6Class(
             id = ns('pnl_help'),
             icon = icon('help-circle-outline', size = 's'),
             shiny::br(),
-            shiny::tags$p(class = 'intro', .('Get Started with Step-by-Step Guide'), style = 'font-size: 14px'),
+            shiny::tags$p(
+              class = 'intro',
+              .('Get Started with Step-by-Step Guide'),
+              style = 'font-size: 14px'
+            ),
             shiny::tags$ul(
-              shiny::tags$li(actionLink(inputId = ns('link_guide_ui'), label = .('Interface')))
+              shiny::tags$li(actionLink(
+                inputId = ns('link_guide_ui'),
+                label = .('Interface')
+              ))
             )
           )
         )
       )
     },
     getOutputMap = function(session) {
-
       map <- super$getOutputMap(session)
 
       # if (!getOption('identify')) {
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_layers'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_upload'), icon = icon('layers-plus'), title = ..('Add a Roofs layer...'))
+        easyButtonShiny(
+          inputId = ns('act_upload'),
+          icon = icon('layers-plus'),
+          title = ..('Add a Roofs layer...')
+        )
       )
       # }
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_identify'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_identify'), icon = icon('feature-search-outline'), title = ..('Search and identify'))
+        easyButtonShiny(
+          inputId = ns('act_identify'),
+          icon = icon('feature-search-outline'),
+          title = ..('Search and identify')
+        )
       )
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_check'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_check'), icon = icon('checkbox-blank', color = '#ffd557'), title = ..('Check (SPACE)')),
-        easyButtonShiny(inputId = ns('act_valid'), icon = icon('checkbox-blank', color = 'green'), title = ..('Valid (ENTER)'))
+        easyButtonShiny(
+          inputId = ns('act_check'),
+          icon = icon('checkbox-blank', color = '#ffd557'),
+          title = ..('Check (SPACE)')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_valid'),
+          icon = icon('checkbox-blank', color = 'green'),
+          title = ..('Valid (ENTER)')
+        )
       )
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_valid'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_valid_all'), icon = icon('checkbox-multiple-marked', color = 'green'), title = ..('Valid All'))
+        easyButtonShiny(
+          inputId = ns('act_valid_all'),
+          icon = icon('checkbox-multiple-marked', color = 'green'),
+          title = ..('Valid All')
+        )
       )
 
       map
     },
     getServer = function(input, output, session) {
-
       super$getServer(input, output, session)
 
       vars <- shiny::reactiveValues(
@@ -180,15 +227,32 @@ StepIdentify <- R6::R6Class(
       # Actions
 
       shiny::observeEvent(input$act_identify, {
-        data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token)
+        data$searchSwipeTile(
+          map = map,
+          direction = 'next',
+          map_size = input$map_size,
+          token = session$token
+        )
       })
 
       shiny::observeEvent(input$act_check, {
-        data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token, mapped = TRUE)
+        data$searchSwipeTile(
+          map = map,
+          direction = 'next',
+          map_size = input$map_size,
+          token = session$token,
+          mapped = TRUE
+        )
       })
 
       shiny::observeEvent(input$act_valid, {
-        data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token, valid = TRUE)
+        data$searchSwipeTile(
+          map = map,
+          direction = 'next',
+          map_size = input$map_size,
+          token = session$token,
+          valid = TRUE
+        )
       })
 
       shiny::observeEvent(input$act_valid_all, {
@@ -196,7 +260,9 @@ StepIdentify <- R6::R6Class(
           inputIdOk = ns('act_valid_all_confirm'),
           icon = 'alert-plus',
           msg = ..('Are you sure you want to valid all the polygons.'),
-          msg_info = ..('All work will be cleared / overwritten. You can\'t undo this action.'),
+          msg_info = ..(
+            'All work will be cleared / overwritten. You can\'t undo this action.'
+          ),
           label_cancel = ..('Cancel'),
           label_ok = ..('Ok')
         )
@@ -222,31 +288,81 @@ StepIdentify <- R6::R6Class(
       # --------------------------------------------------------------------------------------
       # Shortcuts
 
-      shiny::observeEvent(application$keypress$key, ignoreInit = TRUE, ignoreNULL = TRUE, {
-        if (data$step == 'step_identify') {
-          key <- application$keypress$key
-          print(key)
-          if (key %in% paste0('alt+', 0:9)) {
-            data$addCell(map = map, token = session$token, cell = as.integer(stringr::str_remove(string = key, pattern = '^alt+')))
-          } else if (key == '-') {
-            data$addCell(map = map, token = session$token, cell = -1L)
-          } else if (key == 'enter') {
-            data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token, valid = TRUE)
-          } else if (key == 'space') {
-            data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token, mapped = TRUE)
-          } else if (key == 'delete') {
-            data$searchSwipeTile(map = map, direction = 'next', map_size = input$map_size, token = session$token, invalid = TRUE)
-          } else if (key == '4') {
-            data$searchSwipeTile(map = map, direction = 'left', map_size = input$map_size, token = session$token)
-          } else if (key == '6') {
-            data$searchSwipeTile(map = map, direction = 'right', map_size = input$map_size, token = session$token)
-          } else if (key == '8') {
-            data$searchSwipeTile(map = map, direction = 'top', map_size = input$map_size, token = session$token)
-          } else if (key == '2') {
-            data$searchSwipeTile(map = map, direction = 'bottom', map_size = input$map_size, token = session$token)
+      shiny::observeEvent(
+        application$keypress$key,
+        ignoreInit = TRUE,
+        ignoreNULL = TRUE,
+        {
+          if (data$step == 'step_identify') {
+            key <- application$keypress$key
+            logDebug("Keypress: %s", key)
+            if (key %in% paste0('alt+', 0:9)) {
+              data$addCell(
+                map = map,
+                token = session$token,
+                cell = as.integer(stringr::str_remove(
+                  string = key,
+                  pattern = '^alt+'
+                ))
+              )
+            } else if (key == '-') {
+              data$addCell(map = map, token = session$token, cell = -1L)
+            } else if (key == 'enter') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'next',
+                map_size = input$map_size,
+                token = session$token,
+                valid = TRUE
+              )
+            } else if (key == 'space') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'next',
+                map_size = input$map_size,
+                token = session$token,
+                mapped = TRUE
+              )
+            } else if (key == 'delete') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'next',
+                map_size = input$map_size,
+                token = session$token,
+                invalid = TRUE
+              )
+            } else if (key == '4') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'left',
+                map_size = input$map_size,
+                token = session$token
+              )
+            } else if (key == '6') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'right',
+                map_size = input$map_size,
+                token = session$token
+              )
+            } else if (key == '8') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'top',
+                map_size = input$map_size,
+                token = session$token
+              )
+            } else if (key == '2') {
+              data$searchSwipeTile(
+                map = map,
+                direction = 'bottom',
+                map_size = input$map_size,
+                token = session$token
+              )
+            }
           }
         }
-      })
+      )
 
       # --------------------------------------------------------------------------------------
       # Download Actions
@@ -256,7 +372,8 @@ StepIdentify <- R6::R6Class(
           selector = sprintf('#%s', ns('pnl_data')),
           where = 'beforeEnd',
           ui = disabledConditional(
-            condition = sum(data$polygons_selected$roofs_count, na.rm = TRUE) == 0L,
+            condition = sum(data$polygons_selected$roofs_count, na.rm = TRUE) ==
+              0L,
             ui = shiny::tagList(
               buttonDownload(outputId = ns('act_download_shp'), label = 'SHP'),
               buttonDownload(outputId = ns('act_download_kml'), label = 'KML'),
@@ -271,7 +388,12 @@ StepIdentify <- R6::R6Class(
           sprintf('rooftops - %s.kml', Sys.Date())
         },
         content = function(file) {
-          writeSpatialLayer(sf = data$roofs, file = file, layer = sprintf('rooftops - %s', Sys.Date()), fieldname = 'id')
+          writeSpatialLayer(
+            sf = data$roofs,
+            file = file,
+            layer = sprintf('rooftops - %s', Sys.Date()),
+            fieldname = 'id'
+          )
         }
       )
 
@@ -280,7 +402,12 @@ StepIdentify <- R6::R6Class(
           sprintf('rooftops - %s.zip', Sys.Date())
         },
         content = function(file) {
-          writeSpatialLayer(sf = data$roofs, file = file, layer = sprintf('rooftops - %s', Sys.Date()), fieldname = 'id')
+          writeSpatialLayer(
+            sf = data$roofs,
+            file = file,
+            layer = sprintf('rooftops - %s', Sys.Date()),
+            fieldname = 'id'
+          )
         }
       )
 
@@ -289,7 +416,12 @@ StepIdentify <- R6::R6Class(
           sprintf('rooftops - %s.gpx', Sys.Date())
         },
         content = function(file) {
-          writeSpatialLayer(sf = data$roofs, file = file, layer = sprintf('rooftops - %s', Sys.Date()), fieldname = 'id')
+          writeSpatialLayer(
+            sf = data$roofs,
+            file = file,
+            layer = sprintf('rooftops - %s', Sys.Date()),
+            fieldname = 'id'
+          )
         }
       )
 
@@ -326,7 +458,6 @@ StepIdentify <- R6::R6Class(
       # Leaflet
 
       output$legend <- shiny::renderUI({
-
         data$roofs_changed()
 
         tiles_status <- data$getTileStatus()
@@ -352,48 +483,59 @@ StepIdentify <- R6::R6Class(
                 <tr><td><font color="red">&#9632;</font> %s:&nbsp;&nbsp;</td><td><b>%s</b> (%s%%)</td></tr>
                 </table>
                 ',
-              .('Tiles'), tiles_n,
-              tiles_status$n[5L], .('roof(s)'), .('identified'),
-              .('Available for mapping'), tiles_status$n[1L], round(100L * tiles_status$n[1L] / tiles_n, 1L),
-              .('Checked (Ready for validation)'), tiles_status$n[2L], round(100L * tiles_status$n[2L] / tiles_n, 1L),
-              .('Validated'), tiles_status$n[3L], round(100L * tiles_status$n[3L] / tiles_n, 1L),
-              .('Locked'), max(0L, tiles_status$n[4L] - 1L), round(100L * (max(0L, tiles_status$n[4L] - 1L)) / tiles_n, 1L)
+              .('Tiles'),
+              tiles_n,
+              tiles_status$n[5L],
+              .('roof(s)'),
+              .('identified'),
+              .('Available for mapping'),
+              tiles_status$n[1L],
+              round(100L * tiles_status$n[1L] / tiles_n, 1L),
+              .('Checked (Ready for validation)'),
+              tiles_status$n[2L],
+              round(100L * tiles_status$n[2L] / tiles_n, 1L),
+              .('Validated'),
+              tiles_status$n[3L],
+              round(100L * tiles_status$n[3L] / tiles_n, 1L),
+              .('Locked'),
+              max(0L, tiles_status$n[4L] - 1L),
+              round(100L * (max(0L, tiles_status$n[4L] - 1L)) / tiles_n, 1L)
             )
           )
         )
-
       })
 
       # --------------------------------------------------------------------------------------
       # Map Observers
 
       shiny::observeEvent(input$map_shape_click, {
-
         if (input$map_shape_click$group == 'polygons') {
-
           data$searchSwipeTile(
             map = map,
             direction = 'coordinates',
             lat = input$map_shape_click$lat,
-            lon = input$map_shape_click$lng, map_size = input$map_size, token = session$token
+            lon = input$map_shape_click$lng,
+            map_size = input$map_size,
+            token = session$token
           )
-
         } else if (input$map_shape_click$group == 'identify_grid') {
-
-          cell <- as.integer(stringr::str_extract(input$map_shape_click$id, '[1-9]+'))
+          cell <- as.integer(stringr::str_extract(
+            input$map_shape_click$id,
+            '[1-9]+'
+          ))
 
           if (is.na(cell)) {
-            data$addRoof(map = map, lng = input$map_click$lng, lat = input$map_click$lat)
+            data$addRoof(
+              map = map,
+              lng = input$map_click$lng,
+              lat = input$map_click$lat
+            )
           } else {
             data$addCell(map = map, token = session$token, cell = cell)
           }
-
         } else if (input$map_shape_click$group == 'identify_building') {
-
           data$removeRoof(map = map, roof_id = input$map_shape_click$id)
-
         }
-
       })
 
       # --------------------------------------------------------------------------------------
@@ -427,14 +569,18 @@ StepIdentify <- R6::R6Class(
           feature_sf$identifier <- 1L
           shiny::isolate(vars$polygon_identify$roofs_sf <- feature_sf)
         } else {
-          shiny::isolate(vars$polygon_identify$roofs_sf <- combine_list_of_sf(list(vars$polygon_identify$roofs_sf, feature_sf)))
+          shiny::isolate(
+            vars$polygon_identify$roofs_sf <- combine_list_of_sf(list(
+              vars$polygon_identify$roofs_sf,
+              feature_sf
+            ))
+          )
         }
       })
 
       # Edited Features
       shiny::observeEvent(input$map_draw_edited_features, {
-        print('Edited Features')
-        print(input$map_draw_edited_features)
+        logDebug("Edited Features: %s", length(input$map_draw_edited_features))
       })
 
       # Deleted features
@@ -448,15 +594,17 @@ StepIdentify <- R6::R6Class(
         feature <- input$map_draw_deleted_features
 
         shiny::isolate(
-          vars$polygon_identify$roofs_sf <- dplyr::filter(vars$polygon_identify$roofs_sf, X_leaflet_id != feature$properties$`_leaflet_id`)
+          vars$polygon_identify$roofs_sf <- dplyr::filter(
+            vars$polygon_identify$roofs_sf,
+            X_leaflet_id != feature$properties$`_leaflet_id`
+          )
         )
       })
 
       # We also listen for draw_all_features which is called anytime
       # features are created/edited/deleted from the map
       shiny::observeEvent(input$map_draw_all_features, {
-        print('All Features')
-        print(input$map_draw_all_features)
+        logDebug("All Features: %s", length(input$map_draw_all_features))
       })
 
       # --------------------------------------------------------------------------------------
@@ -465,9 +613,19 @@ StepIdentify <- R6::R6Class(
       shiny::observe({
         self$data$project_method_changed
         if (self$data$project_method %in% c('SP_QDR', 'SP_TSQ')) {
-          shinyjs::hide(selector = sprintf('li:has(a[data-value=%s])', 'app-steps-step_identify-tab'))
+          shinyjs::hide(
+            selector = sprintf(
+              'li:has(a[data-value=%s])',
+              'app-steps-step_identify-tab'
+            )
+          )
         } else {
-          shinyjs::show(selector = sprintf('li:has(a[data-value=%s])', 'app-steps-step_identify-tab'))
+          shinyjs::show(
+            selector = sprintf(
+              'li:has(a[data-value=%s])',
+              'app-steps-step_identify-tab'
+            )
+          )
         }
       })
 
@@ -475,7 +633,8 @@ StepIdentify <- R6::R6Class(
         shiny::tagList(
           shiny::tags$div(
             class = 'tip',
-            shiny::tags$strong(..('Identify: ')), shiny::HTML(text = self$state$info)
+            shiny::tags$strong(..('Identify: ')),
+            shiny::HTML(text = self$state$info)
           )
         )
       })
@@ -491,39 +650,90 @@ StepIdentify <- R6::R6Class(
       })
 
       shiny::observeEvent(input$link_guide_ui, {
-
         closeSidebar()
 
         steps <-
           tibble::tribble(
-            ~element, ~group, ~tooltip, ~description,
-            'map_zoom_in_btn', .('Map'), .('Zoom In'), .('Zoom in to the map'),
-            'map_zoom_out_btn', .('Map'), .('Zoom Out'), .('Zoom out from the map'),
-            'map_zoom_extent_btn', .('Map'), .('Zoom to layer\'s extent'), NA,
-            'map .leaflet-control-fullscreen', .('Map'), .('FullScreen'), .('Enlarge the map to fullscreen'),
-            'act_ok_btn', .('Delimit'), .('Validate modifications'), .('Validate the modifications done in this page'),
-            'act_rollback_btn', .('Delimit'), .('Undo'), .('Undo the last modification'),
-            'act_clear_btn', .('Delimit'), .('Reset page'), .('Reset the whole page by clearing all outlines created or imported'),
-            'act_upload_btn', .('Draw'), .('Add polygon(s) layer from file'), .('Open a dialog window to browse and upload a file from your computer containing the polygon or the outlines.'),
-            'act_identify_btn', .('?'), .('?'), .('?')
+            ~element,
+            ~group,
+            ~tooltip,
+            ~description,
+            'map_zoom_in_btn',
+            .('Map'),
+            .('Zoom In'),
+            .('Zoom in to the map'),
+            'map_zoom_out_btn',
+            .('Map'),
+            .('Zoom Out'),
+            .('Zoom out from the map'),
+            'map_zoom_extent_btn',
+            .('Map'),
+            .('Zoom to layer\'s extent'),
+            NA,
+            'map .leaflet-control-fullscreen',
+            .('Map'),
+            .('FullScreen'),
+            .('Enlarge the map to fullscreen'),
+            'act_ok_btn',
+            .('Delimit'),
+            .('Validate modifications'),
+            .('Validate the modifications done in this page'),
+            'act_rollback_btn',
+            .('Delimit'),
+            .('Undo'),
+            .('Undo the last modification'),
+            'act_clear_btn',
+            .('Delimit'),
+            .('Reset page'),
+            .(
+              'Reset the whole page by clearing all outlines created or imported'
+            ),
+            'act_upload_btn',
+            .('Draw'),
+            .('Add polygon(s) layer from file'),
+            .(
+              'Open a dialog window to browse and upload a file from your computer containing the polygon or the outlines.'
+            ),
+            'act_identify_btn',
+            .('?'),
+            .('?'),
+            .('?')
           )
 
         step_instructions <-
           tibble::tribble(
-            ~element,                          ~instructions,
-            'map_zoom_in_btn',                 .('The zooming can also be done by moving the mouse wheel.'),
-            'map_zoom_out_btn',                .('The zooming can also be done by moving the mouse wheel.'),
-            'map .leaflet-control-fullscreen', .('Press `Esc` to exit the fullscreen.'),
-            'act_upload_btn',                  .('File formats accepted are zipped shape files, kml and kmz. Only files containing polygons are accepted')
+            ~element,
+            ~instructions,
+            'map_zoom_in_btn',
+            .('The zooming can also be done by moving the mouse wheel.'),
+            'map_zoom_out_btn',
+            .('The zooming can also be done by moving the mouse wheel.'),
+            'map .leaflet-control-fullscreen',
+            .('Press `Esc` to exit the fullscreen.'),
+            'act_upload_btn',
+            .(
+              'File formats accepted are zipped shape files, kml and kmz. Only files containing polygons are accepted'
+            )
           )
 
         step_warnings <-
           tibble::tribble(
-            ~element,                          ~warning,
-            'act_ok_btn',                      .('You cannot move to the next pages before having selected at least one outline and validated modifications.'),
-            'act_rollback_btn',                .('Only the last modification can be undo.'),
-            'act_clear_btn',                   .('By resetting this page you also clear all items created or imported in the other pages.'),
-            'act_upload_btn',                  .('Do not confuse polygon and line geometry types. In a GIS software lines may look like polygons. To understand the difference between line and polygon types click [here](https://www.igismap.com/gis-tutorial-basic-spatial-elements-points-lines-and-polygons/). If you have a file containing lines, you first need to convert the lines into polygons before importing the file. You can use [QGIS](https://www.qgis.org/en/site/) and follow [these instructionss](https://gis.stackexchange.com/questions/207463/converting-line-to-polygon-using-qgis) to convert the lines into polygons.')
+            ~element,
+            ~warning,
+            'act_ok_btn',
+            .(
+              'You cannot move to the next pages before having selected at least one outline and validated modifications.'
+            ),
+            'act_rollback_btn',
+            .('Only the last modification can be undo.'),
+            'act_clear_btn',
+            .(
+              'By resetting this page you also clear all items created or imported in the other pages.'
+            ),
+            'act_upload_btn',
+            .(
+              'Do not confuse polygon and line geometry types. In a GIS software lines may look like polygons. To understand the difference between line and polygon types click [here](https://www.igismap.com/gis-tutorial-basic-spatial-elements-points-lines-and-polygons/). If you have a file containing lines, you first need to convert the lines into polygons before importing the file. You can use [QGIS](https://www.qgis.org/en/site/) and follow [these instructionss](https://gis.stackexchange.com/questions/207463/converting-line-to-polygon-using-qgis) to convert the lines into polygons.'
+            )
           )
 
         steps <- steps |>
@@ -531,18 +741,33 @@ StepIdentify <- R6::R6Class(
           dplyr::left_join(step_warnings, by = 'element') |>
           dplyr::mutate(
             element = sprintf('#mod_steps-mod_step_identify-%s', element),
-            intro   = sprintf('<b>%s</b>: %s.', group, tooltip),
-            intro   = ifelse(is.na(description), intro, sprintf('%s<br><br>%s', intro, description)),
-            intro   = ifelse(is.na(instructions), intro, sprintf('%s<br><br>%s', intro, instructions)),
-            intro   = ifelse(is.na(warning), intro, sprintf('%s<br><br>%s: %s', intro, icon('alert-rhombus', size = 's'), warning))
+            intro = sprintf('<b>%s</b>: %s.', group, tooltip),
+            intro = ifelse(
+              is.na(description),
+              intro,
+              sprintf('%s<br><br>%s', intro, description)
+            ),
+            intro = ifelse(
+              is.na(instructions),
+              intro,
+              sprintf('%s<br><br>%s', intro, instructions)
+            ),
+            intro = ifelse(
+              is.na(warning),
+              intro,
+              sprintf(
+                '%s<br><br>%s: %s',
+                intro,
+                icon('alert-rhombus', size = 's'),
+                warning
+              )
+            )
           )
 
         guide(steps = steps, session = application$session, ns = ns)
       })
-
     },
     onStateChange = function() {
-
       if (sum(self$data$polygons_selected$roofs_count, na.rm = TRUE) == 0L) {
         shinyjs::disable(id = 'act_download_kml')
         shinyjs::disable(id = 'act_download_shp')
@@ -576,19 +801,14 @@ StepIdentify <- R6::R6Class(
       }
 
       if (self$state$mode == 'select') {
-
         shinyjs::disable(id = 'act_check')
         shinyjs::disable(id = 'act_valid')
-
       } else {
-
         shinyjs::enable(id = 'act_check')
         shinyjs::enable(id = 'act_valid')
-
       }
 
       super$onStateChange()
-
     },
     onMapZoom = function() {
       zoom <- floor(self$map_zoom)
@@ -609,40 +829,38 @@ StepIdentify <- R6::R6Class(
       shiny::insertUI(
         selector = sprintf('#%s', ns('pnl_settings')),
         where = 'beforeEnd',
-        ui =
-          shiny::tagList(
-            shiny::br(),
-            shiny::h6('Roofs:'),
-            p(shiny::sliderInput(
-              inputId = ns('sli_circle_radius'),
-              label = .('Circle Radius (meter):'),
-              min = 1L,
-              max = 5L,
-              value = data$settings$getValue('sli_circle_radius'),
-              step = 0.5
-            )),
-            p(shiny::sliderInput(
-              inputId = ns('sli_circle_opacity'),
-              label = .('Circle Opacity:'),
-              min = 0L,
-              max = 100L,
-              value = data$settings$getValue('sli_circle_opacity'),
-              step = 5L
-            )),
-            p(shinyWidgets::colorSelectorInput(
-              inputId = ns('csi_circle_color'),
-              label = .('Color:'),
-              choices = grDevices::rainbow(12L),
-              ncol = 12L,
-              selected = data$settings$getValue('csi_circle_color')
-            ))
-          )
+        ui = shiny::tagList(
+          shiny::br(),
+          shiny::h6('Roofs:'),
+          p(shiny::sliderInput(
+            inputId = ns('sli_circle_radius'),
+            label = .('Circle Radius (meter):'),
+            min = 1L,
+            max = 5L,
+            value = data$settings$getValue('sli_circle_radius'),
+            step = 0.5
+          )),
+          p(shiny::sliderInput(
+            inputId = ns('sli_circle_opacity'),
+            label = .('Circle Opacity:'),
+            min = 0L,
+            max = 100L,
+            value = data$settings$getValue('sli_circle_opacity'),
+            step = 5L
+          )),
+          p(shinyWidgets::colorSelectorInput(
+            inputId = ns('csi_circle_color'),
+            label = .('Color:'),
+            choices = grDevices::rainbow(12L),
+            ncol = 12L,
+            selected = data$settings$getValue('csi_circle_color')
+          ))
+        )
       )
       super$renderMap()
       invalidateGridIdentifyStatus(force = TRUE)
     },
     checkState = function(value) {
-
       polygons_selected_count <- data$polygons_selected_count
 
       value$can_commit <- value$modified & polygons_selected_count > 0L
@@ -653,20 +871,22 @@ StepIdentify <- R6::R6Class(
       if (self$state$mode == 'select') {
         # if(identify_pct == 0) {
         value$info_text <- sprintf(
-          ..('Outlines is divided into task tiles. Search the first tile and begin to draw roof (%s). Beforehand, it is possible to upload data from external source (%s).'),
+          ..(
+            'Outlines is divided into task tiles. Search the first tile and begin to draw roof (%s). Beforehand, it is possible to upload data from external source (%s).'
+          ),
           as.character(icon('home-edit-polygon')),
           as.character(icon('layers-plus'))
         )
         # }
-
       } else {
         # if(identify_pct == 0) {
         value$info_text <- sprintf(
-          ..('Click on the map to add or delete roof. At the end, complete the task (<b>[SPACE]</b> or %s) or valid it (<b>[ENTER]</b>). When you want, you can change tile task with arrow keys.'),
+          ..(
+            'Click on the map to add or delete roof. At the end, complete the task (<b>[SPACE]</b> or %s) or valid it (<b>[ENTER]</b>). When you want, you can change tile task with arrow keys.'
+          ),
           as.character(icon('home-edit-polygon'))
         )
         # }
-
       }
 
       value

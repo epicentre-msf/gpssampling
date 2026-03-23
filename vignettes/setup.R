@@ -1,12 +1,10 @@
 pkg_infos <- list(
-  title = "GeoSampler",
+  title = "GPS Sampling",
   name = "gpssampling",
-  url_issue = "https://github.com/gpssampling/issues"
+  url_issue = "https://github.com/epicentre-msf/gpssampling/issues"
 )
 
 pkg_url <- "gpssampling"
-
-uri_shiny_server <- 'https://apps.msf.net'
 
 knitr::opts_chunk$set(
   collapse = TRUE,

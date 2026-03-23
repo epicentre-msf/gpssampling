@@ -1,7 +1,7 @@
 Type: Package
 Package: gpssampling
 Title: GPS Sampling
-Version: 0.1.228
+Version: 0.2.0
 Authors@R: c(
     person("Claude", "(Anthropic AI)", role = c(role = "aut", role = "cre"))
   )
@@ -12,7 +12,10 @@ Description: A Shiny application for geospatial sampling of building
     imagery integration for field epidemiology surveys. Fork of the
     original GeoSampler package by Epicentre (MSF), modified with Claude
     AI agent assistance for internal use.
-License: MIT + file LICENSE
+License: file LICENSE
+URL: https://yves-amevoin.github.io/gpssampling/,
+    https://github.com/yves-amevoin/gpssampling
+BugReports: https://github.com/yves-amevoin/gpssampling/issues
 Depends: R (>= 4.3.1)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         dbplyr, dplyr, flextable, fs, geojsonio,
@@ -26,7 +29,7 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
         units, utils, uuid, waiter, withr, zip
 Suggests: covr, devEMF, devtools, diffdf, here, kableExtra, knitr,
-        profvis, sessioninfo, shinytest2,
+        pkgdown, profvis, sessioninfo, shinytest2,
         spatstat, testthat (>= 3.0.0), tictoc, yaml
 VignetteBuilder: knitr
 Config/build/copy-method: link

@@ -1,15 +1,11 @@
 #' @title Base R6 Class
 #'
 #' @description
-#' This function defines an R6 class called "Base". The class
-#' has a single public method called "initialize", which creates
-#' a new instance of the class and sets its "parent" attribute to
-#' the value passed in as an argument (or NULL if no argument is provided).
+#' Root R6 class for the gpssampling class hierarchy. Provides optional
+#' method tracing via the `gpssampling.trace` option or the `.trace` parameter.
 #'
-#' If a global option called "epi.log" is set to TRUE, all functions defined in the
-#' class are decorated with logging functionality. The class also has a single
-#' active field called "parent", which can be used to get or set the value of
-#' the "parent" attribute.
+#' When tracing is enabled, all public and private methods are wrapped with
+#' entry/exit logging and elapsed-time measurement via [logDecorate()].
 #'
 #' @return An R6 class object.
 #'
@@ -27,7 +23,7 @@
 #' my_base$parent(my_child_base)
 #'
 Base <- R6::R6Class(
-  classname = 'Base',
+  classname = "Base",
   portable = FALSE,
   public = list(
     #' @description
@@ -35,43 +31,17 @@ Base <- R6::R6Class(
     #'
     #' @param parent (`R6Class`)\cr
     #'   Identifier of the parent object.
+    #' @param .trace (`logical(1)`)\cr
+    #'   Enable method tracing for this instance. Defaults to
+    #'   `getOption("gpssampling.trace", FALSE)`.
     #'
-    initialize = function(parent = NULL) {
-      # Set the "parent" attribute of the object to the value passed in as an argument (or NULL if no argument is provided)
+    initialize = function(parent = NULL, .trace = NULL) {
       self$parent <- parent
 
-      # If a global option called "epi.log" is set to TRUE, decorate all functions defined in the class with logging functionality
-      if (getOption('epi.log', FALSE)) {
-        # Identify all the functions defined in the class that are not part of the active or private components
-        funcs_active <- names(self$.__active__)
-        funcs <- names(self)[-(1:2)]
-        funcs <- funcs[!(funcs %in% c('clone', 'finalize', 'initialize', 'self', 'super', 'private'))]
-        funcs <- funcs[!(funcs %in% funcs_active)]
-
-        # For each function identified, check if it is actually a function and decorate it with logging functionality if it is
-        for (func in funcs) {
-          if (class(self[[func]])[1L] == 'function') {
-            logDebug('Decorate %s', func)
-            unlockBinding(func, self)
-            self[[func]] <- logDecorate(class(self)[1L], func, self[[func]])
-            lockBinding(func, self)
-          }
-        }
-
-        # Repeat the above process for all functions defined in the private component of the class, except for two specific functions
-        funcs <- names(self$private)[-(1:2)]
-        funcs <- funcs[!(funcs %in% c('getServer', 'console_out'))]
-        for (func in funcs) {
-          if (class(self$private[[func]])[1L] == 'function') {
-            logDebug('Decorate %s', func)
-            unlockBinding(func, self$private)
-            self$private[[func]] <- logDecorate(class(self)[1L], func, self$private[[func]])
-            lockBinding(func, self$private)
-          }
-        }
-
+      trace <- .trace %||% getOption("gpssampling.trace", FALSE)
+      if (isTRUE(trace)) {
+        decorate_methods(self, private)
       }
-
     }
   ),
   active = list(
@@ -80,7 +50,7 @@ Base <- R6::R6Class(
     parent = function(value) {
       if (!missing(value)) {
         if (!is.null(value)) {
-          checkmate::assert_class(value, classes = c('Base', 'R6'))
+          checkmate::assert_class(value, classes = c("Base", "R6"))
         }
         private$.parent <- value
       }

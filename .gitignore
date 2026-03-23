@@ -66,3 +66,6 @@ Meta/
 # Quarto / knitr caches
 *_cache/
 *_files/
+
+/.quarto/
+**/*.quarto_ipynb

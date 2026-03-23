@@ -10,13 +10,9 @@ getShinyServerHost(session)
 \item{session}{The Shiny session object.}
 }
 \value{
-The Shiny Server host.
+The hostname (character) from the client's URL.
 }
 \description{
-Retrieves the Shiny Server host based on the session object.
-}
-\details{
-If the app is hosted, the Shiny Server host is set to 'https://apps.msf.net'.
-Otherwise, the Shiny Server host is set to 'https://apps.msf.net'.
+Retrieves the hostname from the Shiny session's client data.
 }
 \keyword{internal}
