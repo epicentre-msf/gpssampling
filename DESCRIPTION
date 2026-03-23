@@ -29,9 +29,10 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
         units, utils, uuid, waiter, withr, zip
-Suggests: covr, devEMF, devtools, diffdf, here, kableExtra, knitr,
-        pkgdown, profvis, sessioninfo, shinytest2,
-        spatstat, testthat (>= 3.0.0), tictoc, yaml
+Suggests: covr, devEMF, devtools, diffdf, emayili, ggplot2, ggspatial,
+        here, kableExtra, knitr, pkgdown, profvis, sessioninfo,
+        shinytest2, spatstat, testthat (>= 3.0.0), tictoc, tidyterra,
+        yaml
 Remotes: trafficonese/leaflet.extras
 VignetteBuilder: knitr
 Config/build/copy-method: link
