@@ -1,3 +1,3 @@
-devtools::load_all(here::here())
+library(gpssampling)
 samp <- sampler()
 samp$launch(open = FALSE, method = "RS_SMP")

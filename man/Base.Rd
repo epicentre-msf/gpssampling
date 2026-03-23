@@ -11,22 +11,9 @@ Root R6 class for the gpssampling class hierarchy. Provides optional
 method tracing via the \code{gpssampling.trace} option or the \code{.trace} parameter.
 
 When tracing is enabled, all public and private methods are wrapped with
-entry/exit logging and elapsed-time measurement via \code{\link[=logDecorate]{logDecorate()}}.
+entry/exit logging and elapsed-time measurement via \code{logDecorate()}.
 }
-\examples{
-# Create a new instance of the Base class with no parent
-my_base <- Base$new()
-
-# Create a new instance of the Base class with a parent
-my_child_base <- Base$new(parent = my_base)
-
-# Get the value of the "parent" attribute for an instance of the Base class
-my_base$parent()
-
-# Set the value of the "parent" attribute for an instance of the Base class
-my_base$parent(my_child_base)
-
-}
+\keyword{internal}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

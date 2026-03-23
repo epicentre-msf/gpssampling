@@ -31,17 +31,15 @@ test_that('GpsSampler launch returns shiny.appobj', {
 
 test_that('GpsSampler app serves HTTP', {
   port <- httpuv::randomPort()
-  pkg_root <- here::here()
-
   # launch() returns a shinyApp object — runApp() blocks and serves
   rx <- callr::r_bg(
-    function(pkg_root, port) {
-      devtools::load_all(pkg_root)
+    function(port) {
+      library(gpssampling)
       samp <- sampler()
       app <- samp$launch(open = FALSE, port = port)
       shiny::runApp(app, port = port, launch.browser = FALSE)
     },
-    args = list(pkg_root = pkg_root, port = port),
+    args = list(port = port),
     stdout = '', stderr = '', supervise = TRUE
   )
   withr::defer(rx$kill())

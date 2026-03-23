@@ -5,23 +5,11 @@
 #' method tracing via the `gpssampling.trace` option or the `.trace` parameter.
 #'
 #' When tracing is enabled, all public and private methods are wrapped with
-#' entry/exit logging and elapsed-time measurement via [logDecorate()].
+#' entry/exit logging and elapsed-time measurement via `logDecorate()`.
 #'
 #' @return An R6 class object.
 #'
-#' @examples
-#' # Create a new instance of the Base class with no parent
-#' my_base <- Base$new()
-#'
-#' # Create a new instance of the Base class with a parent
-#' my_child_base <- Base$new(parent = my_base)
-#'
-#' # Get the value of the "parent" attribute for an instance of the Base class
-#' my_base$parent()
-#'
-#' # Set the value of the "parent" attribute for an instance of the Base class
-#' my_base$parent(my_child_base)
-#'
+#' @keywords internal
 Base <- R6::R6Class(
   classname = "Base",
   portable = FALSE,

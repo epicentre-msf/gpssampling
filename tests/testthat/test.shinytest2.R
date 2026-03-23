@@ -21,10 +21,6 @@ skip_if(
 
 app_dir <- test_path("apps", "gpssampling-app")
 
-# Resolve package root now (while we are in the package dir), so temp-dir
-# tests can pass it to devtools::load_all().
-pkg_root <- here::here()
-
 # ---------------------------------------------------------------------------
 # Shared app instance for the main test suite. Creating a single AppDriver
 # avoids resource exhaustion from spawning 20+ Shiny + Chrome processes.
@@ -285,7 +281,7 @@ test_that("App starts with each sampling method", {
     tmp_dir <- withr::local_tempdir()
     writeLines(
       c(
-        sprintf('devtools::load_all("%s")', pkg_root),
+        'library(gpssampling)',
         'samp <- sampler()',
         sprintf('samp$launch(open = FALSE, method = "%s")', method)
       ),

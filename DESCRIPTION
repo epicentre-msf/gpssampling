@@ -17,7 +17,7 @@ License: file LICENSE
 URL: https://yves-amevoin.github.io/gpssampling/,
     https://github.com/yves-amevoin/gpssampling
 BugReports: https://github.com/yves-amevoin/gpssampling/issues
-Depends: R (>= 4.3.1)
+Depends: R (>= 4.3.0)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         dbplyr, dplyr, flextable, fs, geojsonio,
         geos, glue, grDevices, htmltools, htmlwidgets, httr, ipc,

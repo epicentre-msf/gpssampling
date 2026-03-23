@@ -1,4 +1,7 @@
-tests_assets_dir <- here::here('tests', 'testthat', '_assets')
+tests_assets_dir <- tryCatch(
+  here::here("tests", "testthat", "_assets"),
+  error = function(e) file.path(testthat::test_path(), "_assets")
+)
 
 fs::dir_create(tests_assets_dir, recurse = TRUE)
 

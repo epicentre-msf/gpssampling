@@ -196,12 +196,7 @@ test_that('OSM fetching constant is defined', {
 # --- 6. Error handling coverage ----------------------------------------------
 
 test_that('All DB operations in class.app.store.R are wrapped with safe_db', {
-  source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.app.store.R')
-  }
+  source_code <- read_pkg_file('R/class.app.store.R')
 
   raw_db_calls <- grep(
     'db\\$db(GetQuery|Execute|WriteTable)',
@@ -209,11 +204,8 @@ test_that('All DB operations in class.app.store.R are wrapped with safe_db', {
     value = TRUE
   )
 
-  # All raw db calls should be inside safe_db() or in class definition context
   for (line in raw_db_calls) {
     trimmed <- trimws(line)
-    # Lines defining the wrapper method in class.shiny.R are OK
-    # Lines already wrapped in safe_db are OK
     is_wrapper_def <- grepl('pool::', trimmed)
     is_wrapped <- grepl('safe_db', trimmed)
     is_inside_safe_db <- any(grepl('safe_db', source_code[
@@ -228,12 +220,7 @@ test_that('All DB operations in class.app.store.R are wrapped with safe_db', {
 })
 
 test_that('All DB operations in class.tile.manager.R are wrapped with safe_db', {
-  source_code <- readLines(
-    system.file('R', 'class.tile.manager.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.tile.manager.R')
-  }
+  source_code <- read_pkg_file('R/class.tile.manager.R')
 
   db_lines <- grep('data\\$db\\$db', source_code)
 
@@ -253,12 +240,7 @@ test_that('All DB operations in class.tile.manager.R are wrapped with safe_db', 
 })
 
 test_that('All DB operations in class.polygon.manager.R are wrapped with safe_db', {
-  source_code <- readLines(
-    system.file('R', 'class.polygon.manager.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.polygon.manager.R')
-  }
+  source_code <- read_pkg_file('R/class.polygon.manager.R')
 
   db_lines <- grep('data\\$db\\$db', source_code)
 
@@ -278,12 +260,7 @@ test_that('All DB operations in class.polygon.manager.R are wrapped with safe_db
 })
 
 test_that('All DB operations in class.data.persistence.R are wrapped with safe_db', {
-  source_code <- readLines(
-    system.file('R', 'class.data.persistence.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.data.persistence.R')
-  }
+  source_code <- read_pkg_file('R/class.data.persistence.R')
 
   db_lines <- grep('data\\$db\\$db', source_code)
 
@@ -305,25 +282,13 @@ test_that('All DB operations in class.data.persistence.R are wrapped with safe_d
 # --- 7. Commented-out code removal -------------------------------------------
 
 test_that('No terra::plot debug calls remain in class.app.store.R', {
-  source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.app.store.R')
-  }
-
+  source_code <- read_pkg_file('R/class.app.store.R')
   terra_plots <- grep('terra::plot', source_code, value = TRUE)
   expect_length(terra_plots, 0L)
 })
 
 test_that('No commented-out shiny::observe blocks remain in class.app.store.R', {
-  source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.app.store.R')
-  }
-
+  source_code <- read_pkg_file('R/class.app.store.R')
   commented_observe <- grep(
     '^\\s*#\\s*shiny::observe',
     source_code,
@@ -333,13 +298,7 @@ test_that('No commented-out shiny::observe blocks remain in class.app.store.R', 
 })
 
 test_that('No commented-out hintjs or tab module calls remain', {
-  source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.app.store.R')
-  }
-
+  source_code <- read_pkg_file('R/class.app.store.R')
   dead_code <- grep(
     '^\\s*#\\s*(hintjs|tabSplash|tabSteps|onBookmarked)',
     source_code,
@@ -351,13 +310,7 @@ test_that('No commented-out hintjs or tab module calls remain', {
 # --- 8. French comment removal ----------------------------------------------
 
 test_that('No French FIXME/TODO comments remain in class.app.store.R', {
-  source_code <- readLines(
-    system.file('R', 'class.app.store.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/class.app.store.R')
-  }
-
+  source_code <- read_pkg_file('R/class.app.store.R')
   french <- grep(
     "l'image est decalee|Gestion du mode de tirage",
     source_code,
@@ -367,13 +320,7 @@ test_that('No French FIXME/TODO comments remain in class.app.store.R', {
 })
 
 test_that('No French placeholder keywords remain in utils.R', {
-  source_code <- readLines(
-    system.file('R', 'utils.R', package = 'gpssampling')
-  )
-  if (length(source_code) == 0L) {
-    source_code <- readLines('../../R/utils.R')
-  }
-
+  source_code <- read_pkg_file('R/utils.R')
   french_keywords <- grep('truc machin|truc$', source_code, value = TRUE)
   expect_length(french_keywords, 0L)
 })
@@ -381,23 +328,27 @@ test_that('No French placeholder keywords remain in utils.R', {
 # --- 9. DESCRIPTION placeholder removed -------------------------------------
 
 test_that('DESCRIPTION has a real package description', {
-  desc_lines <- readLines(
-    system.file('DESCRIPTION', package = 'gpssampling')
+  desc <- utils::packageDescription('gpssampling')
+  expect_false(
+    grepl('What the package does', desc$Description),
+    info = 'DESCRIPTION should not have placeholder text'
   )
-  if (length(desc_lines) == 0L) {
-    desc_lines <- readLines('../../DESCRIPTION')
-  }
-
-  placeholder <- grep('What the package does', desc_lines, value = TRUE)
-  expect_length(placeholder, 0L)
 })
 
 # --- 10. Roxygen placeholder removal ----------------------------------------
 
 test_that('No FUNCTION_TITLE or FUNCTION_DESCRIPTION placeholders remain', {
-  r_files <- list.files('../../R', pattern = '\\.R$', full.names = TRUE)
+  r_files <- read_pkg_file('R/utils.R')
+  # Check all R source files via the package namespace
+  r_dir <- system.file('R', package = 'gpssampling')
+  if (nzchar(r_dir) && dir.exists(r_dir)) {
+    all_files <- list.files(r_dir, pattern = '\\.R$', full.names = TRUE)
+  } else {
+    r_dir2 <- tryCatch(here::here('R'), error = function(e) '../../R')
+    all_files <- list.files(r_dir2, pattern = '\\.R$', full.names = TRUE)
+  }
 
-  for (f in r_files) {
+  for (f in all_files) {
     content <- readLines(f)
     placeholders <- grep(
       'FUNCTION_TITLE|FUNCTION_DESCRIPTION|PARAM_DESCRIPTION',
@@ -414,51 +365,23 @@ test_that('No FUNCTION_TITLE or FUNCTION_DESCRIPTION placeholders remain', {
 # --- 11. Line count verification ---------------------------------------------
 
 test_that('class.app.store.R is under 1000 lines', {
-  source_file <- system.file(
-    'R', 'class.app.store.R', package = 'gpssampling'
-  )
-  if (source_file == '') {
-    source_file <- '../../R/class.app.store.R'
-  }
-
-  line_count <- length(readLines(source_file))
-  expect_lt(line_count, 1000L)
+  source_code <- read_pkg_file('R/class.app.store.R')
+  expect_lt(length(source_code), 1000L)
 })
 
 test_that('class.polygon.manager.R exists and has content', {
-  source_file <- system.file(
-    'R', 'class.polygon.manager.R', package = 'gpssampling'
-  )
-  if (source_file == '') {
-    source_file <- '../../R/class.polygon.manager.R'
-  }
-
-  line_count <- length(readLines(source_file))
-  expect_gt(line_count, 100L)
+  source_code <- read_pkg_file('R/class.polygon.manager.R')
+  expect_gt(length(source_code), 100L)
 })
 
 test_that('class.data.persistence.R exists and has content', {
-  source_file <- system.file(
-    'R', 'class.data.persistence.R', package = 'gpssampling'
-  )
-  if (source_file == '') {
-    source_file <- '../../R/class.data.persistence.R'
-  }
-
-  line_count <- length(readLines(source_file))
-  expect_gt(line_count, 100L)
+  source_code <- read_pkg_file('R/class.data.persistence.R')
+  expect_gt(length(source_code), 100L)
 })
 
 test_that('config.R exists and has content', {
-  source_file <- system.file(
-    'R', 'config.R', package = 'gpssampling'
-  )
-  if (source_file == '') {
-    source_file <- '../../R/config.R'
-  }
-
-  line_count <- length(readLines(source_file))
-  expect_gt(line_count, 30L)
+  source_code <- read_pkg_file('R/config.R')
+  expect_gt(length(source_code), 30L)
 })
 
 # --- 12. Package loads cleanly -----------------------------------------------
