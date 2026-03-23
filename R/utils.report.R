@@ -7,15 +7,11 @@
 #' Default to FALSE
 #' @return a rdocx element with a break at the end
 #' @examples
-#' doc <- read_docx()
-#' doc <- addTextElement(doc, 'Titre 1 : description of the dataset', style = 'heading 1')
+#' \dontrun{
+#' doc <- officer::read_docx()
+#' doc <- addTextElement(doc, 'Titre 1', style = 'heading 1')
 #' doc <- addBreak(doc)
-#' doc <- addTextElement(doc, 'Titre 2 : comparaison of the dataset', style = 'heading 1')
-#' doc <- setLandscape(doc, add_break = TRUE)
-#' doc <- addBreak(doc, landscape_continuous = TRUE)
-#' doc <- addTextElement(doc, 'Titre 3 : plot', style = 'heading 1')
-#' doc <- setLandscape(doc, add_break = FALSE)
-#' print(doc, target = 'output.docx')
+#' }
 #'
 addBreak <- function(doc, landscape_continuous = FALSE) {
   if (methods::is(doc, 'rdocx')) {

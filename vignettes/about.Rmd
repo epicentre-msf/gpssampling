@@ -32,7 +32,7 @@ When compared with population census, sampling methods are more timely and less 
 
 ## `r pkg_infos$title` to facilitate the task
 
-**`r pkg_infos$title`** is a browser-based application that was created to facilitate and standardise procedures for **estimating population sizes using a sample of geographical information**. The application was created and is maintained by [Epicentre](https://epicentre.msf.org){target="_blank"} to support the field activities of [Médecins Sans Frontières](https://www.msf.org){target="_blank"}.
+**`r pkg_infos$title`** is a browser-based application that facilitates and standardises procedures for **estimating population sizes using a sample of geographical information**. It is a fork of [GeoSampler](https://apps.msf.net/geosampler/site/index.html){target="_blank"}, originally created by [Epicentre](https://epicentre.msf.org){target="_blank"} to support the field activities of [Médecins Sans Frontières](https://www.msf.org){target="_blank"}. This fork is maintained independently for internal use.
 
 `r pkg_infos$title` is developed in [R](https://www.r-project.org){target="_blank"} and based on the [Shiny](https://shiny.rstudio.com/){target="_blank"} package, and runs on a server or off-line on a computer.
 

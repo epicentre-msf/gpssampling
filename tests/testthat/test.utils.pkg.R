@@ -7,9 +7,20 @@ polygon_sfc <-
   sf::st_sfc() |>
   sf::st_set_crs(4326L)
 
-zone <- readSpatialLayer(file = here::here('inst/data-ext/zone.zip'))$layer
+zone_path <- system.file("data-ext", "zone.zip", package = "gpssampling")
+if (!nzchar(zone_path)) {
+  zone_path <- tryCatch(
+    here::here("inst", "data-ext", "zone.zip"),
+    error = function(e) ""
+  )
+}
+if (!nzchar(zone_path) || !file.exists(zone_path)) {
+  skip("zone.zip test data not found")
+}
+zone <- readSpatialLayer(file = zone_path)$layer
 
 test_that('Plot Map Sat', {
+  skip_on_ci()
   expect_snapshot_file(save_png(plotMap(zone, force = TRUE)), 'mapsat.png')
 })
 

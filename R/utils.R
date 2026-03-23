@@ -109,10 +109,7 @@ catf <- function(fmt, ...) {
 #' @keywords internal
 #'
 console.out <- function(msg, ...) {
-  if (requireNamespace('tictoc', quietly = TRUE)) {
-    tictoc::toc(quiet = TRUE)
-    tictoc::tic()
-  }
+  logDebug(msg, ...)
 }
 
 # styler: block Package description
@@ -267,23 +264,15 @@ getPackageVersion <- function(...) {
 
 #' Get the Shiny Server host
 #'
-#' Retrieves the Shiny Server host based on the session object.
-#'
-#' If the app is hosted, the Shiny Server host is set to 'https://apps.msf.net'.
-#' Otherwise, the Shiny Server host is set to 'https://apps.msf.net'.
+#' Retrieves the hostname from the Shiny session's client data.
 #'
 #' @param session The Shiny session object.
 #'
-#' @return The Shiny Server host.
+#' @return The hostname (character) from the client's URL.
 #'
 #' @keywords internal
 #'
 getShinyServerHost <- function(session) {
-  if (isHostedApp()) {
-    host <- 'https://apps.msf.net'
-  } else {
-    host <- 'https://apps.msf.net'
-  }
   session$clientData$url_hostname
 }
 

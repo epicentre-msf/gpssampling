@@ -169,18 +169,7 @@ row <- function(..., flex = TRUE, align_self = NULL) {
 
 # styler: block Modal Dialog
 
-#' @examples
-#' shiny::shinyApp(
-#'   ui = shiny::basicPage(
-#'     shiny::actionButton('show', 'Show modal dialog')
-#'   ),
-#'   server = function(input, output) {
-#'     shiny::observeEvent(input$show, {
-#'       shiny::showModal(modalDanger('rt'))
-#'     })
-#'   }
-#' )
-#'
+#' @noRd
 modalDanger <- function(
   inputIdOk,
   icon = 'alert',
@@ -695,7 +684,7 @@ nav <- function(
   ...,
   value = title,
   icon = NULL,
-  h100 = getOption('epi.h100', TRUE)
+  h100 = getOption('gpssampling.h100', TRUE)
 ) {
   tag <- bslib::nav(title = title, ..., value = value, icon = icon)
   tag_qr <- htmltools::tagQuery(tag)
@@ -744,7 +733,7 @@ navs_tab_card <- function(
   selected = NULL,
   header = NULL,
   footer = NULL,
-  h100 = getOption('epi.h100', TRUE)
+  h100 = getOption('gpssampling.h100', TRUE)
 ) {
   tag <- bslib::navs_tab_card(
     ...,
@@ -800,7 +789,7 @@ navsetCardPill <- function(..., fill = FALSE, header = TRUE) {
   tag_qr$allTags()
 }
 
-navsetCardTab <- function(..., h100 = getOption('epi.h100', TRUE)) {
+navsetCardTab <- function(..., h100 = getOption('gpssampling.h100', TRUE)) {
   tag <- bslib::navset_card_tab(...)
   tag_qr <- htmltools::tagQuery(tag)
   # if (h100) {
@@ -919,7 +908,7 @@ page_navbar <- function(
   theme = bslib::bs_theme(),
   window_title = NA,
   lang = NULL,
-  h100 = getOption('epi.h100', TRUE),
+  h100 = getOption('gpssampling.h100', TRUE),
   shadow = TRUE
 ) {
   tag <- bslib::page_navbar(
@@ -1261,7 +1250,7 @@ verticalSplitLayout <- function(left, right, lwidth = '370px') {
   )
 }
 
-wellPanel <- function(..., h100 = getOption('epi.h100', TRUE)) {
+wellPanel <- function(..., h100 = getOption('gpssampling.h100', TRUE)) {
   tag <- shiny::wellPanel(...)
   tag_qr <- htmltools::tagQuery(tag)
   if (h100) {

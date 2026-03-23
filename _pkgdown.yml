@@ -1,0 +1,25 @@
+url: https://yves-amevoin.github.io/gpssampling/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+
+articles:
+  - title: Getting started
+    contents:
+      - what
+      - about
+      - getting.started
+  - title: Tutorials
+    contents:
+      - learn
+      - learn.step.by.step.1
+      - learn.step.by.step.2
+      - learn.step.by.step.3
+  - title: Other
+    contents:
+      - credits

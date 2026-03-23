@@ -1,3 +1,4 @@
-devtools::load_all(here::here())
+options(shiny.testmode = TRUE)
+library(gpssampling)
 samp <- sampler()
 samp$launch(open = FALSE, method = "RS_SMP")

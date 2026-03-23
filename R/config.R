@@ -1,7 +1,6 @@
-#' @title Application Configuration Constants
-#' @description Centralizes magic numbers, default values, and configuration
-#'   constants used throughout the gpssampling package.
-#' @noRd
+# Application Configuration Constants
+# Centralizes magic numbers, default values, and configuration
+# constants used throughout the gpssampling package.
 
 # Zoom Levels
 # ............................................................................

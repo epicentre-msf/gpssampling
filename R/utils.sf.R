@@ -48,7 +48,13 @@ getKeyName <- function(x) {
   }
 }
 
-readSpatialLayer <- function(file, layer = NULL, simplify = TRUE, keep = 0.05, verbose = TRUE) {
+readSpatialLayer <- function(
+  file,
+  layer = NULL,
+  simplify = TRUE,
+  keep = 0.05,
+  verbose = TRUE
+) {
   if (tools::file_ext(file) == 'zip') {
     path <- fs::path_temp('layers')
     if (fs::dir_exists(path)) {
@@ -62,8 +68,7 @@ readSpatialLayer <- function(file, layer = NULL, simplify = TRUE, keep = 0.05, v
     layers_dsn <- file
   }
   if (verbose) {
-    print(layers)
-    cat('\n')
+    logDebug("Layers: %s", paste(layers$name, collapse = ", "))
   }
   layers <-
     tibble::tibble(
@@ -86,13 +91,23 @@ readSpatialLayer <- function(file, layer = NULL, simplify = TRUE, keep = 0.05, v
     }
   } else {
     if (nrow(layers) > 1L) {
-      warning('This file contains several shapefiles. Please keep one shapefile by zip.')
+      warning(
+        'This file contains several shapefiles. Please keep one shapefile by zip.'
+      )
     }
 
-    layer_sf <- sf::st_read(dsn = layers_dsn, layer = layers$name[1L], quiet = !verbose)
+    layer_sf <- sf::st_read(
+      dsn = layers_dsn,
+      layer = layers$name[1L],
+      quiet = !verbose
+    )
     layer_sf_df <- sf::st_drop_geometry(layer_sf)
 
-    if (simplify && as.character(unique(sf::st_geometry_type(layer_sf))) %in% c('POLYGON', 'MULTIPOLYGON')) {
+    if (
+      simplify &&
+        as.character(unique(sf::st_geometry_type(layer_sf))) %in%
+          c('POLYGON', 'MULTIPOLYGON')
+    ) {
       # layer_sf <- rmapshaper::ms_simplify(layer_sf, keep = keep, keep_shapes = TRUE)
     }
 
@@ -100,10 +115,16 @@ readSpatialLayer <- function(file, layer = NULL, simplify = TRUE, keep = 0.05, v
     layer_sf_df_key_scores <- sapply(layer_sf_df, score_unique)
 
     if (any(layer_sf_df_key_scores > 0L)) {
-      layer_sf_df_key_scores <- layer_sf_df_key_scores[layer_sf_df_key_scores > 0L]
-      layer_sf_df_key_scores <- layer_sf_df_key_scores[layer_sf_df_key_scores == max(layer_sf_df_key_scores)]
+      layer_sf_df_key_scores <- layer_sf_df_key_scores[
+        layer_sf_df_key_scores > 0L
+      ]
+      layer_sf_df_key_scores <- layer_sf_df_key_scores[
+        layer_sf_df_key_scores == max(layer_sf_df_key_scores)
+      ]
       if (length(layer_sf_df_key_scores)) {
-        layer_sf_df_key <- names(layer_sf_df_key_scores[layer_sf_df_key_scores == max(layer_sf_df_key_scores)])[1L]
+        layer_sf_df_key <- names(layer_sf_df_key_scores[
+          layer_sf_df_key_scores == max(layer_sf_df_key_scores)
+        ])[1L]
       }
     }
 
@@ -129,7 +150,9 @@ readSpatialLayer <- function(file, layer = NULL, simplify = TRUE, keep = 0.05, v
       dplyr::bind_cols(layer_sf_df)
   }
   layer_geometry_type_tbl <- table(sf::st_geometry_type(layer_sf))
-  layer_geometry_type_tbl <- layer_geometry_type_tbl[layer_geometry_type_tbl > 0L]
+  layer_geometry_type_tbl <- layer_geometry_type_tbl[
+    layer_geometry_type_tbl > 0L
+  ]
   list(
     layers = layers,
     layer = layer_sf,
@@ -146,7 +169,14 @@ writeSpatialLayer <- function(sf, file, layer, fieldname) {
         fs::dir_delete(d)
       }
       fs::dir_create(d, recurse = TRUE)
-      sf::st_write(sf, driver = 'ESRI Shapefile', dsn = d, layer = layer, overwrite = TRUE, append = FALSE)
+      sf::st_write(
+        sf,
+        driver = 'ESRI Shapefile',
+        dsn = d,
+        layer = layer,
+        overwrite = TRUE,
+        append = FALSE
+      )
       fp <- fs::path(d, sprintf('%s.zip', layer))
       zip::zip(
         zipfile = fp,
@@ -167,7 +197,13 @@ writeSpatialLayer <- function(sf, file, layer, fieldname) {
     } else if (driver == 'gpx') {
       fp <- fs::file_temp()
       sf$Name <- sf[[fieldname]]
-      sf::st_write(sf, dsn = fp, layer = 'waypoints', driver = 'GPX', dataset_options = 'GPX_USE_EXTENSIONS=yes')
+      sf::st_write(
+        sf,
+        dsn = fp,
+        layer = 'waypoints',
+        driver = 'GPX',
+        dataset_options = 'GPX_USE_EXTENSIONS=yes'
+      )
       fs::file_copy(path = fp, new_path = file, overwrite = TRUE)
     }
   }
@@ -236,7 +272,11 @@ st_as_sfc.feature <- function(x, crs = 4326L, ...) {
 #' @keywords internal
 #'
 st_bbox_polygon <- function(bbox, crs = 4326L, ...) {
-  sf::st_polygon(list(matrix(bbox[c(1L, 2L, 3L, 2L, 3L, 4L, 1L, 4L, 1L, 2L)], ncol = 2L, byrow = TRUE)))
+  sf::st_polygon(list(matrix(
+    bbox[c(1L, 2L, 3L, 2L, 3L, 4L, 1L, 4L, 1L, 2L)],
+    ncol = 2L,
+    byrow = TRUE
+  )))
 }
 
 st_centroid_ll <- function(sf) {
@@ -318,7 +358,8 @@ st_set_id <- function(sf, prefix = 'sf') {
 }
 
 st_simplify <- function(sf, keep = 0.02, explode = FALSE) {
-  rmapshaper::ms_simplify(sf,
+  rmapshaper::ms_simplify(
+    sf,
     keep = keep,
     keep_shapes = TRUE,
     explode = explode

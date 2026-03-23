@@ -2,53 +2,27 @@
 % Please edit documentation in R/class.app.R
 \name{GpsSampler}
 \alias{GpsSampler}
-\title{GpsSampler R6 class}
-\format{
-A list of additional arguments
-}
-\value{
-The launch application
-}
+\title{GpsSampler R6 Class}
 \description{
+GpsSampler R6 Class
+
+GpsSampler R6 Class
+}
+\details{
 Main entry point for the GPS sampling Shiny application.
 Use the \code{\link[=sampler]{sampler()}} factory function for idiomatic construction.
 }
-\section{Functions}{
-\itemize{
-\item \code{GpsSampler}: Launch a project
-
-}}
-\section{Public}{
-
-}
-
-\section{Private}{
-
-}
-
 \section{Super classes}{
 \code{\link[gpssampling:Base]{gpssampling::Base}} -> \code{gpssampling::AppShinyBase} -> \code{gpssampling::AppShinyWithAuthentification} -> \code{gpssampling::AppShinyWithTranslation} -> \code{gpssampling::AppShiny} -> \code{GpsSampler}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{data}}{(\code{character(1)})
-A function to retrieve the application's data}
+\item{\code{data}}{The application's UserData store.}
 
-\item{\code{dlg_method}}{(\code{character(1)})
-A function to retrieve the dialog method}
+\item{\code{dlg_method}}{The method selection dialog.}
 
-\item{\code{keypress}}{(\code{character(1)})
-A function to retrieve the keypress}
-
-\item{\code{data}}{(\code{character(1)})\cr}
-
-\item{\code{dlg_method}}{(\code{character(1)})\cr}
-
-\item{\code{keypress}}{(\code{character(1)})\cr
-Initializes the object
-
-This function initializes the object with given arguments.}
+\item{\code{keypress}}{The keyboard shortcut handler.}
 }
 \if{html}{\out{</div>}}
 }
@@ -73,6 +47,7 @@ This function initializes the object with given arguments.}
 \if{html}{\out{<a id="method-GpsSampler-new"></a>}}
 \if{latex}{\out{\hypertarget{method-GpsSampler-new}{}}}
 \subsection{Method \code{new()}}{
+Create a new GpsSampler instance.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GpsSampler$new(...)}\if{html}{\out{</div>}}
 }
@@ -80,11 +55,7 @@ This function initializes the object with given arguments.}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{A list of additional arguments
-
-Launch a project
-
-This function launches a project with given parameters.}
+\item{\code{...}}{Additional arguments passed to the parent class.}
 }
 \if{html}{\out{</div>}}
 }
@@ -93,6 +64,7 @@ This function launches a project with given parameters.}
 \if{html}{\out{<a id="method-GpsSampler-launch"></a>}}
 \if{latex}{\out{\hypertarget{method-GpsSampler-launch}{}}}
 \subsection{Method \code{launch()}}{
+Launch the Shiny application.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{GpsSampler$launch(
   open = TRUE,
@@ -110,22 +82,28 @@ This function launches a project with given parameters.}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{open}}{logical indicating whether or not to open the project on launch}
+\item{\code{open}}{Logical; open the app in a browser on launch.}
 
-\item{\code{port}}{Optional numeric port number for the project}
+\item{\code{port}}{Optional numeric port number.}
 
-\item{\code{options}}{An optional list of named attributes that are passed as options to the project launch}
+\item{\code{options}}{Named list of Shiny options.}
 
-\item{\code{authentification}}{Logical indicating whether or not to use authentication}
+\item{\code{test}}{Logical; run in test mode.}
 
-\item{\code{method}}{An optional character string specifying a specific method for the project}
+\item{\code{test_record}}{Logical; enable shinytest2 recording.}
 
-\item{\code{identify}}{Logical indicating whether or not to use identify part only}
+\item{\code{authentification}}{Logical; enable OAuth2 authentication.}
+
+\item{\code{method}}{Character; sampling method code (e.g. \code{"RS_SMP"}, \code{"SP_SMP"}).}
+
+\item{\code{identify}}{Logical; run in identify-only mode.}
+
+\item{\code{bbox}}{Numeric vector of length 4; default bounding box.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-The launch application
+A \code{shiny.appobj} object.
 }
 }
 \if{html}{\out{<hr>}}

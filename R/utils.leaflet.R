@@ -1116,7 +1116,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(
@@ -1202,7 +1202,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuy0eb402p41atdjafcgugv/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(
@@ -1217,7 +1217,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyic56058j19miysj7yldz/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(
@@ -1231,7 +1231,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyiros055n19poe6mj52s1/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(
@@ -1246,7 +1246,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuyjqcw059p19o4wqqaw46z/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/navigation-day-v1/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(
@@ -1271,7 +1271,7 @@ setBasemap <- function(
       layerId = 'base',
       attribution = '<a href=\"https://www.mapbox.com/about/maps/\" target=\"_blank\">&copy; Mapbox</a> <a href=\"https://openstreetmap.org/about/\" target=\"_blank\">&copy; OpenStreetMap</a> <a class=\"mapbox-improve-map\" href=\"https://www.mapbox.com/map-feedback/\" target=\"_blank\">Improve this map</a>',
       urlTemplate = sprintf(
-        'https://api.mapbox.com/styles/v1/s-balandine/ckhuxxyag04pd19tem7udhdxe/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
+        'https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=%s',
         api.key.mapbox
       ),
       options = leaflet::tileOptions(

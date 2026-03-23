@@ -1,12 +1,12 @@
 # Phase 5: Performance optimization, dependency cleanup, step class coverage
 # devtools::test(filter = 'test.phase5', stop_on_failure = TRUE)
 
-pkg_root <- here::here()
+# Uses read_pkg_file() from helper.R
 
 # -- addRoofsGoogle: batch download optimization -------------------------------
 
 test_that("addRoofsGoogle uses curl::multi_download", {
-  src <- readLines(file.path(pkg_root, "R/utils.pkg.R"))
+  src <- read_pkg_file("R/utils.pkg.R")
   expect_true(
     any(grepl("curl::multi_download", src, fixed = TRUE)),
     info = "addRoofsGoogle should use curl::multi_download for batch downloads"
@@ -17,7 +17,7 @@ test_that("addRoofsGoogle uses curl::multi_download", {
 })
 
 test_that("addRoofsGoogle separates download from processing", {
-  src <- readLines(file.path(pkg_root, "R/utils.pkg.R"))
+  src <- read_pkg_file("R/utils.pkg.R")
   fn_text <- paste(src, collapse = "\n")
 
   # The function should have Phase 1 (batch download) and Phase 2 (process)
@@ -38,7 +38,7 @@ test_that("TileManager has roofsAddOSM method", {
 })
 
 test_that("UserData$roofsAddOSM delegates to tile_mgr", {
-  src <- readLines(file.path(pkg_root, "R/class.app.store.R"))
+  src <- read_pkg_file("R/class.app.store.R")
   fn_text <- paste(src, collapse = "\n")
   expect_true(
     grepl("tile_mgr\\$roofsAddOSM", fn_text),
@@ -49,9 +49,9 @@ test_that("UserData$roofsAddOSM delegates to tile_mgr", {
 # -- devEMF and sessioninfo moved to Suggests ----------------------------------
 
 test_that("devEMF is in Suggests, not Imports", {
-  desc <- read.dcf(file.path(pkg_root, "DESCRIPTION"), fields = c("Imports", "Suggests"))
-  imports <- desc[1L, "Imports"]
-  suggests <- desc[1L, "Suggests"]
+  desc <- utils::packageDescription("gpssampling")
+  imports <- desc$Imports %||% ""
+  suggests <- desc$Suggests %||% ""
 
   expect_false(
     grepl("\\bdevEMF\\b", imports),
@@ -64,9 +64,9 @@ test_that("devEMF is in Suggests, not Imports", {
 })
 
 test_that("sessioninfo is in Suggests, not Imports", {
-  desc <- read.dcf(file.path(pkg_root, "DESCRIPTION"), fields = c("Imports", "Suggests"))
-  imports <- desc[1L, "Imports"]
-  suggests <- desc[1L, "Suggests"]
+  desc <- utils::packageDescription("gpssampling")
+  imports <- desc$Imports %||% ""
+  suggests <- desc$Suggests %||% ""
 
   expect_false(
     grepl("\\bsessioninfo\\b", imports),
@@ -79,7 +79,7 @@ test_that("sessioninfo is in Suggests, not Imports", {
 })
 
 test_that("devEMF call sites have requireNamespace guard", {
-  src <- readLines(file.path(pkg_root, "R/utils.report.R"))
+  src <- read_pkg_file("R/utils.report.R")
 
   devemf_calls <- grep("devEMF::emf", src, fixed = TRUE)
   guard_calls <- grep('requireNamespace\\("devEMF"', src)
@@ -91,7 +91,7 @@ test_that("devEMF call sites have requireNamespace guard", {
 })
 
 test_that("sessioninfo call site has requireNamespace guard", {
-  src <- readLines(file.path(pkg_root, "R/class.help.about.R"))
+  src <- read_pkg_file("R/class.help.about.R")
   src_text <- paste(src, collapse = "\n")
 
   expect_true(
@@ -152,7 +152,7 @@ test_that("Step base class inherits from GpsSamplerModule", {
 })
 
 test_that("StepDelimit has correct id", {
-  src <- readLines(file.path(pkg_root, "R/class.step.delimit.R"))
+  src <- read_pkg_file("R/class.step.delimit.R")
   expect_true(
     any(grepl("step_delimit", src, fixed = TRUE)),
     info = "StepDelimit should use id 'step_delimit'"
@@ -160,7 +160,7 @@ test_that("StepDelimit has correct id", {
 })
 
 test_that("StepIdentify has correct id", {
-  src <- readLines(file.path(pkg_root, "R/class.step.identify.R"))
+  src <- read_pkg_file("R/class.step.identify.R")
   expect_true(
     any(grepl("step_identify", src, fixed = TRUE)),
     info = "StepIdentify should use id 'step_identify'"
@@ -168,7 +168,7 @@ test_that("StepIdentify has correct id", {
 })
 
 test_that("StepSample has correct id", {
-  src <- readLines(file.path(pkg_root, "R/class.step.sample.R"))
+  src <- read_pkg_file("R/class.step.sample.R")
   expect_true(
     any(grepl("step_sample", src, fixed = TRUE)),
     info = "StepSample should use id 'step_sample'"
@@ -176,7 +176,7 @@ test_that("StepSample has correct id", {
 })
 
 test_that("StepResult has correct id", {
-  src <- readLines(file.path(pkg_root, "R/class.step.result.R"))
+  src <- read_pkg_file("R/class.step.result.R")
   expect_true(
     any(grepl("step_result", src, fixed = TRUE)),
     info = "StepResult should use id 'step_result'"

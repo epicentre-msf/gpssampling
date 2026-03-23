@@ -1,4 +1,5 @@
 test_that('Check function dzipois', {
+  skip_if_not_installed('VGAM')
   pop <- c(1L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 0L)
 
   expect_equal( # nolint: expect_identical_linter.

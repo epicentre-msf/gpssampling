@@ -1,89 +1,7 @@
-# styler: block
-
 .logs <- new.env(parent = emptyenv())
 
 debug <- function(...) {
   base::debug(...)
-}
-
-decorate <- function(self) {
-  funcs_active <- names(self$.__active__)
-  funcs <- names(self)[-(1:2)]
-  funcs <- funcs[
-    !(funcs %in%
-      c('clone', 'finalize', 'initialize', 'self', 'super', 'private'))
-  ]
-  funcs <- funcs[!(funcs %in% funcs_active)]
-  for (func in funcs) {
-    if (class(self[[func]])[1L] == 'function') {
-      logDebug('Decorate %s', func)
-      unlockBinding(func, self)
-      self[[func]] <- logDecorate(class(self)[1L], func, self[[func]])
-      lockBinding(func, self)
-    }
-  }
-}
-
-decorateR6 <- function(object) {
-  if (getOption('epi.log', FALSE)) {
-    return()
-  }
-
-  funcs_active <- names(object$.__active__)
-
-  funcs <- names(object)[-(1:2)]
-  funcs <- funcs[
-    !(funcs %in%
-      c(
-        'ui',
-        'server',
-        'clone',
-        'finalize',
-        'initialize',
-        'object',
-        'super',
-        'private'
-      ))
-  ]
-  funcs <- funcs[!(funcs %in% funcs_active)]
-
-  for (func in funcs) {
-    if (class(object[[func]])[1L] == 'function') {
-      logDebug('Decorate %s', func)
-      unlockBinding(func, object)
-      object[[func]] <- logDecorate(class(object)[1L], func, object[[func]])
-      lockBinding(func, object)
-    }
-  }
-
-  funcs <- names(object$private)[-(1:2)]
-  funcs <- funcs[!(funcs %in% c('getServer', 'console_out'))]
-
-  for (func in funcs) {
-    if (class(object$private[[func]])[1L] == 'function') {
-      logDebug('Decorate %s', func)
-      unlockBinding(func, object$private)
-      object$private[[func]] <- logDecorate(
-        class(object)[1L],
-        func,
-        object$private[[func]]
-      )
-      lockBinding(func, object$private)
-    }
-  }
-}
-
-decorator <- function(deco, ...) {
-  args <- rlang::list2(...)
-  fun <- utils::tail(args, 1L)[[1L]]
-  deco <- c(list(deco), utils::head(args, -1L))
-  clos <- function() {
-    stop('Need to call decorate() on this object first')
-  }
-  attr(clos, 'deco') <- deco
-  attr(clos, 'fun') <- fun
-  class(clos) <- c('decorator', class(clos))
-  clos
 }
 
 levelLogger <- function(level = NULL) {
@@ -92,47 +10,6 @@ levelLogger <- function(level = NULL) {
 
 logDebug <- function(msg, ...) {
   log4r::debug(.logger, sprintf(msg, ...))
-}
-
-logDecorate <- function(classname, funcname, func) {
-  force(classname)
-  force(funcname)
-  force(func)
-  logDebug('Decorate %s %s', classname, funcname)
-  wrapper <- function(...) {
-    if (is.null(.logs$indent)) {
-      .logs$indent <- 0L
-    }
-    logDebug(
-      '%s%s / %s (%s seconds elapsed)',
-      strrep('  ', .logs$indent),
-      funcname,
-      classname,
-      .logs$tictoc
-    )
-    assign('indent', .logs$indent + 1L, .logs)
-    has_tictoc <- requireNamespace('tictoc', quietly = TRUE)
-    if (has_tictoc) tictoc::tic()
-    out <- func(...)
-    if (has_tictoc) {
-      toc <- tictoc::toc(quiet = TRUE)
-      assign('tictoc', round(toc$toc - toc$tic, 4L), .logs)
-    }
-    assign('indent', .logs$indent - 1L, .logs)
-    out
-  }
-  wrapper
-}
-
-logDecorator <- function(func) {
-  wrapper <- function(...) {
-    start <- proc.time()
-
-    func()
-
-    print(proc.time() - start)
-  }
-  wrapper
 }
 
 logError <- function(msg, ...) {
@@ -151,37 +28,142 @@ logWarn <- function(msg, ...) {
   log4r::warn(.logger, sprintf(msg, ...))
 }
 
-log_layout <- function(level, ...) {
-  paste0(format(Sys.time()), ' [', level, '] ', ..., '\n', collapse = '')
+logDecorate <- function(classname, funcname, func) {
+  force(classname)
+  force(funcname)
+  force(func)
+  wrapper <- function(...) {
+    if (is.null(.logs$indent)) {
+      .logs$indent <- 0L
+    }
+    start <- proc.time()[["elapsed"]]
+    logDebug(
+      "%s> %s$%s",
+      strrep(".", .logs$indent),
+      classname,
+      funcname
+    )
+    assign("indent", .logs$indent + 1L, .logs)
+    out <- func(...)
+    elapsed <- round(proc.time()[["elapsed"]] - start, 4L)
+    assign("indent", .logs$indent - 1L, .logs)
+    logDebug(
+      "%s< %s$%s (%s s)",
+      strrep(".", .logs$indent),
+      classname,
+      funcname,
+      elapsed
+    )
+    out
+  }
+  wrapper
 }
 
-# decorate <- function(x) {
-#   decorate_method <- function(deco, fun, env) {
-#     meth <- deco(fun)
-#     parent.env(environment(meth)) <- env
-#     meth
-#   }
-#   method_names <- ls(x, all.names = TRUE)
-#   for (mnm in method_names) {
-#     if (inherits(x[[mnm]], "decorator")) {
-#       get("unlockBinding", baseenv())(mnm, x)
-#       deco <- attr(x[[mnm]], "deco")
-#       fun <- attr(x[[mnm]], "fun")
-#       env <- environment(x[[mnm]])
-#       environment(fun) <- env
-#       for (d in deco) {
-#         fun <- decorate_method(d, fun, env)
-#       }
-#       x[[mnm]] <- fun
-#       lockBinding(mnm, x)
-#     }
-#   }
-#   x
-# }
-.logger <- log4r::logger(
-  threshold = 'DEBUG',
-  appenders = list(
-    log4r::console_appender(layout = log_layout)
-    # log4r::file_appender(fs::path(getDirApp(), 'log.txt'), append = FALSE, layout = log_layout)
+decorate_methods <- function(self, private = NULL, trace_methods = NULL) {
+  excluded <- c(
+    "clone",
+    "finalize",
+    "initialize",
+    "self",
+    "super",
+    "private"
   )
-)
+  funcs_active <- names(self$.__active__)
+
+  funcs <- names(self)[-(1:2)]
+  funcs <- funcs[!(funcs %in% excluded)]
+  funcs <- funcs[!(funcs %in% funcs_active)]
+
+  if (!is.null(trace_methods)) {
+    funcs <- funcs[funcs %in% trace_methods]
+  }
+
+  for (func in funcs) {
+    if (is.function(self[[func]])) {
+      unlockBinding(func, self)
+      self[[func]] <- logDecorate(class(self)[1L], func, self[[func]])
+      lockBinding(func, self)
+    }
+  }
+
+  if (!is.null(private)) {
+    priv_funcs <- names(private)[-(1:2)]
+    priv_excluded <- c("getServer", "console_out")
+    priv_funcs <- priv_funcs[!(priv_funcs %in% priv_excluded)]
+
+    if (!is.null(trace_methods)) {
+      priv_funcs <- priv_funcs[priv_funcs %in% trace_methods]
+    }
+
+    for (func in priv_funcs) {
+      if (is.function(private[[func]])) {
+        unlockBinding(func, private)
+        private[[func]] <- logDecorate(
+          class(self)[1L],
+          func,
+          private[[func]]
+        )
+        lockBinding(func, private)
+      }
+    }
+  }
+}
+
+log_layout <- function(level, ...) {
+  paste0(format(Sys.time()), " [", level, "] ", ..., "\n", collapse = "")
+}
+
+log_layout_structured <- function(level, ...) {
+  entry <- list(
+    timestamp = format(Sys.time(), "%Y-%m-%dT%H:%M:%OS3"),
+    level = level,
+    message = paste0(..., collapse = ""),
+    pid = Sys.getpid()
+  )
+  paste0(jsonlite::toJSON(entry, auto_unbox = TRUE), "\n")
+}
+
+init_logger <- function() {
+  level <- Sys.getenv("GPSSAMPLING_LOG_LEVEL", "DEBUG")
+
+  layout <- if (identical(Sys.getenv("GPSSAMPLING_LOG_FORMAT"), "json")) {
+    log_layout_structured
+  } else {
+    log_layout
+  }
+
+  appenders <- list(
+    log4r::console_appender(layout = layout)
+  )
+
+  log_dir <- Sys.getenv("GPSSAMPLING_LOG_DIR", "")
+  if (nzchar(log_dir)) {
+    fs::dir_create(log_dir, recurse = TRUE)
+    log_file <- fs::path(log_dir, "gpssampling.log")
+    rotate_log(log_file)
+    appenders <- c(
+      appenders,
+      list(log4r::file_appender(log_file, append = TRUE, layout = layout))
+    )
+  }
+
+  log4r::logger(threshold = level, appenders = appenders)
+}
+
+rotate_log <- function(log_path, max_files = 5L, max_size_mb = 10L) {
+  if (!fs::file_exists(log_path)) {
+    return(invisible(NULL))
+  }
+  if (fs::file_size(log_path) <= max_size_mb * 1024^2) {
+    return(invisible(NULL))
+  }
+  for (i in seq(max_files - 1L, 1L)) {
+    from <- paste0(log_path, ".", i)
+    to <- paste0(log_path, ".", i + 1L)
+    if (fs::file_exists(from)) fs::file_move(from, to)
+  }
+  fs::file_move(log_path, paste0(log_path, ".1"))
+  invisible(NULL)
+}
+
+.logger <- init_logger()

@@ -7,30 +7,13 @@
 An R6 class object.
 }
 \description{
-This function defines an R6 class called "Base". The class
-has a single public method called "initialize", which creates
-a new instance of the class and sets its "parent" attribute to
-the value passed in as an argument (or NULL if no argument is provided).
+Root R6 class for the gpssampling class hierarchy. Provides optional
+method tracing via the \code{gpssampling.trace} option or the \code{.trace} parameter.
 
-If a global option called "epi.log" is set to TRUE, all functions defined in the
-class are decorated with logging functionality. The class also has a single
-active field called "parent", which can be used to get or set the value of
-the "parent" attribute.
+When tracing is enabled, all public and private methods are wrapped with
+entry/exit logging and elapsed-time measurement via \code{logDecorate()}.
 }
-\examples{
-# Create a new instance of the Base class with no parent
-my_base <- Base$new()
-
-# Create a new instance of the Base class with a parent
-my_child_base <- Base$new(parent = my_base)
-
-# Get the value of the "parent" attribute for an instance of the Base class
-my_base$parent()
-
-# Set the value of the "parent" attribute for an instance of the Base class
-my_base$parent(my_child_base)
-
-}
+\keyword{internal}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
@@ -52,7 +35,7 @@ Parent object of the object.}
 \subsection{Method \code{new()}}{
 Creates a new instance of this \link[R6:R6Class]{R6} class.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$new(parent = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$new(parent = NULL, .trace = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -60,6 +43,10 @@ Creates a new instance of this \link[R6:R6Class]{R6} class.
 \describe{
 \item{\code{parent}}{(\code{R6Class})\cr
 Identifier of the parent object.}
+
+\item{\code{.trace}}{(\code{logical(1)})\cr
+Enable method tracing for this instance. Defaults to
+\code{getOption("gpssampling.trace", FALSE)}.}
 }
 \if{html}{\out{</div>}}
 }

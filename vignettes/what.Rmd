@@ -1,12 +1,12 @@
 ---
-title: "What is GeoSampler"
+title: "What is GPS Sampling"
 subtitle: >
-  What is GeoSampler, why GeoSampler was developed and what are the advantages in using it.
+  What is GPS Sampling, why it was developed and what are the advantages in using it.
 output:
   rmarkdown::html_vignette:
     keep_md: yes
 vignette: >
-  %\VignetteIndexEntry{What is GeoSampler}
+  %\VignetteIndexEntry{What is GPS Sampling}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 ---
@@ -15,14 +15,11 @@ vignette: >
 source(here::here('vignettes/setup.R'), local = TRUE) # nolint: undesirable_function_linter.
 ```
 
-[**`r pkg_infos$title`**](`r uri_shiny_server`/`r tolower(pkg_infos$title)`){target="_blank"} is a web application designed for providing users with procedures for estimating population size using geographical information. The application is based on [R](https://www.r-project.org/){target="_blank"} freeware and the [Shiny](https://shiny.rstudio.com/){target="_blank"} package.
+**`r pkg_infos$title`** is a web application designed for providing users with procedures for estimating population size using geographical information. The application is based on [R](https://www.r-project.org/){target="_blank"} freeware and the [Shiny](https://shiny.rstudio.com/){target="_blank"} package.
 
-`r pkg_infos$title` was developed and is maintained by [Epicentre](https://epicentre.msf.org/){target="_blank"} to support the activities of [Médecins Sans Frontières](https://www.msf.org){target="_blank"}. However, as a open source application under the [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0){target="_blank"}, anyone is free to use, share and change all versions of this software.
-The web application can be found at this [link](`r uri_shiny_server`/`r tolower(pkg_infos$title)`){target="_blank"}, while the source code is available at this [GitHub repository](`r uri_shiny_server`r pkg_infos$title`[2, "url"]`){target="_blank"}.
+`r pkg_infos$title` is a fork of [GeoSampler](https://apps.msf.net/geosampler/site/index.html){target="_blank"}, originally developed by [Epicentre](https://epicentre.msf.org/){target="_blank"} to support the activities of [Médecins Sans Frontières](https://www.msf.org){target="_blank"}. This fork is maintained independently for internal use and released under the [WTFPL](http://www.wtfpl.net/){target="_blank"} license.
 
 Please use the issue tracker on GitHub to suggest enhancements or report problems: [`r pkg_infos$url_issue`](`r pkg_infos$url_issue`){target="_blank"}.
-
-For the original version of this application, please visit the [official GeoSampler website](https://apps.msf.net/geosampler/site/index.html). This fork is maintained by Claude (Anthropic AI agent).
 
 Three sampling methods are implemented:
 

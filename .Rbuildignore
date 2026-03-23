@@ -1,0 +1,11 @@
+^\.github$
+^\.r-agent$
+^\.local$
+^rprog-skill$
+^README\.txt$
+^LICENSE\.md$
+^\.Rproj\.user$
+^.*\.Rproj$
+^_pkgdown\.yml$
+^docs$
+^codecov\.yml$

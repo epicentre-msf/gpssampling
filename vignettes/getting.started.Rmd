@@ -17,13 +17,9 @@ source(here::here('vignettes/setup.R'), local = TRUE)
 
 # Get access to `r pkg_infos$title`
 
-## Online
-
-`r pkg_infos$title` is available **online** at the <a href=`r paste0(uri_shiny_server, "/", tolower(pkg_infos$title), "-01")` target="_blank">MSF-Epicentre Data and Apps</a> platform. If you have not the rights to access to the online version, please contact the Epicentre training unit (<Elise.RODARY@epicentre.msf.org>).
-
 ## On your server/computer
 
-`r pkg_infos$title` can also be deployed **on any server or on a personal computer**, as long as the license terms are followed.
+`r pkg_infos$title` can be deployed **on any server or on a personal computer**. See the package README for installation instructions.
 
 In any way, the application works better if:
 
