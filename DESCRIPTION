@@ -31,6 +31,7 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
 Suggests: covr, devEMF, devtools, diffdf, here, kableExtra, knitr,
         pkgdown, profvis, sessioninfo, shinytest2,
         spatstat, testthat (>= 3.0.0), tictoc, yaml
+Remotes: trafficonese/leaflet.extras
 VignetteBuilder: knitr
 Config/build/copy-method: link
 Config/testthat/edition: 3
