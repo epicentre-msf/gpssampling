@@ -292,6 +292,7 @@ test_that("App starts with each sampling method", {
     tmp_dir <- withr::local_tempdir()
     writeLines(
       c(
+        'options(shiny.testmode = TRUE)',
         'library(gpssampling)',
         'samp <- sampler()',
         sprintf('samp$launch(open = FALSE, method = "%s")', method)
