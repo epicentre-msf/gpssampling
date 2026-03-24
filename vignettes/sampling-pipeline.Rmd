@@ -250,14 +250,15 @@ buildings_list <- fetch_osm_buildings(state_boundary) |>
   filter_buildings() |>
   crop_buildings(communities, community_id_col = "name")
 
-# 3. Sample
+# 3. Sample (seed is required — choose any integer for reproducibility)
 samples <- sample_communities(
   buildings_list,
   n_required = c(
     community_one = 30, community_two = 80,
     community_three = 85, community_four = 60
   ),
-  min_distance = 50
+  min_distance = 50,
+  seed = 250292L
 )
 
 # 4. Batch and export

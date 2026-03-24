@@ -23,6 +23,23 @@ auto_utm_crs <- function(x) {
   if (center_lat >= 0) 32600L + utm_zone else 32700L + utm_zone
 }
 
+
+#' Derive a per-community seed from a master seed and community name
+#'
+#' Produces a deterministic integer seed unique to each community so that
+#' adding or removing a community does not change the selection in others.
+#'
+#' @param seed Integer master seed.
+#' @param name Character community name.
+#' @return An integer seed.
+#' @noRd
+derive_community_seed <- function(seed, name) {
+  chars <- utf8ToInt(name)
+  name_hash <- sum(chars * seq_along(chars))
+  abs(bitwXor(as.integer(seed), as.integer(name_hash %% .Machine$integer.max)))
+}
+
+
 #' Fetch OSM building footprints
 #'
 #' Downloads OpenStreetMap building footprints for a given area using
@@ -666,11 +683,14 @@ order_selected_points <- function(
 #'   integer applies the same size to all communities.
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
-#' @param seed Integer RNG seed for reproducibility. Default `250292L`.
-#'   Results are reproducible across machines given the same seed, input
-#'   data, and R version (>= 3.6.0). R 3.6.0 changed the default
-#'   sampling algorithm (`sample.kind = "Rejection"`), so results from
-#'   R < 3.6 and R >= 3.6 will differ even with the same seed.
+#' @param seed Integer RNG seed for reproducibility (**required**, no
+#'   default). A per-community seed is derived from `seed` and the
+#'   community name, so adding or removing a community does not change
+#'   the selection in other communities. Results are reproducible across
+#'   machines given the same seed, input data, and R version (>= 3.6.0).
+#'   R 3.6.0 changed the default sampling algorithm
+#'   (`sample.kind = "Rejection"`), so results from R < 3.6 and
+#'   R >= 3.6 will differ even with the same seed.
 #' @param road_types Character vector of OSM `highway=*` values used
 #'   for the post-selection proximity ordering.
 #' @return A named list of lists. Each community element contains:
@@ -683,14 +703,15 @@ order_selected_points <- function(
 #' samples <- sample_communities(
 #'   buildings_list,
 #'   n_required = c(community_one = 30, community_two = 80),
-#'   min_distance = 50
+#'   min_distance = 50,
+#'   seed = 12345L
 #' )
 #' }
 sample_communities <- function(
   buildings_list,
   n_required,
   min_distance = 50,
-  seed = 250292L,
+  seed,
   road_types = c(
     "primary",
     "secondary",
@@ -746,30 +767,32 @@ sample_communities <- function(
     "Sampling {length(sorted_names)} communit{?y/ies} with seed {seed}..."
   )
 
-  results <- withr::with_seed(seed, {
-    res <- list()
-    for (nm in sorted_names) {
-      cli::cli_inform("  Sampling {.val {nm}} ({n_required[[nm]]} points)...")
-      sampled <- select_sample_points(
+  res <- list()
+  for (nm in sorted_names) {
+    community_seed <- derive_community_seed(seed, nm)
+    cli::cli_inform(
+      "  Sampling {.val {nm}} ({n_required[[nm]]} points, seed {community_seed})..."
+    )
+    sampled <- withr::with_seed(community_seed, {
+      select_sample_points(
         buildings_list[[nm]],
         n_required[[nm]],
         min_distance
       )
-      cli::cli_inform("  Ordering {.val {nm}} by road proximity...")
-      ordered_primary <- order_selected_points(
-        sampled$primary,
-        road_types
-      )
-      res[[nm]] <- list(
-        buildings = buildings_list[[nm]],
-        primary = ordered_primary,
-        secondary = sampled$secondary,
-        min_distance = min_distance,
-        seed = seed
-      )
-    }
-    res
-  })
+    })
+    cli::cli_inform("  Ordering {.val {nm}} by road proximity...")
+    ordered_primary <- order_selected_points(
+      sampled$primary,
+      road_types
+    )
+    res[[nm]] <- list(
+      buildings = buildings_list[[nm]],
+      primary = ordered_primary,
+      secondary = sampled$secondary,
+      min_distance = min_distance,
+      seed = community_seed
+    )
+  }
 
-  results
+  res
 }

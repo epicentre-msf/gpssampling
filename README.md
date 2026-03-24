@@ -80,7 +80,8 @@ buildings_list <- fetch_osm_buildings(st_read("boundary.gpkg")) |>
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_1 = 30, community_2 = 80),
-  min_distance = 50
+  min_distance = 50,
+  seed = 250292L
 )
 
 # Batch, export (GPX + GeoPackage + OsmAnd tiles), and map

@@ -391,7 +391,8 @@ test_that("sample_communities result structure is correct", {
     expect_s3_class(result[[nm]]$primary, "sf")
     expect_s3_class(result[[nm]]$secondary, "sf")
     expect_equal(result[[nm]]$min_distance, 50)
-    expect_equal(result[[nm]]$seed, 42L)
+    # seed is per-community (derived from master seed + community name)
+    expect_type(result[[nm]]$seed, "integer")
     # selection_order should be present after ordering
     expect_true("selection_order" %in% names(result[[nm]]$primary))
   }
@@ -403,7 +404,7 @@ test_that("sample_communities errors on unknown community", {
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
 
   expect_error(
-    sample_communities(bl, c(alpha = 3L, beta = 3L, gamma = 3L)),
+    sample_communities(bl, c(alpha = 3L, beta = 3L, gamma = 3L), seed = 42L),
     "not found"
   )
 })
