@@ -2,7 +2,7 @@
 
 This function is used to determine whether the current R session is
 running a Shiny server application. It internally calls the
-[`isHostedApp`](https://yves-amevoin.github.io/gpssampling/reference/isHostedApp.md)
+[`isHostedApp`](https://epicentre-msf.github.io/gpssampling/reference/isHostedApp.md)
 function to determine this.
 
 ## Usage

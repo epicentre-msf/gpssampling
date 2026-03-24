@@ -31,7 +31,9 @@ calculateSampleZeroInflatedDistribution(
 
 - progress:
 
-  a progress bar object created by `progress_bar` (default is NULL)
+  a progress bar object created by
+  [`progress_bar`](http://r-lib.github.io/progress/reference/progress_bar.md)
+  (default is NULL)
 
 ## Value
 

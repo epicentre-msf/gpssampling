@@ -28,7 +28,7 @@ An R6 class object.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### Method [`new()`](https://rdrr.io/r/methods/new.html)
 
 Creates a new instance of this
 [R6](https://r6.r-lib.org/reference/R6Class.html) class.

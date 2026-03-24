@@ -6,7 +6,7 @@
 
 - Renamed package from `epi.geosampler` to `gpssampling`.
 - Renamed `Application` class to `GpsSampler`. Added
-  [`sampler()`](https://yves-amevoin.github.io/gpssampling/reference/sampler.md)
+  [`sampler()`](https://epicentre-msf.github.io/gpssampling/reference/sampler.md)
   factory function. `Application` and `ApplicationModule` kept as
   deprecated aliases.
 - Removed 4 private GitHub Remotes (`leafem`, `epi.icons`, `leafpm`,
@@ -19,7 +19,7 @@
 ### Bug fixes
 
 - Fixed HTTP 500 on app startup:
-  [`useGoogle()`](https://yves-amevoin.github.io/gpssampling/reference/useGoogle.md)
+  [`useGoogle()`](https://epicentre-msf.github.io/gpssampling/reference/useGoogle.md)
   no longer calls [`stop()`](https://rdrr.io/r/base/stop.html) when
   `MAPS_API_KEY_GOOGLE` is unset. Returns empty tag with a warning
   instead.
@@ -41,7 +41,7 @@
 - Fixed NULL guard on `roofs_sf` in
   `addRoofsGoogle`/`addRoofsOpenBuilding`.
 - Fixed
-  [`findFreePort()`](https://yves-amevoin.github.io/gpssampling/reference/findFreePort.md)
+  [`findFreePort()`](https://epicentre-msf.github.io/gpssampling/reference/findFreePort.md)
   — replaced Windows-only `netstat -aofn` with cross-platform socket
   binding test.
 - Patched 18 SQL injection sites with parameterized queries.
@@ -78,7 +78,7 @@
 - Replaced [`print()`](https://rdrr.io/r/base/print.html) in
   `utils.pkg.R` (tile progress) with `logDebug()`.
 - Upgraded
-  [`console.out()`](https://yves-amevoin.github.io/gpssampling/reference/console.out.md)
+  [`console.out()`](https://epicentre-msf.github.io/gpssampling/reference/console.out.md)
   to delegate to `logDebug()` instead of being a tictoc-only no-op.
 - Upgraded session start/end log calls from `logDebug()` to `logInfo()`.
 - Logger is re-initialized in `.onLoad()` to pick up env var changes.
@@ -112,7 +112,7 @@
 - Moved `devEMF` and `sessioninfo` from Imports to Suggests with
   [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) guards.
 - Optimized
-  [`addRoofsGoogle()`](https://yves-amevoin.github.io/gpssampling/reference/addRoofsGoogle.md)
+  [`addRoofsGoogle()`](https://epicentre-msf.github.io/gpssampling/reference/addRoofsGoogle.md)
   with
   [`curl::multi_download()`](https://jeroen.r-universe.dev/curl/reference/multi_download.html)
   batch downloads.
@@ -135,7 +135,7 @@
 
 - 591 tests passing (up from ~390 at fork).
 - Added shinytest2 test infrastructure with initial test suite.
-- Rewrote `test.utils.shiny.R` and `test.logging.R` from scratch.
+- Rewrote `test-utils-shiny.R` and `test-logging.R` from scratch.
 - Removed Selenium dependencies (`RSelenium`, `selenider`) from
   Suggests.
 

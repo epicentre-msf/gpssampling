@@ -5,10 +5,10 @@ documentation and tutorials for learning to use **GPS Sampling**.
 
 Before starting using GPS Sampling, you may be interested in knowing
 what is [GPS Sampling about and why GPS Sampling was
-created](https://yves-amevoin.github.io/gpssampling/articles/about.md).
+created](https://epicentre-msf.github.io/gpssampling/articles/about.md).
 
 If you are not familiar with GPS Sampling, have a look at the [Getting
-started](https://yves-amevoin.github.io/gpssampling/articles/getting.started.md)
+started](https://epicentre-msf.github.io/gpssampling/articles/getting.started.md)
 page.
 
 ## Tutorials
@@ -20,11 +20,11 @@ developed by Epicentre (MSF).
 - Prepare a geographic sample
 
   - [By random sampling of
-    roofs](https://yves-amevoin.github.io/gpssampling/articles/learn.step.by.step.1.md)
+    roofs](https://epicentre-msf.github.io/gpssampling/articles/learn.step.by.step.1.md)
   - [By spatial
-    sampling](https://yves-amevoin.github.io/gpssampling/articles/learn.step.by.step.2.md)
+    sampling](https://epicentre-msf.github.io/gpssampling/articles/learn.step.by.step.2.md)
   - [By spatial sampling
-    supervised](https://yves-amevoin.github.io/gpssampling/articles/learn.step.by.step.3.md)
+    supervised](https://epicentre-msf.github.io/gpssampling/articles/learn.step.by.step.3.md)
 
 For any questions or suggestions, please use the issue tracker:
 [https://github.com/epicentre-msf/gpssampling/issues](https://github.com/epicentre-msf/gpssampling/issues).

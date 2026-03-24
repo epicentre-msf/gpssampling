@@ -39,13 +39,13 @@ brew install gdal geos proj udunits
 
 ``` r
 install.packages("remotes")
-remotes::install_github("yves-amevoin/gpssampling")
+remotes::install_github("epicentre-msf/gpssampling")
 ```
 
 ### Install from a local clone
 
 ``` bash
-git clone https://github.com/yves-amevoin/gpssampling.git
+git clone https://github.com/epicentre-msf/gpssampling.git
 R CMD INSTALL gpssampling
 ```
 
@@ -62,6 +62,38 @@ library(gpssampling)
 samp <- sampler()
 samp$launch()
 ```
+
+## Programmatic Sampling Pipeline
+
+In addition to the Shiny app, the package provides a scripted sampling
+pipeline for reproducible workflows:
+
+``` r
+library(gpssampling)
+library(sf)
+
+# Fetch buildings, filter, crop to communities
+buildings_list <- fetch_osm_buildings(st_read("boundary.gpkg")) |>
+  filter_buildings() |>
+  crop_buildings(st_read("communities.gpkg"), community_id_col = "name")
+
+# Sample with minimum-distance constraints
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_1 = 30, community_2 = 80),
+  min_distance = 50,
+  seed = 250292L
+)
+
+# Batch, export (GPX + GeoPackage + OsmAnd tiles), and map
+batched <- split_batches(samples, n_batches = 5L, set = "primary")
+export_points(batched, out_dir = "output", set = "primary")
+map_all_communities(samples, communities, out_dir = "output/maps")
+```
+
+See
+[`vignette("sampling-pipeline")`](https://epicentre-msf.github.io/gpssampling/articles/sampling-pipeline.md)
+for the full guide.
 
 ## Configuration
 
@@ -134,7 +166,7 @@ samp <- sampler(.trace = TRUE)
 Development happens on the `dev` branch:
 
 ``` bash
-git clone https://github.com/yves-amevoin/gpssampling.git
+git clone https://github.com/epicentre-msf/gpssampling.git
 cd gpssampling
 git checkout dev
 ```

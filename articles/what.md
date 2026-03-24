@@ -19,10 +19,10 @@ problems:
 
 Three sampling methods are implemented:
 
-- the [Quadrats](https://yves-amevoin.github.io/gpssampling/articles/)
-- the [T-square](https://yves-amevoin.github.io/gpssampling/articles/)
+- the [Quadrats](https://epicentre-msf.github.io/gpssampling/articles/)
+- the [T-square](https://epicentre-msf.github.io/gpssampling/articles/)
 - the [Roof-Simple-Random
-  sampling](https://yves-amevoin.github.io/gpssampling/articles/)
+  sampling](https://epicentre-msf.github.io/gpssampling/articles/)
 
 The three methods have different limitations and potential weaknesses
 depending of the context they are applied and the type and quality of

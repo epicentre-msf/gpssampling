@@ -26,7 +26,7 @@ A numeric score for the uniqueness of elements in `x`
 ## References
 
 Levenshtein, V. (1966). Binary codes capable of correcting deletions,
-insertions, and reversals. Soviet Physics Doklady, 10(8), 7072013710.
+insertions, and reversals. Soviet Physics Doklady, 10(8), 707-710.
 
 ## See also
 

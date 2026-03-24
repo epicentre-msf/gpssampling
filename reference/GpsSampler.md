@@ -7,12 +7,12 @@ GpsSampler R6 Class
 ## Details
 
 Main entry point for the GPS sampling Shiny application. Use the
-[`sampler()`](https://yves-amevoin.github.io/gpssampling/reference/sampler.md)
+[`sampler()`](https://epicentre-msf.github.io/gpssampling/reference/sampler.md)
 factory function for idiomatic construction.
 
 ## Super classes
 
-[`gpssampling::Base`](https://yves-amevoin.github.io/gpssampling/reference/Base.md)
+[`gpssampling::Base`](https://epicentre-msf.github.io/gpssampling/reference/Base.md)
 -\> `gpssampling::AppShinyBase` -\>
 `gpssampling::AppShinyWithAuthentification` -\>
 `gpssampling::AppShinyWithTranslation` -\> `gpssampling::AppShiny` -\>
@@ -44,13 +44,13 @@ factory function for idiomatic construction.
 
 Inherited methods
 
-- [`gpssampling::AppShinyBase$addModule()`](https://yves-amevoin.github.io/gpssampling/reference/AppShinyBase.html#method-addModule)
-- [`gpssampling::AppShinyBase$shutdown()`](https://yves-amevoin.github.io/gpssampling/reference/AppShinyBase.html#method-shutdown)
-- [`gpssampling::AppShinyWithAuthentification$logout()`](https://yves-amevoin.github.io/gpssampling/reference/AppShinyWithAuthentification.html#method-logout)
+- [`gpssampling::AppShinyBase$addModule()`](https://epicentre-msf.github.io/gpssampling/reference/AppShinyBase.html#method-addModule)
+- [`gpssampling::AppShinyBase$shutdown()`](https://epicentre-msf.github.io/gpssampling/reference/AppShinyBase.html#method-shutdown)
+- [`gpssampling::AppShinyWithAuthentification$logout()`](https://epicentre-msf.github.io/gpssampling/reference/AppShinyWithAuthentification.html#method-logout)
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### Method [`new()`](https://rdrr.io/r/methods/new.html)
 
 Create a new GpsSampler instance.
 

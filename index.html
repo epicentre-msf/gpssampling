@@ -38,7 +38,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/yves-amevoin/gpssampling/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/epicentre-msf/gpssampling/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,12 +74,12 @@
 </h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"yves-amevoin/gpssampling"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"epicentre-msf/gpssampling"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="install-from-a-local-clone">Install from a local clone<a class="anchor" aria-label="anchor" href="#install-from-a-local-clone"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/yves-amevoin/gpssampling.git</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/epicentre-msf/gpssampling.git</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="ex">R</span> CMD INSTALL gpssampling</span></code></pre></div>
 <p>Or from within R:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -90,9 +90,36 @@
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://yves-amevoin.github.io/gpssampling/">gpssampling</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epicentre-msf.github.io/gpssampling/">gpssampling</a></span><span class="op">)</span></span>
 <span><span class="va">samp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sampler.html">sampler</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">samp</span><span class="op">$</span><span class="fu">launch</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="programmatic-sampling-pipeline">Programmatic Sampling Pipeline<a class="anchor" aria-label="anchor" href="#programmatic-sampling-pipeline"></a>
+</h2>
+<p>In addition to the Shiny app, the package provides a scripted sampling pipeline for reproducible workflows:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epicentre-msf.github.io/gpssampling/">gpssampling</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fetch buildings, filter, crop to communities</span></span>
+<span><span class="va">buildings_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"boundary.gpkg"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/filter_buildings.html">filter_buildings</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/crop_buildings.html">crop_buildings</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"communities.gpkg"</span><span class="op">)</span>, community_id_col <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Sample with minimum-distance constraints</span></span>
+<span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sample_communities.html">sample_communities</a></span><span class="op">(</span></span>
+<span>  <span class="va">buildings_list</span>,</span>
+<span>  n_required <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_1 <span class="op">=</span> <span class="fl">30</span>, community_2 <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>,</span>
+<span>  min_distance <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">250292L</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Batch, export (GPX + GeoPackage + OsmAnd tiles), and map</span></span>
+<span><span class="va">batched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/split_batches.html">split_batches</a></span><span class="op">(</span><span class="va">samples</span>, n_batches <span class="op">=</span> <span class="fl">5L</span>, set <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/export_points.html">export_points</a></span><span class="op">(</span><span class="va">batched</span>, out_dir <span class="op">=</span> <span class="st">"output"</span>, set <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/map_all_communities.html">map_all_communities</a></span><span class="op">(</span><span class="va">samples</span>, <span class="va">communities</span>, out_dir <span class="op">=</span> <span class="st">"output/maps"</span><span class="op">)</span></span></code></pre></div>
+<p>See <code><a href="articles/sampling-pipeline.html">vignette("sampling-pipeline")</a></code> for the full guide.</p>
 </div>
 <div class="section level2">
 <h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
@@ -178,9 +205,9 @@
 </tbody>
 </table>
 <p>Example:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># In ~/.Renviron</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="va">GPSSAMPLING_LOG_LEVEL</span><span class="op">=</span>INFO</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="va">GPSSAMPLING_LOG_DIR</span><span class="op">=</span>~/gpssampling-logs</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># In ~/.Renviron</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="va">GPSSAMPLING_LOG_LEVEL</span><span class="op">=</span>INFO</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="va">GPSSAMPLING_LOG_DIR</span><span class="op">=</span>~/gpssampling-logs</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="mergin-integration-optional">Mergin integration (optional)<a class="anchor" aria-label="anchor" href="#mergin-integration-optional"></a>
@@ -215,12 +242,12 @@
 <h3 id="method-tracing">Method tracing<a class="anchor" aria-label="anchor" href="#method-tracing"></a>
 </h3>
 <p>For debugging, enable method-level tracing to log every R6 method call with timing:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>gpssampling.trace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">samp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sampler.html">sampler</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">samp</span><span class="op">$</span><span class="fu">launch</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Or enable per-instance:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">samp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sampler.html">sampler</a></span><span class="op">(</span>.trace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -228,9 +255,9 @@
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
 <p>Development happens on the <code>dev</code> branch:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/yves-amevoin/gpssampling.git</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="bu">cd</span> gpssampling</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">git</span> checkout dev</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/epicentre-msf/gpssampling.git</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="bu">cd</span> gpssampling</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">git</span> checkout dev</span></code></pre></div>
 <p><strong>Branch workflow:</strong></p>
 <ul>
 <li>
@@ -263,8 +290,8 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/yves-amevoin/gpssampling/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/yves-amevoin/gpssampling/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/epicentre-msf/gpssampling/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/epicentre-msf/gpssampling/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 

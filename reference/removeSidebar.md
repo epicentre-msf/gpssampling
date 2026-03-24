@@ -21,8 +21,8 @@ the new `map` object
 ## See also
 
 Other Sidebar Functions:
-[`addSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/addSidebar.md),
-[`closeSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/closeSidebar.md),
-[`openSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/openSidebar.md),
-[`sidebar_pane()`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_pane.md),
-[`sidebar_tabs()`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_tabs.md)
+[`addSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/addSidebar.md),
+[`closeSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/closeSidebar.md),
+[`openSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/openSidebar.md),
+[`sidebar_pane()`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_pane.md),
+[`sidebar_tabs()`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_tabs.md)

@@ -116,9 +116,9 @@ directory.
 - `getDirAssets()`: Chemin des ressource du package (image, icon, fonts,
   css, js, ...)
 
-  Cette fonction renvoie le chemin du r contenant les ressources du
-  package, telles que les images, les ic, les polices, les fichiers CSS,
-  les fichiers JS, etc.
+  Cette fonction renvoie le chemin du repertoire contenant les
+  ressources du package, telles que les images, les icones, les polices,
+  les fichiers CSS, les fichiers JS, etc.
 
 - `getDirDatabase()`: Get the directory path of the database
 

@@ -99,18 +99,18 @@ polygons. Imported or newly created polygons can be edit afterwards.
 Validate at least one polygon to move th the next pages.
 
 If you opted for the [Roof Simple-Random
-sampling](https://yves-amevoin.github.io/gpssampling/articles/) method,
+sampling](https://epicentre-msf.github.io/gpssampling/articles/) method,
 move to Page **② Identify** .
 
 If you opted for the
-[Quadrats](https://yves-amevoin.github.io/gpssampling/articles/) or
-[T-square](https://yves-amevoin.github.io/gpssampling/articles/) method,
-move to Page **③ Sample** .
+[Quadrats](https://epicentre-msf.github.io/gpssampling/articles/) or
+[T-square](https://epicentre-msf.github.io/gpssampling/articles/)
+method, move to Page **③ Sample** .
 
 ### Page **② Identify**
 
 Page is to be used only if you opted for the [Roof Simple-Random
-sampling](https://yves-amevoin.github.io/gpssampling/articles/) method.
+sampling](https://epicentre-msf.github.io/gpssampling/articles/) method.
 
 In this page the application has created tiles of 150 metres per side to
 cover the polygon(s) saved in the previous page. Tiles are displayed in
@@ -163,7 +163,7 @@ of the sampling method chose.
 
 Before sampling, you need to select at least one polygon frow which the
 points are to be sampled. Do so even if there is only one polygon. For
-the [Quadrats](https://yves-amevoin.github.io/gpssampling/articles/)
+the [Quadrats](https://epicentre-msf.github.io/gpssampling/articles/)
 method you need to chose also the size of the quadrats.
 
 ### Page **④ Results**

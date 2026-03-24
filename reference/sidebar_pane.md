@@ -43,11 +43,11 @@ A `shiny.tag` with sidebar-specific HTML classes
 ## See also
 
 Other Sidebar Functions:
-[`addSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/addSidebar.md),
-[`closeSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/closeSidebar.md),
-[`openSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/openSidebar.md),
-[`removeSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/removeSidebar.md),
-[`sidebar_tabs()`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_tabs.md)
+[`addSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/addSidebar.md),
+[`closeSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/closeSidebar.md),
+[`openSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/openSidebar.md),
+[`removeSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/removeSidebar.md),
+[`sidebar_tabs()`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_tabs.md)
 
 ## Examples
 

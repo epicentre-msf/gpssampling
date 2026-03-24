@@ -13,19 +13,19 @@ sidebar_tabs(id = "sidebar", iconList = NULL, ...)
 - id:
 
   The id of the sidebar, which must match the `id` of
-  [`addSidebar`](https://yves-amevoin.github.io/gpssampling/reference/addSidebar.md).
+  [`addSidebar`](https://epicentre-msf.github.io/gpssampling/reference/addSidebar.md).
   Default is `"sidebar"`
 
 - iconList:
 
   A list of icons to be shown, when the sidebar is collapsed. The list
   is required and must match the amount of
-  [`sidebar_pane`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_pane.md).
+  [`sidebar_pane`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_pane.md).
 
 - ...:
 
   The individual
-  [`sidebar_pane`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_pane.md).
+  [`sidebar_pane`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_pane.md).
 
 ## Value
 
@@ -39,11 +39,11 @@ A `shiny.tag` with individual sidebar panes
 ## See also
 
 Other Sidebar Functions:
-[`addSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/addSidebar.md),
-[`closeSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/closeSidebar.md),
-[`openSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/openSidebar.md),
-[`removeSidebar()`](https://yves-amevoin.github.io/gpssampling/reference/removeSidebar.md),
-[`sidebar_pane()`](https://yves-amevoin.github.io/gpssampling/reference/sidebar_pane.md)
+[`addSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/addSidebar.md),
+[`closeSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/closeSidebar.md),
+[`openSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/openSidebar.md),
+[`removeSidebar()`](https://epicentre-msf.github.io/gpssampling/reference/removeSidebar.md),
+[`sidebar_pane()`](https://epicentre-msf.github.io/gpssampling/reference/sidebar_pane.md)
 
 ## Examples
 

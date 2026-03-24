@@ -138,7 +138,7 @@ There are 2 options :
 
 2.  Click on the button **Upload…** and in the file dialog, navigate in
     your folders and select the appropriate file
-    ([masai-lodge.kmz](https://yves-amevoin.github.io/gpssampling/articles/data/psp/2022.nairobi/masai-lodge.kmz)).  
+    ([masai-lodge.kmz](https://epicentre-msf.github.io/gpssampling/articles/data/psp/2022.nairobi/masai-lodge.kmz)).  
     ![](images/upload-delimit-2.webp)
 
 3.  Click on the button **Add a polygon layer…** when the upload is
