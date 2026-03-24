@@ -1,5 +1,15 @@
 # Tests for R/sampling_manage.R — Phase B GPS point management
 
+# sf::st_write GPKG triggers dyn.load() that segfaults on macOS CI runners
+# (GDAL binary incompatibility). Tests pass on Ubuntu CI and local macOS.
+# File-level skip required because segfault crashes the subprocess before
+# any in-test skip can execute.
+is_ci <- isTRUE(as.logical(Sys.getenv("CI", "false")))
+is_mac <- Sys.info()[["sysname"]] == "Darwin"
+if (is_ci && is_mac) {
+  skip("sf::st_write GPKG segfaults on macOS CI (GDAL binary issue)")
+}
+
 # Helpers (reuse from test-sampling.R patterns)
 # ............................................................................
 
