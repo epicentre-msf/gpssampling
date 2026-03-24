@@ -3,7 +3,7 @@ Package: gpssampling
 Title: GPS Sampling
 Version: 0.2.0
 Authors@R: c(
-    person("Yves", "Amevoin", email = "yves-amevoin@users.noreply.github.com",
+    person("Yves", "Amevoin", email = "epicentre-msf@users.noreply.github.com",
            role = c("aut", "cre")),
     person("Claude", "(Anthropic AI)", role = "aut")
   )
@@ -14,9 +14,9 @@ Description: A Shiny application for geospatial sampling of building
     original GeoSampler package by Epicentre (MSF), modified with Claude
     AI agent assistance for internal use.
 License: file LICENSE
-URL: https://yves-amevoin.github.io/gpssampling/,
-    https://github.com/yves-amevoin/gpssampling
-BugReports: https://github.com/yves-amevoin/gpssampling/issues
+URL: https://epicentre-msf.github.io/gpssampling/,
+    https://github.com/epicentre-msf/gpssampling
+BugReports: https://github.com/epicentre-msf/gpssampling/issues
 Depends: R (>= 4.3.0)
 Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         dbplyr, dplyr, flextable, fs, geojsonio,
@@ -28,10 +28,11 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         scales, sf, shiny, shiny.i18n, shinybusy,
         shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
-        units, utils, uuid, waiter, withr, zip
-Suggests: covr, devEMF, devtools, diffdf, here, kableExtra, knitr,
-        pkgdown, profvis, sessioninfo, shinytest2,
-        spatstat, testthat (>= 3.0.0), tictoc, yaml
+        units, utils, uuid, waiter, withr, wk, zip
+Suggests: covr, devEMF, devtools, diffdf, emayili, ggplot2, ggspatial,
+        here, kableExtra, knitr, pkgdown, profvis, sessioninfo,
+        shinytest2, spatstat, testthat (>= 3.0.0), tictoc, tidyterra,
+        yaml
 Remotes: trafficonese/leaflet.extras
 VignetteBuilder: knitr
 Config/build/copy-method: link

@@ -269,7 +269,7 @@ splitMsg <- function(msg) {
 #'
 #' @references
 #' Levenshtein, V. (1966). Binary codes capable of correcting deletions, insertions, and reversals.
-#' Soviet Physics Doklady, 10(8), 707\u2013710.
+#' Soviet Physics Doklady, 10(8), 707-710.
 #'
 #' @seealso
 #' \code{\link{stringdist::phonetic}}

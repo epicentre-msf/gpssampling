@@ -894,9 +894,9 @@ new_rast <- function(
   units
 ) {
   ncols <- round(ncols)
-  if (ncols < 1L) error('rast', 'ncols < 1')
+  if (ncols < 1L) stop('[rast] ncols < 1')
   nrows <- round(nrows)
-  if (nrows < 1L) error('rast', 'nrows < 1')
+  if (nrows < 1L) stop('[rast] nrows < 1')
 
   if (missing(extent)) {
     e <- c(xmin, xmax, ymin, ymax)

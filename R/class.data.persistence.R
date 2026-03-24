@@ -402,7 +402,7 @@ DataPersistence <- R6::R6Class(
 
       saveToCache(project, file = 'project.rds')
 
-      load(name, force = TRUE)
+      self$load(name, force = TRUE)
     },
 
     #' @description Clone a project's files and create under a new name.
@@ -461,7 +461,7 @@ DataPersistence <- R6::R6Class(
     #' @description Switch active project.
     #' @param name Project name to switch to (default: 'default').
     projectSelect = function(name = 'default') {
-      load(name)
+      self$load(name)
 
       data$step_delimit$state <- utils::modifyList(
         data$step_delimit$state,
