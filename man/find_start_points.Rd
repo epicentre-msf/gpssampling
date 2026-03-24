@@ -2,7 +2,7 @@
 % Please edit documentation in R/sampling.R
 \name{find_start_points}
 \alias{find_start_points}
-\title{Find starting points closest to roads}
+\title{Find buildings closest to roads}
 \usage{
 find_start_points(
   buildings_list,
@@ -23,8 +23,9 @@ community.
 }
 \description{
 For each community, identifies the building closest to an OSM road.
-This provides a deterministic, reproducible starting point for the
-sampling algorithm.
+This is a standalone utility; the main pipeline uses
+\code{\link[=order_selected_points]{order_selected_points()}} internally for proximity-based ordering
+after random selection.
 }
 \examples{
 \dontrun{

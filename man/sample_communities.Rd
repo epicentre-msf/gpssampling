@@ -7,9 +7,8 @@
 sample_communities(
   buildings_list,
   n_required,
-  start_points = NULL,
   min_distance = 50,
-  seed = 250292L,
+  seed,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified")
 )
@@ -22,34 +21,40 @@ sample_communities(
 community. Names must match \code{buildings_list}. A single unnamed
 integer applies the same size to all communities.}
 
-\item{start_points}{Optional named integer vector of starting point
-IDs. If \code{NULL}, computed automatically via \code{\link[=find_start_points]{find_start_points()}}.}
-
 \item{min_distance}{Numeric, minimum distance in meters between any
 two selected points. Default \code{50}.}
 
-\item{seed}{Integer RNG seed for reproducibility. Default \code{250292L}.}
+\item{seed}{Integer RNG seed for reproducibility (\strong{required}, no
+default). A per-community seed is derived from \code{seed} and the
+community name, so adding or removing a community does not change
+the selection in other communities. Results are reproducible across
+machines given the same seed, input data, and R version (>= 3.6.0).
+R 3.6.0 changed the default sampling algorithm
+(\code{sample.kind = "Rejection"}), so results from R < 3.6 and
+R >= 3.6 will differ even with the same seed.}
 
-\item{road_types}{Character vector passed to \code{\link[=find_start_points]{find_start_points()}}
-when \code{start_points} is \code{NULL}.}
+\item{road_types}{Character vector of OSM \verb{highway=*} values used
+for the post-selection proximity ordering.}
 }
 \value{
 A named list of lists. Each community element contains:
-\verb{$buildings} (all candidates), \verb{$primary} (selected points),
-\verb{$secondary} (remaining points), \verb{$start_id}, \verb{$min_distance},
-and \verb{$seed}.
+\verb{$buildings} (all candidates), \verb{$primary} (selected points with
+\code{selection_order}), \verb{$secondary} (remaining points),
+\verb{$min_distance}, and \verb{$seed}.
 }
 \description{
 Top-level function that orchestrates reproducible spatial sampling
-across all communities. Uses minimum-distance constraints and
-deterministic starting points (closest building to a road).
+across all communities. Points are selected randomly with minimum-
+distance constraints, then reordered by proximity to roads for
+efficient field work.
 }
 \examples{
 \dontrun{
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_one = 30, community_two = 80),
-  min_distance = 50
+  min_distance = 50,
+  seed = 12345L
 )
 }
 }
