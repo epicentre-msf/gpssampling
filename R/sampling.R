@@ -561,6 +561,10 @@ select_sample_points <- function(
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
 #' @param seed Integer RNG seed for reproducibility. Default `250292L`.
+#'   Results are reproducible across machines given the same seed, input
+#'   data, and R version (>= 3.6.0). R 3.6.0 changed the default
+#'   sampling algorithm (`sample.kind = "Rejection"`), so results from
+#'   R < 3.6 and R >= 3.6 will differ even with the same seed.
 #' @param road_types Character vector passed to [find_start_points()]
 #'   when `start_points` is `NULL`.
 #' @return A named list of lists. Each community element contains:
