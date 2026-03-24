@@ -1,5 +1,7 @@
 # styler: block
 
-# Pre-load sf GDAL drivers to avoid segfault when testthat parallel
-# workers call dyn.load() in forked processes on macOS CI (ARM64).
-suppressMessages(sf::sf_extSoftVersion())
+# Disable parallel testthat on macOS: forked processes + dyn.load()
+# of GDAL native libraries causes segfaults on macOS ARM64 CI runners.
+if (Sys.info()[["sysname"]] == "Darwin") {
+  options(testthat.parallel = FALSE) # nolint
+}
