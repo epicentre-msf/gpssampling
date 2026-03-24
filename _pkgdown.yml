@@ -22,4 +22,5 @@ articles:
       - learn.step.by.step.3
   - title: Other
     contents:
+      - sampling-pipeline
       - credits
