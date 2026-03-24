@@ -29,6 +29,6 @@ sampling algorithm.
 \examples{
 \dontrun{
 starts <- find_start_points(buildings_list)
-# c(kamboma = 17, largo = 78)
+# c(community_one = 17, community_two = 78)
 }
 }

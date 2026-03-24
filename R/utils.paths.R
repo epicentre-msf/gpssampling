@@ -126,8 +126,8 @@ getDirApps <- function(...) {
 
 #' @describeIn utils_dir Chemin des ressource du package (image, icon, fonts, css, js, ...)
 #'
-#' Cette fonction renvoie le chemin du r\u00e9pertoire contenant les ressources du package,
-#' telles que les images, les ic\u00f4nes, les polices, les fichiers CSS, les fichiers JS, etc.
+#' Cette fonction renvoie le chemin du repertoire contenant les ressources du package,
+#' telles que les images, les icones, les polices, les fichiers CSS, les fichiers JS, etc.
 #'
 #' @keywords internal
 #'

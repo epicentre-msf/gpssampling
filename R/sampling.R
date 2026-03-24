@@ -358,7 +358,7 @@ crop_buildings <- function(
 #' @examples
 #' \dontrun{
 #' starts <- find_start_points(buildings_list)
-#' # c(kamboma = 17, largo = 78)
+#' # c(community_one = 17, community_two = 78)
 #' }
 find_start_points <- function(
   buildings_list,
@@ -572,7 +572,7 @@ select_sample_points <- function(
 #' \dontrun{
 #' samples <- sample_communities(
 #'   buildings_list,
-#'   n_required = c(kamboma = 30, largo = 80),
+#'   n_required = c(community_one = 30, community_two = 80),
 #'   min_distance = 50
 #' )
 #' }

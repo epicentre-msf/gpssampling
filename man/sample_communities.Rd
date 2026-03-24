@@ -48,7 +48,7 @@ deterministic starting points (closest building to a road).
 \dontrun{
 samples <- sample_communities(
   buildings_list,
-  n_required = c(kamboma = 30, largo = 80),
+  n_required = c(community_one = 30, community_two = 80),
   min_distance = 50
 )
 }

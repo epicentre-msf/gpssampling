@@ -11,7 +11,7 @@ split_batches(samples_list, n_batches, set = c("primary", "secondary"))
 \code{\link[=sample_communities]{sample_communities()}}.}
 
 \item{n_batches}{Integer (applied to all communities) or named integer
-vector (per community). E.g., \code{5L} or \code{c(kamboma = 5, largo = 3)}.}
+vector (per community). E.g., \code{5L} or \code{c(community_one = 5, community_two = 3)}.}
 
 \item{set}{Which point set to split: \code{"primary"} (default) or
 \code{"secondary"}.}

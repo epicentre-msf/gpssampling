@@ -28,7 +28,7 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         scales, sf, shiny, shiny.i18n, shinybusy,
         shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
-        units, utils, uuid, waiter, withr, zip
+        units, utils, uuid, waiter, withr, wk, zip
 Suggests: covr, devEMF, devtools, diffdf, emayili, ggplot2, ggspatial,
         here, kableExtra, knitr, pkgdown, profvis, sessioninfo,
         shinytest2, spatstat, testthat (>= 3.0.0), tictoc, tidyterra,

@@ -36,8 +36,8 @@
 #' @export
 #' @examples
 #' \dontrun{
-#' p <- map_community("Kamboma", community_poly, sampled_pts, bufs)
-#' ggplot2::ggsave("kamboma.png", p, width = 10, height = 12)
+#' p <- map_community("community_one", community_poly, sampled_pts, bufs)
+#' ggplot2::ggsave("community_one.png", p, width = 10, height = 12)
 #' }
 map_community <- function(
   community_name,

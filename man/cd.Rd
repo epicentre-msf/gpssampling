@@ -12,3 +12,4 @@ cd(dir)
 \description{
 bash alias for \code{\link[base]{setwd}}
 }
+\keyword{internal}

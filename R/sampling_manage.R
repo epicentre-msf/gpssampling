@@ -15,7 +15,7 @@
 #' @param samples_list Named list of communities, output of
 #'   [sample_communities()].
 #' @param n_batches Integer (applied to all communities) or named integer
-#'   vector (per community). E.g., `5L` or `c(kamboma = 5, largo = 3)`.
+#'   vector (per community). E.g., `5L` or `c(community_one = 5, community_two = 3)`.
 #' @param set Which point set to split: `"primary"` (default) or
 #'   `"secondary"`.
 #' @return A named list of `sf` POINT objects, each with an added

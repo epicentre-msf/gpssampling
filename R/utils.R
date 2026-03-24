@@ -35,12 +35,14 @@ adf <- base::as.data.frame
 #' bash alias for \code{\link[base]{setwd}}
 #'
 #' @inheritParams base::setwd
+#' @keywords internal
 #'
-cd <- base::setwd
+cd <- function(dir) base::setwd(dir)
 
 #' bash alias for \code{\link[base]{getwd}}
+#' @keywords internal
 #'
-pwd <- base::getwd
+pwd <- function() base::getwd()
 
 #' bash alias for \code{\link[utils]{sessionInfo}}
 #'
