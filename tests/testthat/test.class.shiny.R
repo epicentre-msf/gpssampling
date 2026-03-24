@@ -30,6 +30,13 @@ test_that('GpsSampler launch returns shiny.appobj', {
 })
 
 test_that('GpsSampler app serves HTTP', {
+  # callr::r_bg spawns a fresh R process that needs gpssampling installed;
+  # devtools::load_all() only loads in the current session.
+  pkg_ok <- tryCatch(
+    callr::r(function() library(gpssampling), timeout = 15),
+    error = function(e) FALSE
+  )
+  skip_if(identical(pkg_ok, FALSE), "gpssampling not installed for subprocess")
   port <- httpuv::randomPort()
   # launch() returns a shinyApp object — runApp() blocks and serves
   rx <- callr::r_bg(
