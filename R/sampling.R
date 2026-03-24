@@ -23,9 +23,6 @@ auto_utm_crs <- function(x) {
   if (center_lat >= 0) 32600L + utm_zone else 32700L + utm_zone
 }
 
-# Task 1: Sampling Core
-# ............................................................................
-
 #' Fetch OSM building footprints
 #'
 #' Downloads OpenStreetMap building footprints for a given area using

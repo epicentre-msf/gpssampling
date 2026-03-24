@@ -1,4 +1,4 @@
-# devtools::test(filter = 'test.utils.shiny', stop_on_failure = TRUE)
+# devtools::test(filter = 'test-utils-shiny', stop_on_failure = TRUE)
 
 test_that('button creates actionButton tag', {
   btn <- button('btn_id', label = 'Click')

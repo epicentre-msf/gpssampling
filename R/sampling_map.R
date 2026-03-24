@@ -3,9 +3,6 @@
 # Publication-quality static maps showing communities, sampled points,
 # and buffers. Uses ggplot2 + maptiles + ggspatial (all in Suggests).
 
-# Task 3: Static Mapping
-# ............................................................................
-
 #' Create a static map for one community
 #'
 #' Renders a publication-quality map showing a community polygon, sampled
@@ -344,7 +341,9 @@ map_all_communities <- function(
         next
       }
 
-      if (nrow(pts) == 0L) next
+      if (nrow(pts) == 0L) {
+        next
+      }
 
       bufs <- buffer_sf(pts, buffer_radius)
       map_name <- paste0(nm, "_", s)

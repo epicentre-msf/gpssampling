@@ -107,7 +107,7 @@
 
 * 591 tests passing (up from ~390 at fork).
 * Added shinytest2 test infrastructure with initial test suite.
-* Rewrote `test.utils.shiny.R` and `test.logging.R` from scratch.
+* Rewrote `test-utils-shiny.R` and `test-logging.R` from scratch.
 * Removed Selenium dependencies (`RSelenium`, `selenider`) from Suggests.
 
 ## Documentation

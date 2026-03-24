@@ -3,9 +3,6 @@
 # Batch splitting, buffer creation, SQLite tile overlays for OsmAnd,
 # file export, zipping, and email delivery.
 
-# Task 2: GPS Point Management
-# ............................................................................
-
 #' Split sample points into batches
 #'
 #' Distributes primary or secondary sample points into numbered batches
@@ -202,7 +199,9 @@ create_buffer_tiles <- function(
       ))
 
       hits <- sf::st_intersects(tile_sfc, buffers_4326)[[1L]]
-      if (length(hits) == 0L) next
+      if (length(hits) == 0L) {
+        next
+      }
 
       tile_buffers <- buffers_4326[hits, ]
       img_raw <- render_tile(
@@ -544,7 +543,9 @@ zip_points <- function(
 
   for (s in sets) {
     set_dir <- fs::path(export_dir, s)
-    if (!fs::dir_exists(set_dir)) next
+    if (!fs::dir_exists(set_dir)) {
+      next
+    }
 
     gpx_files <- fs::dir_ls(
       set_dir,
@@ -558,7 +559,9 @@ zip_points <- function(
     )
     all_files <- c(gpx_files, sqlite_files)
 
-    if (length(all_files) == 0L) next
+    if (length(all_files) == 0L) {
+      next
+    }
 
     zipname <- glue::glue("{prefix}{s}-points.zip")
     zipfile <- fs::path(out_dir, zipname)

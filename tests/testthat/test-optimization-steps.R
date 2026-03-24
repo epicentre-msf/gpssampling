@@ -1,5 +1,5 @@
-# Phase 5: Performance optimization, dependency cleanup, step class coverage
-# devtools::test(filter = 'test.phase5', stop_on_failure = TRUE)
+# Performance optimization, dependency cleanup, step class coverage
+# devtools::test(filter = 'test-optimization-steps', stop_on_failure = TRUE)
 
 # Uses read_pkg_file() from helper.R
 

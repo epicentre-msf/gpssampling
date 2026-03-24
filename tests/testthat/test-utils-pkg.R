@@ -1,4 +1,4 @@
-# devtools::test(filter = 'test.utils.pkg', stop_on_failure = TRUE)
+# devtools::test(filter = 'test-utils-pkg', stop_on_failure = TRUE)
 
 source(testthat::test_path('prepare.R'), local = TRUE)
 

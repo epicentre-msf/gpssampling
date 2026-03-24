@@ -18,7 +18,7 @@ expect_layer <- function(file, layer, classes, type, n, key) {
   layer
 }
 
-# testthat::test_file(testthat::test_path('test.utils.sf.R'))
+# testthat::test_file(testthat::test_path('test-utils-sf.R'))
 test_that('ReadSpatialLayer SHP POLYGON', {
 
   shp_files <- unzip(f_uga_admbnda_shp)
