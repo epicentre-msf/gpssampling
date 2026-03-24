@@ -61,6 +61,10 @@ jobs:
             libtiff-dev \
             libjpeg-dev
 
+      - name: Disable parallel tests on macOS
+        if: runner.os == 'macOS'
+        run: echo "TESTTHAT_CPUS=1" >> $GITHUB_ENV
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
