@@ -339,11 +339,12 @@ crop_buildings <- function(
 }
 
 
-#' Find starting points closest to roads
+#' Find buildings closest to roads
 #'
 #' For each community, identifies the building closest to an OSM road.
-#' This provides a deterministic, reproducible starting point for the
-#' sampling algorithm.
+#' This is a standalone utility; the main pipeline uses
+#' [order_selected_points()] internally for proximity-based ordering
+#' after random selection.
 #'
 #' @param buildings_list Named list of `sf` POINT objects (output of
 #'   [crop_buildings()]).
@@ -454,25 +455,25 @@ find_start_points <- function(
 #' Select sample points with minimum distance constraint
 #'
 #' Core sampling algorithm for a single community. Selects `n_required`
-#' points from candidate buildings such that no two selected points are
-#' closer than `min_distance` meters. Does NOT manage its own RNG seed;
+#' points randomly from candidate buildings such that no two selected
+#' points are closer than `min_distance` meters. All points (including
+#' the first) are chosen at random. Does NOT manage its own RNG seed;
 #' the caller ([sample_communities()]) wraps the loop in
 #' [withr::with_seed()].
 #'
 #' @param points_sf An `sf` POINT for one community (element of
 #'   [crop_buildings()] output).
 #' @param n_required Integer, number of points to select.
-#' @param start_id Integer, the `id` of the starting point.
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
-#' @return A list with `$primary` (`sf` POINT of selected points with
-#'   added `selection_order` column) and `$secondary` (`sf` POINT of
-#'   all remaining points).
+#' @return A list with `$primary` (`sf` POINT of selected points) and
+#'   `$secondary` (`sf` POINT of all remaining points). The primary set
+#'   has no `selection_order` column; ordering is done separately by
+#'   [order_selected_points()].
 #' @noRd
 select_sample_points <- function(
   points_sf,
   n_required,
-  start_id,
   min_distance = 50
 ) {
   checkmate::assert_class(points_sf, "sf")
@@ -485,16 +486,13 @@ select_sample_points <- function(
     )
   }
 
-  if (!start_id %in% points_sf$id) {
-    cli::cli_abort("Start ID {start_id} not found in points.")
-  }
-
   utm_crs <- auto_utm_crs(points_sf)
   pts_utm <- sf::st_transform(points_sf, utm_crs)
 
-  start_row <- which(pts_utm$id == start_id)
-  selected_idx <- start_row
-  remaining_idx <- setdiff(seq_len(nrow(pts_utm)), start_row)
+  all_idx <- seq_len(nrow(pts_utm))
+  first <- sample(all_idx, 1L)
+  selected_idx <- first
+  remaining_idx <- setdiff(all_idx, first)
 
   while (length(selected_idx) < n_required && length(remaining_idx) > 0L) {
     sel_geom <- sf::st_geometry(pts_utm[selected_idx, ])
@@ -530,7 +528,6 @@ select_sample_points <- function(
   }
 
   primary <- sf::st_transform(pts_utm[selected_idx, ], 4326L)
-  primary$selection_order <- seq_len(nrow(primary))
 
   secondary <- if (length(remaining_idx) > 0L) {
     sf::st_transform(pts_utm[remaining_idx, ], 4326L)
@@ -542,19 +539,131 @@ select_sample_points <- function(
 }
 
 
+#' Order selected points by route proximity
+#'
+#' After random selection, reorders the selected points so field workers
+#' walk minimal distances. The ordering starts from the selected point
+#' closest to an OSM road, then chains to the nearest unordered point
+#' at each step (greedy nearest-neighbour).
+#'
+#' @param selected_sf An `sf` POINT of selected buildings for one
+#'   community (the `$primary` output of [select_sample_points()]).
+#' @param road_types Character vector of OSM `highway=*` values.
+#' @return The same `sf` reordered with a `selection_order` column
+#'   (1 = closest to road, then nearest-neighbour chain).
+#' @noRd
+order_selected_points <- function(
+  selected_sf,
+  road_types = c(
+    "primary",
+    "secondary",
+    "tertiary",
+    "residential",
+    "trunk",
+    "unclassified"
+  )
+) {
+  n <- nrow(selected_sf)
+  if (n <= 1L) {
+    selected_sf$selection_order <- seq_len(n)
+    return(selected_sf)
+  }
+
+  utm_crs <- auto_utm_crs(selected_sf)
+  pts_utm <- sf::st_transform(selected_sf, utm_crs)
+  bbox <- sf::st_bbox(sf::st_transform(selected_sf, 4326L))
+
+  # --- find the selected point closest to a road ---
+  roads <- tryCatch(
+    {
+      osm <- osmdata::opq(bbox = bbox) |>
+        osmdata::add_osm_feature(
+          key = "highway",
+          value = road_types
+        ) |>
+        osmdata::osmdata_sf()
+      osm$osm_lines
+    },
+    error = function(e) {
+      cli::cli_warn(
+        "OSM road query failed for ordering: {e$message}"
+      )
+      NULL
+    }
+  )
+
+  if (is.null(roads) || nrow(roads) == 0L) {
+    bbox_expanded <- bbox + c(-0.005, -0.005, 0.005, 0.005)
+    roads <- tryCatch(
+      {
+        osm <- osmdata::opq(bbox = bbox_expanded) |>
+          osmdata::add_osm_feature(
+            key = "highway",
+            value = road_types
+          ) |>
+          osmdata::osmdata_sf()
+        osm$osm_lines
+      },
+      error = function(e) NULL
+    )
+  }
+
+  if (is.null(roads) || nrow(roads) == 0L) {
+    cli::cli_warn(c(
+      "No roads found for ordering.",
+      "i" = "Falling back to centroid-nearest start."
+    ))
+    centroid <- sf::st_centroid(sf::st_union(pts_utm))
+    dists <- as.numeric(sf::st_distance(pts_utm, centroid))
+    start_idx <- which.min(dists)
+  } else {
+    roads_utm <- sf::st_transform(roads, utm_crs)
+    nearest_road_idx <- sf::st_nearest_feature(pts_utm, roads_utm)
+    dists <- sf::st_distance(
+      pts_utm,
+      roads_utm[nearest_road_idx, ],
+      by_element = TRUE
+    )
+    min_dist <- min(dists)
+    ties <- which(dists == min_dist)
+    start_idx <- ties[which.min(selected_sf$id[ties])]
+  }
+
+  # --- nearest-neighbour chain from the start point ---
+  ordered_idx <- integer(n)
+  ordered_idx[1L] <- start_idx
+  remaining <- setdiff(seq_len(n), start_idx)
+
+  for (i in 2L:n) {
+    ordered_geom <- sf::st_geometry(pts_utm[ordered_idx[seq_len(i - 1L)], ])
+    rem_geom <- sf::st_geometry(pts_utm[remaining, ])
+
+    dist_mat <- sf::st_distance(rem_geom, ordered_geom)
+    min_per_remaining <- apply(dist_mat, 1L, min)
+    nearest <- which.min(min_per_remaining)
+
+    ordered_idx[i] <- remaining[nearest]
+    remaining <- remaining[-nearest]
+  }
+
+  result <- sf::st_transform(pts_utm[ordered_idx, ], 4326L)
+  result$selection_order <- seq_len(n)
+  result
+}
+
+
 #' Sample buildings across communities
 #'
 #' Top-level function that orchestrates reproducible spatial sampling
-#' across all communities. Uses minimum-distance constraints and
-#' deterministic starting points (closest building to a road).
+#' across all communities. Points are selected randomly with minimum-
+#' distance constraints, then reordered by proximity to roads for
+#' efficient field work.
 #'
 #' @param buildings_list Named list of `sf` POINT objects (output of
 #'   [crop_buildings()]).
 #' @param n_required Named integer vector of required sample sizes per
 #'   community. Names must match `buildings_list`. A single unnamed
 #'   integer applies the same size to all communities.
-#' @param start_points Optional named integer vector of starting point
-#'   IDs. If `NULL`, computed automatically via [find_start_points()].
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
 #' @param seed Integer RNG seed for reproducibility. Default `250292L`.
@@ -562,12 +671,12 @@ select_sample_points <- function(
 #'   data, and R version (>= 3.6.0). R 3.6.0 changed the default
 #'   sampling algorithm (`sample.kind = "Rejection"`), so results from
 #'   R < 3.6 and R >= 3.6 will differ even with the same seed.
-#' @param road_types Character vector passed to [find_start_points()]
-#'   when `start_points` is `NULL`.
+#' @param road_types Character vector of OSM `highway=*` values used
+#'   for the post-selection proximity ordering.
 #' @return A named list of lists. Each community element contains:
-#'   `$buildings` (all candidates), `$primary` (selected points),
-#'   `$secondary` (remaining points), `$start_id`, `$min_distance`,
-#'   and `$seed`.
+#'   `$buildings` (all candidates), `$primary` (selected points with
+#'   `selection_order`), `$secondary` (remaining points),
+#'   `$min_distance`, and `$seed`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -580,7 +689,6 @@ select_sample_points <- function(
 sample_communities <- function(
   buildings_list,
   n_required,
-  start_points = NULL,
   min_distance = 50,
   seed = 250292L,
   road_types = c(
@@ -632,17 +740,6 @@ sample_communities <- function(
     }
   }
 
-  if (is.null(start_points)) {
-    cli::cli_inform("Computing starting points (closest to road)...")
-    start_points <- find_start_points(buildings_list, road_types)
-  }
-
-  checkmate::assert_integerish(
-    start_points,
-    names = "named",
-    len = length(community_names)
-  )
-
   sorted_names <- sort(community_names)
 
   cli::cli_inform(
@@ -656,14 +753,17 @@ sample_communities <- function(
       sampled <- select_sample_points(
         buildings_list[[nm]],
         n_required[[nm]],
-        start_points[[nm]],
         min_distance
+      )
+      cli::cli_inform("  Ordering {.val {nm}} by road proximity...")
+      ordered_primary <- order_selected_points(
+        sampled$primary,
+        road_types
       )
       res[[nm]] <- list(
         buildings = buildings_list[[nm]],
-        primary = sampled$primary,
+        primary = ordered_primary,
         secondary = sampled$secondary,
-        start_id = start_points[[nm]],
         min_distance = min_distance,
         seed = seed
       )

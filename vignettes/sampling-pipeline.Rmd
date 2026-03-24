@@ -92,9 +92,16 @@ vapply(buildings_list, nrow, integer(1L))
 
 ### Sample with minimum-distance constraints
 
-`sample_communities()` selects points using a greedy algorithm that ensures
-no two selected points are closer than `min_distance` meters. The starting
-point in each community is the building closest to a road (via OSM).
+`sample_communities()` selects points using a two-phase approach:
+
+1. **Random selection** -- all points (including the first) are chosen at
+   random, subject to the `min_distance` constraint so that no two selected
+   points are closer than `min_distance` meters.
+2. **Proximity ordering** -- after selection, the points are reordered for
+   efficient field work: the selected point closest to an OSM road becomes
+   #1, then the nearest unvisited selected point becomes #2, and so on
+   (greedy nearest-neighbour chain). This `selection_order` determines batch
+   assignment and the sequence field workers follow on the ground.
 
 ```{r sample}
 samples <- sample_communities(
@@ -109,8 +116,8 @@ samples <- sample_communities(
 ```
 
 The result is a named list of lists. Each community contains `$primary`
-(selected points), `$secondary` (remaining points), `$buildings` (all
-candidates), and metadata (`$start_id`, `$min_distance`, `$seed`).
+(selected points with `selection_order`), `$secondary` (remaining points),
+`$buildings` (all candidates), and metadata (`$min_distance`, `$seed`).
 
 **Reproducibility:** Same `seed` + same inputs = same output on any platform.
 The algorithm uses `withr::with_seed()` (not `set.seed()`), deterministic
@@ -281,8 +288,8 @@ map_all_communities(
 | `fetch_osm_buildings()` | Download OSM building footprints for an area |
 | `filter_buildings()` | Remove non-residential buildings by OSM tags |
 | `crop_buildings()` | Clip buildings to community polygons, convert to centroids |
-| `find_start_points()` | Find closest-to-road building per community |
-| `sample_communities()` | Reproducible min-distance sampling across communities |
+| `find_start_points()` | Find closest-to-road building per community (utility) |
+| `sample_communities()` | Random sampling with proximity-based ordering |
 
 ### GPS Management
 

@@ -60,7 +60,6 @@ make_sample_result <- function() {
       buildings = pts_a,
       primary = pts_a,
       secondary = sec_a,
-      start_id = 1L,
       min_distance = 50,
       seed = 42L
     ),
@@ -68,7 +67,6 @@ make_sample_result <- function() {
       buildings = pts_b,
       primary = pts_b,
       secondary = sec_b,
-      start_id = 1L,
       min_distance = 50,
       seed = 42L
     )
