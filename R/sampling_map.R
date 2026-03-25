@@ -381,118 +381,180 @@ map_all_communities <- function(
 
 #' Map cropped buildings per community
 #'
-#' Produces a horizontal strip of maps (one per community) showing the
-#' community boundary and its building centroids after cropping. Uses
-#' `patchwork` for layout (`p1 | p2 | p3`).
+#' Produces one large map per community showing the community boundary
+#' and the actual building footprint shapes over an OSM basemap. The
+#' building polygons are clipped to each community boundary internally.
+#' Returns a named list of `ggplot` objects (one per community).
 #'
-#' @param buildings_list Named list of `sf` POINT objects (output of
-#'   [crop_buildings()]).
+#' Requires `ggplot2`, `ggspatial`, and `tidyterra` (all in Suggests).
+#'
+#' @param buildings_sf An `sf` POLYGON of building footprints (the same
+#'   input you passed to [crop_buildings()]). The function clips them
+#'   to each community internally.
 #' @param communities_sf Community polygons (`sf`).
 #' @param community_id_col Column name for community ID in
 #'   `communities_sf`. Default `"name"`.
-#' @param building_color Fill color for building points.
-#'   Default `"#8B4513"` (saddle brown).
-#' @param building_size Point size. Default `1.5`.
-#' @param community_color Boundary stroke color. Default `"#4a4a4a"`.
-#' @param community_fill Boundary fill color. Default `"#faf8f4"`.
-#' @param title Overall plot title. Default `"Cropped communities"`.
-#' @return A `patchwork` object (composable `ggplot`).
+#' @param building_fill Fill color for building footprints.
+#'   Default `"#8B6914"` (brown).
+#' @param building_stroke Stroke color for building outlines.
+#'   Default `"#5B3A29"` (dark brown).
+#' @param community_color Boundary stroke color. Default `"#c98585"`.
+#' @param community_fill Boundary fill color (with transparency).
+#'   Default `"#faf3e820"`.
+#' @param basemap Tile provider name for [maptiles::get_tiles()].
+#'   Default `"OpenStreetMap"`.
+#' @param out_dir Optional output directory. If provided, maps are saved
+#'   as PNG. If `NULL`, maps are only returned.
+#' @param width Plot width in inches. Default `12`.
+#' @param height Plot height in inches. Default `12`.
+#' @param dpi Plot resolution. Default `300`.
+#' @return A named list of `ggplot` objects, one per community.
 #' @export
 #' @examples
 #' \dontrun{
-#' buildings_list <- crop_buildings(buildings, communities, "name")
-#' p <- map_cropped_buildings(buildings_list, communities)
-#' ggplot2::ggsave("cropped.png", p, width = 18, height = 6)
+#' maps <- map_cropped_buildings(buildings, communities)
+#' ggplot2::ggsave("community_one.png", maps[["community_one"]])
 #' }
 map_cropped_buildings <- function(
-  buildings_list,
+  buildings_sf,
   communities_sf,
   community_id_col = "name",
-  building_color = "#8B4513",
-  building_size = 1.5,
-  community_color = "#4a4a4a",
-  community_fill = "#faf8f4",
-  title = "Cropped communities"
+  building_fill = "#8B6914",
+  building_stroke = "#5B3A29",
+  community_color = "#c98585",
+  community_fill = "#faf3e820",
+  basemap = "OpenStreetMap",
+  out_dir = NULL,
+  width = 12,
+  height = 12,
+  dpi = 300
 ) {
   rlang::check_installed("ggplot2", reason = "for static maps")
-  rlang::check_installed("patchwork", reason = "for composing panels")
+  rlang::check_installed("ggspatial", reason = "for scale bar and north arrow")
+  rlang::check_installed("tidyterra", reason = "for basemap tile rendering")
 
-  checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
+  checkmate::assert_class(buildings_sf, "sf")
   checkmate::assert_class(communities_sf, "sf")
   checkmate::assert_string(community_id_col)
   checkmate::assert_choice(community_id_col, names(communities_sf))
 
-  panels <- list()
+  if (sf::st_crs(buildings_sf) != sf::st_crs(communities_sf)) {
+    buildings_sf <- sf::st_transform(
+      buildings_sf,
+      sf::st_crs(communities_sf)
+    )
+  }
+  buildings_sf <- sf::st_make_valid(buildings_sf)
+  sf::st_agr(buildings_sf) <- "constant"
+  sf::st_agr(communities_sf) <- "constant"
 
-  for (nm in names(buildings_list)) {
-    pts <- buildings_list[[nm]]
+  community_names <- communities_sf[[community_id_col]]
+  result <- list()
+
+  for (nm in community_names) {
     community_row <- communities_sf[communities_sf[[community_id_col]] == nm, ]
 
-    if (nrow(community_row) == 0L) {
-      cli::cli_warn("Community {.val {nm}} not found in {.arg communities_sf}.")
+    clipped <- tryCatch(
+      suppressWarnings(
+        sf::st_intersection(buildings_sf, sf::st_geometry(community_row))
+      ),
+      error = function(e) {
+        cli::cli_warn("Clipping failed for {.val {nm}}: {e$message}")
+        NULL
+      }
+    )
+
+    if (is.null(clipped) || nrow(clipped) == 0L) {
+      cli::cli_warn("No buildings in {.val {nm}}, skipping.")
       next
     }
 
-    n_buildings <- nrow(pts)
+    # Keep only polygon geometries after clipping
+    geom_types <- sf::st_geometry_type(clipped)
+    is_poly <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+    if (!all(is_poly)) {
+      clipped <- clipped[is_poly, ]
+    }
+    if (nrow(clipped) == 0L) next
 
-    p <- ggplot2::ggplot() +
+    n_buildings <- nrow(clipped)
+    cli::cli_inform("Generating cropped buildings map for {.val {nm}}...")
+
+    tiles <- tryCatch(
+      suppressWarnings(
+        maptiles::get_tiles(community_row, provider = basemap, crop = TRUE)
+      ),
+      error = function(e) {
+        cli::cli_warn("Basemap download failed: {e$message}")
+        NULL
+      }
+    )
+
+    p <- ggplot2::ggplot()
+
+    if (!is.null(tiles)) {
+      p <- p + tidyterra::geom_spatraster_rgb(data = tiles)
+    }
+
+    p <- p +
       ggplot2::geom_sf(
         data = community_row,
         fill = community_fill,
         color = community_color,
-        linewidth = 0.8
+        linewidth = 0.6
       ) +
       ggplot2::geom_sf(
-        data = pts,
-        color = building_color,
-        fill = building_color,
-        size = building_size,
-        shape = 21,
-        stroke = 0.3,
-        alpha = 0.85
+        data = clipped,
+        fill = building_fill,
+        color = building_stroke,
+        linewidth = 0.15,
+        alpha = 0.7
+      ) +
+      ggspatial::annotation_scale(location = "bl") +
+      ggspatial::annotation_north_arrow(
+        location = "tr",
+        style = ggspatial::north_arrow_minimal()
       ) +
       ggplot2::labs(
         title = nm,
-        subtitle = paste0("n = ", n_buildings)
+        subtitle = paste0(n_buildings, " buildings")
       ) +
       ggplot2::theme_void() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(
           face = "bold",
-          size = 12,
+          size = 16,
           hjust = 0.5
         ),
         plot.subtitle = ggplot2::element_text(
-          size = 9,
+          size = 11,
           hjust = 0.5,
           color = "grey40"
         ),
-        panel.background = ggplot2::element_rect(
-          fill = "#f0ede6",
-          color = NA
-        ),
-        plot.margin = ggplot2::margin(5, 5, 5, 5)
+        plot.margin = ggplot2::margin(10, 10, 10, 10)
       )
 
-    panels[[nm]] <- p
+    result[[nm]] <- p
   }
 
-  if (length(panels) == 0L) {
+  if (length(result) == 0L) {
     cli::cli_abort("No valid communities to plot.")
   }
 
-  combined <- patchwork::wrap_plots(panels, nrow = 1L)
-  combined <- combined +
-    patchwork::plot_annotation(
-      title = title,
-      theme = ggplot2::theme(
-        plot.title = ggplot2::element_text(
-          face = "bold",
-          size = 16,
-          hjust = 0.5
-        )
-      )
-    )
+  if (!is.null(out_dir)) {
+    fs::dir_create(out_dir, recurse = TRUE)
+    for (nm in names(result)) {
+      fpath <- fs::path(out_dir, paste0(nm, "_buildings.png"))
+      suppressWarnings(ggplot2::ggsave(
+        as.character(fpath),
+        plot = result[[nm]],
+        width = width,
+        height = height,
+        dpi = dpi
+      ))
+      cli::cli_inform("Saved {.path {fpath}}")
+    }
+  }
 
-  combined
+  invisible(result)
 }

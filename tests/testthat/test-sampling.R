@@ -159,6 +159,80 @@ test_that("filter_buildings path C: warns when no OSM data", {
   expect_equal(nrow(result), 5L)
 })
 
+test_that("filter_buildings path B: disambiguates multiple OSM matches", {
+  # Create one large user building that overlaps two OSM buildings
+  big_poly <- sf::st_polygon(list(matrix(
+    c(0.01, 0.01, 0.05, 0.01, 0.05, 0.05, 0.01, 0.05, 0.01, 0.01),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  user_buildings <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(big_poly, crs = 4326L)
+  )
+
+  # Two small OSM buildings inside the user building
+  osm_a <- sf::st_polygon(list(matrix(
+    c(0.02, 0.02, 0.03, 0.02, 0.03, 0.03, 0.02, 0.03, 0.02, 0.02),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  osm_b <- sf::st_polygon(list(matrix(
+    c(0.04, 0.04, 0.045, 0.04, 0.045, 0.045, 0.04, 0.045, 0.04, 0.04),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  osm_buildings <- sf::st_sf(
+    osm_id = c("1", "2"),
+    building = c("residential", "hospital"),
+    geometry = sf::st_sfc(list(osm_a, osm_b), crs = 4326L)
+  )
+
+  result <- filter_buildings(
+    user_buildings,
+    osm_buildings_sf = osm_buildings,
+    remove_tags = c("hospital"),
+    building_col = "building"
+  )
+
+  # Should have a tag assigned (nearest feature wins)
+  expect_true("osm_building_tag" %in% names(result))
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$osm_building_tag, "residential")
+})
+
+test_that("filter_buildings path A: emits progress messages", {
+  buildings <- make_buildings(10L)
+  buildings$building[1:2] <- c("hospital", "school")
+
+  expect_message(
+    result <- filter_buildings(buildings, building_col = "building"),
+    "Filtering 10 buildings"
+  )
+  expect_message(
+    filter_buildings(buildings, building_col = "building"),
+    "Removed 2 non-residential"
+  )
+})
+
+test_that("filter_buildings path B: emits progress messages", {
+  user_buildings <- make_buildings(5L)
+  user_buildings$building <- NULL
+
+  osm_buildings <- make_buildings(5L)
+  osm_buildings$building <- c("yes", "hospital", "residential", "school", "yes")
+
+  expect_message(
+    filter_buildings(
+      user_buildings,
+      osm_buildings_sf = osm_buildings,
+      remove_tags = c("hospital", "school"),
+      building_col = "building"
+    ),
+    "Matching 5 buildings against 5 OSM footprints"
+  )
+})
+
 # crop_buildings
 # ............................................................................
 

@@ -92,18 +92,21 @@ vapply(buildings_list, nrow, integer(1L))
 
 ### Visualize cropped buildings
 
-`map_cropped_buildings()` produces a horizontal strip of maps (one per
-community) showing the community boundary and its building centroids:
+`map_cropped_buildings()` produces one large map per community showing the
+community boundary and actual building footprint shapes over an OSM basemap.
+Pass the original building polygons -- the function clips them to each
+community internally:
 
 ```{r map-crop}
-library(patchwork)
-
-p <- map_cropped_buildings(
-  buildings_list,
+crop_maps <- map_cropped_buildings(
+  buildings,
   communities,
-  community_id_col = "name"
+  community_id_col = "name",
+  out_dir = "output/maps"
 )
-ggplot2::ggsave("cropped_buildings.png", p, width = 18, height = 6, dpi = 300)
+# Or save individually:
+# ggplot2::ggsave("community_one.png", crop_maps[["community_one"]],
+#   width = 12, height = 12, dpi = 300)
 ```
 
 ### Sample with minimum-distance constraints

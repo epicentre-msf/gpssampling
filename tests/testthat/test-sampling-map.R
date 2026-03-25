@@ -144,24 +144,19 @@ test_that("map_all_communities returns named list of ggplots", {
 # map_cropped_buildings
 # ............................................................................
 
-test_that("map_cropped_buildings returns a patchwork object", {
+test_that("map_cropped_buildings returns named list of ggplots", {
   skip_if_not_installed("ggplot2")
-  skip_if_not_installed("patchwork")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("tidyterra")
 
-  community_a <- sf::st_sf(
-    name = "alpha",
+  communities <- sf::st_sf(
+    name = c("alpha", "beta"),
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(
         c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
         ncol = 2L,
         byrow = TRUE
       ))),
-      crs = 4326L
-    )
-  )
-  community_b <- sf::st_sf(
-    name = "beta",
-    geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(
         c(0.05, 0.05, 0.1, 0.05, 0.1, 0.1, 0.05, 0.1, 0.05, 0.05),
         ncol = 2L,
@@ -170,41 +165,52 @@ test_that("map_cropped_buildings returns a patchwork object", {
       crs = 4326L
     )
   )
-  communities <- rbind(community_a, community_b)
 
-  pts_a <- sf::st_sf(
-    id = 1:3,
-    community = "alpha",
-    geometry = sf::st_sfc(
-      sf::st_point(c(0.01, 0.01)),
-      sf::st_point(c(0.02, 0.03)),
-      sf::st_point(c(0.04, 0.02)),
-      crs = 4326L
-    )
+  set.seed(42L)
+  n <- 20L
+  cx <- runif(n, 0.001, 0.099)
+  cy <- runif(n, 0.001, 0.099)
+  polys <- lapply(seq_len(n), function(i) {
+    dx <- 0.0002
+    sf::st_polygon(list(matrix(
+      c(
+        cx[i] - dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] - dx
+      ),
+      ncol = 2L,
+      byrow = TRUE
+    )))
+  })
+  buildings <- sf::st_sf(
+    osm_id = as.character(seq_len(n)),
+    building = rep("yes", n),
+    geometry = sf::st_sfc(polys, crs = 4326L)
   )
-  pts_b <- sf::st_sf(
-    id = 1:2,
-    community = "beta",
-    geometry = sf::st_sfc(
-      sf::st_point(c(0.06, 0.06)),
-      sf::st_point(c(0.08, 0.09)),
-      crs = 4326L
-    )
-  )
 
-  buildings_list <- list(alpha = pts_a, beta = pts_b)
-
-  p <- map_cropped_buildings(
-    buildings_list,
+  result <- map_cropped_buildings(
+    buildings,
     communities,
     community_id_col = "name"
   )
-  expect_s3_class(p, "patchwork")
+  expect_type(result, "list")
+  expect_true(length(result) >= 1L)
+  for (nm in names(result)) {
+    expect_s3_class(result[[nm]], "ggplot")
+  }
 })
 
 test_that("map_cropped_buildings handles single community", {
   skip_if_not_installed("ggplot2")
-  skip_if_not_installed("patchwork")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("tidyterra")
 
   community <- sf::st_sf(
     name = "solo",
@@ -218,22 +224,43 @@ test_that("map_cropped_buildings handles single community", {
     )
   )
 
-  pts <- sf::st_sf(
-    id = 1:2,
-    community = "solo",
-    geometry = sf::st_sfc(
-      sf::st_point(c(0.01, 0.01)),
-      sf::st_point(c(0.03, 0.04)),
-      crs = 4326L
-    )
+  set.seed(42L)
+  n <- 10L
+  cx <- runif(n, 0.001, 0.049)
+  cy <- runif(n, 0.001, 0.049)
+  polys <- lapply(seq_len(n), function(i) {
+    dx <- 0.0002
+    sf::st_polygon(list(matrix(
+      c(
+        cx[i] - dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] - dx
+      ),
+      ncol = 2L,
+      byrow = TRUE
+    )))
+  })
+  buildings <- sf::st_sf(
+    osm_id = as.character(seq_len(n)),
+    building = rep("yes", n),
+    geometry = sf::st_sfc(polys, crs = 4326L)
   )
 
-  p <- map_cropped_buildings(
-    list(solo = pts),
+  result <- map_cropped_buildings(
+    buildings,
     community,
     community_id_col = "name"
   )
-  expect_s3_class(p, "ggplot")
+  expect_type(result, "list")
+  expect_equal(length(result), 1L)
+  expect_s3_class(result[["solo"]], "ggplot")
 })
 
 test_that("map_all_communities saves PNGs when out_dir given", {

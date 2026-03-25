@@ -215,12 +215,20 @@ filter_buildings <- function(
   checkmate::assert_flag(keep_untagged)
   checkmate::assert_string(building_col)
 
+  n_input <- nrow(buildings_sf)
   has_building_col <- building_col %in% names(buildings_sf)
 
   # Path A: Direct filtering (buildings_sf has the type column)
   if (has_building_col && is.null(osm_buildings_sf)) {
+    cli::cli_inform(
+      "Filtering {n_input} building{?s} by {.field {building_col}} column..."
+    )
     result <- buildings_sf |>
       dplyr::filter(!(.data[[building_col]] %in% remove_tags))
+    n_removed <- n_input - nrow(result)
+    cli::cli_inform(
+      "Removed {n_removed} non-residential building{?s}, {nrow(result)} remaining."
+    )
     if (nrow(result) == 0L) {
       cli::cli_warn("All buildings were filtered out.")
     }
@@ -231,6 +239,10 @@ filter_buildings <- function(
 
   if (!is.null(osm_buildings_sf)) {
     checkmate::assert_class(osm_buildings_sf, "sf")
+    n_osm <- nrow(osm_buildings_sf)
+    cli::cli_inform(
+      "Matching {n_input} building{?s} against {n_osm} OSM footprint{?s}..."
+    )
 
     # Determine the type column in the OSM data
     osm_type_col <- if ("building" %in% names(osm_buildings_sf)) {
@@ -246,30 +258,59 @@ filter_buildings <- function(
     buildings_crs <- sf::st_crs(buildings_sf)
     osm_crs <- sf::st_crs(osm_buildings_sf)
     if (buildings_crs != osm_crs) {
+      cli::cli_inform("Aligning CRS...")
       buildings_sf <- sf::st_transform(
         buildings_sf,
         sf::st_crs(osm_buildings_sf)
       )
     }
 
+    cli::cli_inform("Validating geometries...")
     buildings_sf <- sf::st_make_valid(buildings_sf)
     osm_buildings_sf <- sf::st_make_valid(osm_buildings_sf)
     sf::st_agr(buildings_sf) <- "constant"
     osm_sub <- osm_buildings_sf |>
       dplyr::select(dplyr::any_of(c("osm_id", osm_type_col)))
     sf::st_agr(osm_sub) <- "constant"
-    joined <- suppressWarnings(sf::st_join(
-      buildings_sf,
-      osm_sub,
-      join = sf::st_intersects,
-      largest = TRUE
-    ))
 
-    joined$osm_building_tag <- joined[[osm_type_col]]
-    if (osm_type_col %in% names(buildings_sf)) {
-      joined <- joined |>
-        dplyr::select(-dplyr::all_of(osm_type_col))
+    # Fast spatial matching: sparse intersection predicate + nearest-feature
+    # disambiguation. Avoids the expensive st_join(largest = TRUE) which
+    # computes full intersection geometries for every pair.
+    cli::cli_inform("Computing spatial intersections...")
+    pairs <- sf::st_intersects(buildings_sf, osm_sub)
+    n_matches <- lengths(pairs)
+
+    osm_tag <- rep(NA_character_, n_input)
+
+    # Single match: direct tag assignment
+    single <- n_matches == 1L
+    if (any(single)) {
+      osm_tag[single] <- osm_sub[[osm_type_col]][
+        vapply(pairs[single], `[[`, integer(1L), 1L)
+      ]
     }
+
+    # Multiple matches: disambiguate with st_nearest_feature (fast)
+    multi <- n_matches > 1L
+    if (any(multi)) {
+      cli::cli_inform(
+        "Disambiguating {sum(multi)} building{?s} with multiple OSM matches..."
+      )
+      nearest_idx <- sf::st_nearest_feature(
+        buildings_sf[multi, ],
+        osm_sub
+      )
+      osm_tag[multi] <- osm_sub[[osm_type_col]][nearest_idx]
+    }
+
+    n_matched <- sum(!is.na(osm_tag))
+    n_unmatched <- sum(is.na(osm_tag))
+    cli::cli_inform(
+      "Matched {n_matched} building{?s}, {n_unmatched} unmatched."
+    )
+
+    joined <- buildings_sf
+    joined$osm_building_tag <- osm_tag
 
     has_match <- !is.na(joined$osm_building_tag)
     is_excluded <- joined$osm_building_tag %in% remove_tags
@@ -281,6 +322,10 @@ filter_buildings <- function(
     }
 
     result <- joined[keep, ]
+    n_removed <- n_input - nrow(result)
+    cli::cli_inform(
+      "Removed {n_removed} non-residential building{?s}, {nrow(result)} remaining."
+    )
     if (nrow(result) == 0L) {
       cli::cli_warn("All buildings were filtered out.")
     }
