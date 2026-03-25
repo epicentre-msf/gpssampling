@@ -73,6 +73,22 @@ vapply(buildings_list, nrow, integer(1L))
 #>           847          1203             956            612
 ```
 
+### Visualize cropped buildings
+
+`map_cropped_buildings()` produces a horizontal strip of maps (one per
+community) showing the community boundary and its building centroids:
+
+``` r
+library(patchwork)
+
+p <- map_cropped_buildings(
+  buildings_list,
+  communities,
+  community_id_col = "name"
+)
+ggplot2::ggsave("cropped_buildings.png", p, width = 18, height = 6, dpi = 300)
+```
+
 ### Sample with minimum-distance constraints
 
 [`sample_communities()`](https://epicentre-msf.github.io/gpssampling/reference/sample_communities.md)
@@ -294,8 +310,9 @@ map_all_communities(
 
 ### Static Mapping
 
-| Function                                                                                                | Purpose                                |
-|---------------------------------------------------------------------------------------------------------|----------------------------------------|
-| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)             | Per-community map with batch coloring  |
-| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)               | Zoomed-out overview of all communities |
-| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md) | Generate and optionally save all maps  |
+| Function                                                                                                | Purpose                                                |
+|---------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `map_cropped_buildings()`                                                                               | Side-by-side panels of cropped buildings per community |
+| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)             | Per-community map with batch coloring                  |
+| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)               | Zoomed-out overview of all communities                 |
+| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md) | Generate and optionally save all maps                  |
