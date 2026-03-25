@@ -618,14 +618,75 @@ find_start_points <- function(
 }
 
 
+#' Draw n points from a pool with minimum distance constraint
+#'
+#' Internal workhorse for [select_sample_points()]. Picks `n_draw`
+#' points from `pool_idx` positions in `pts_utm`, enforcing that no
+#' two selected points are closer than `min_distance` meters.
+#'
+#' @param pts_utm An `sf` POINT already projected to a UTM CRS.
+#' @param pool_idx Integer vector of row indices to draw from.
+#' @param n_draw Integer, number of points to draw.
+#' @param min_distance Numeric, minimum distance in meters.
+#' @return A list with `$selected` (integer indices) and `$remaining`
+#'   (integer indices not selected).
+#' @noRd
+draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
+  first <- sample(pool_idx, 1L)
+  selected_idx <- first
+  remaining_idx <- setdiff(pool_idx, first)
+
+  while (length(selected_idx) < n_draw && length(remaining_idx) > 0L) {
+    sel_geom <- sf::st_geometry(pts_utm[selected_idx, ])
+    rem_geom <- sf::st_geometry(pts_utm[remaining_idx, ])
+
+    within_dist <- sf::st_is_within_distance(
+      rem_geom,
+      sel_geom,
+      dist = min_distance
+    )
+    too_close <- vapply(within_dist, function(x) length(x) > 0L, logical(1L))
+    candidate_mask <- !too_close
+
+    if (!any(candidate_mask)) {
+      n_still_needed <- n_draw - length(selected_idx)
+      cli::cli_inform(c(
+        "!" = paste0(
+          "No candidates beyond {min_distance}m. ",
+          "Drawing {n_still_needed} remaining point{?s} randomly."
+        )
+      ))
+      drawn <- sample(
+        remaining_idx, min(n_still_needed, length(remaining_idx))
+      )
+      selected_idx <- c(selected_idx, drawn)
+      remaining_idx <- setdiff(remaining_idx, drawn)
+      next
+    }
+
+    candidate_positions <- which(candidate_mask)
+    pick <- sample(candidate_positions, 1L)
+    actual_idx <- remaining_idx[pick]
+    selected_idx <- c(selected_idx, actual_idx)
+    remaining_idx <- remaining_idx[-pick]
+  }
+
+  list(selected = selected_idx, remaining = remaining_idx)
+}
+
+
 #' Select sample points with minimum distance constraint
 #'
 #' Core sampling algorithm for a single community. Selects `n_required`
-#' points randomly from candidate buildings such that no two selected
-#' points are closer than `min_distance` meters. All points (including
-#' the first) are chosen at random. Does NOT manage its own RNG seed;
-#' the caller ([sample_communities()]) wraps the loop in
-#' [withr::with_seed()].
+#' primary points randomly from candidate buildings such that no two
+#' selected points are closer than `min_distance` meters. Then selects
+#' up to `n_required` secondary (replacement) points from the remaining
+#' pool using the same distance algorithm. If fewer than `n_required`
+#' points remain after primary selection, all remaining become secondary.
+#'
+#' All points (including the first) are chosen at random. Does NOT
+#' manage its own RNG seed; the caller ([sample_communities()]) wraps
+#' the loop in [withr::with_seed()].
 #'
 #' @param points_sf An `sf` POINT for one community (element of
 #'   [crop_buildings()] output).
@@ -633,9 +694,9 @@ find_start_points <- function(
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
 #' @return A list with `$primary` (`sf` POINT of selected points) and
-#'   `$secondary` (`sf` POINT of all remaining points). The primary set
-#'   has no `selection_order` column; ordering is done separately by
-#'   [order_selected_points()].
+#'   `$secondary` (`sf` POINT of replacement points, at most
+#'   `n_required` rows). The primary set has no `selection_order`
+#'   column; ordering is done separately by [order_selected_points()].
 #' @noRd
 select_sample_points <- function(
   points_sf,
@@ -660,55 +721,43 @@ select_sample_points <- function(
   utm_crs <- auto_utm_crs(points_sf)
   pts_utm <- sf::st_transform(points_sf, utm_crs)
 
+  # --- Primary selection ---
   all_idx <- seq_len(nrow(pts_utm))
-  first <- sample(all_idx, 1L)
-  selected_idx <- first
-  remaining_idx <- setdiff(all_idx, first)
+  primary_draw <- draw_with_distance(
+    pts_utm, all_idx, n_required, min_distance
+  )
 
-  while (length(selected_idx) < n_required && length(remaining_idx) > 0L) {
-    sel_geom <- sf::st_geometry(pts_utm[selected_idx, ])
-    rem_geom <- sf::st_geometry(pts_utm[remaining_idx, ])
+  cli::cli_inform(
+    "    Selected {length(primary_draw$selected)} primary point{?s}."
+  )
 
-    within_dist <- sf::st_is_within_distance(
-      rem_geom,
-      sel_geom,
-      dist = min_distance
+  primary <- sf::st_transform(pts_utm[primary_draw$selected, ], 4326L)
+
+  # --- Secondary selection (capped at n_required) ---
+  leftover_idx <- primary_draw$remaining
+
+  if (length(leftover_idx) == 0L) {
+    secondary <- pts_utm[integer(0L), ] |> sf::st_transform(4326L)
+  } else if (length(leftover_idx) <= n_required) {
+    cli::cli_inform(
+      "    All {length(leftover_idx)} remaining point{?s} become secondary."
     )
-    too_close <- vapply(within_dist, function(x) length(x) > 0L, logical(1L))
-    candidate_mask <- !too_close
-
-    if (!any(candidate_mask)) {
-      n_still_needed <- n_required - length(selected_idx)
-      cli::cli_inform(c(
-        "!" = paste0(
-          "No candidates beyond {min_distance}m in this community. ",
-          "Drawing {n_still_needed} remaining point{?s} randomly."
-        )
-      ))
-      drawn <- sample(remaining_idx, min(n_still_needed, length(remaining_idx)))
-      selected_idx <- c(selected_idx, drawn)
-      remaining_idx <- setdiff(remaining_idx, drawn)
-      next
-    }
-
-    candidate_positions <- which(candidate_mask)
-    pick <- sample(candidate_positions, 1L)
-    actual_idx <- remaining_idx[pick]
-    selected_idx <- c(selected_idx, actual_idx)
-    remaining_idx <- remaining_idx[-pick]
+    secondary <- sf::st_transform(pts_utm[leftover_idx, ], 4326L)
+  } else {
+    cli::cli_inform(
+      "    Selecting {n_required} secondary point{?s} from {length(leftover_idx)} remaining..."
+    )
+    secondary_draw <- draw_with_distance(
+      pts_utm, leftover_idx, n_required, min_distance
+    )
+    secondary <- sf::st_transform(
+      pts_utm[secondary_draw$selected, ], 4326L
+    )
   }
 
   cli::cli_inform(
-    "    Selected {length(selected_idx)} point{?s}, {length(remaining_idx)} remaining."
+    "    {nrow(primary)} primary + {nrow(secondary)} secondary point{?s}."
   )
-
-  primary <- sf::st_transform(pts_utm[selected_idx, ], 4326L)
-
-  secondary <- if (length(remaining_idx) > 0L) {
-    sf::st_transform(pts_utm[remaining_idx, ], 4326L)
-  } else {
-    pts_utm[integer(0L), ] |> sf::st_transform(4326L)
-  }
 
   list(primary = primary, secondary = secondary)
 }

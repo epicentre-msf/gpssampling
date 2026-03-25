@@ -340,9 +340,64 @@ test_that("select_sample_points returns correct counts", {
   })
 
   expect_equal(nrow(result$primary), 5L)
+  # Secondary is capped at n_required
+  expect_true(nrow(result$secondary) <= 5L)
+})
+
+test_that("select_sample_points caps secondary at n_required", {
+  # 25 well-spaced points, request 5 → remaining is 20 > 5,
+  # so secondary must be drawn (not all remaining)
+  coords <- expand.grid(
+    x = seq(0, 0.01, length.out = 5L),
+    y = seq(0, 0.01, length.out = 5L)
+  )
+  pts <- sf::st_sf(
+    id = seq_len(nrow(coords)),
+    community = "test",
+    geometry = sf::st_sfc(
+      lapply(seq_len(nrow(coords)), function(i) {
+        sf::st_point(c(coords$x[i], coords$y[i]))
+      }),
+      crs = 4326L
+    )
+  )
+
+  withr::with_seed(42L, {
+    result <- select_sample_points(pts, 5L, min_distance = 0)
+  })
+
+  expect_equal(nrow(result$primary), 5L)
+  expect_equal(nrow(result$secondary), 5L)
+  # No overlap between primary and secondary
+  expect_length(
+    intersect(result$primary$id, result$secondary$id),
+    0L
+  )
+})
+
+test_that("select_sample_points returns all remaining when fewer than n_required", {
+  # 7 points, request 5 → only 2 remain, both become secondary
+  pts <- sf::st_sf(
+    id = seq_len(7L),
+    community = "test",
+    geometry = sf::st_sfc(
+      lapply(seq_len(7L), function(i) {
+        sf::st_point(c(i * 0.001, 0))
+      }),
+      crs = 4326L
+    )
+  )
+
+  withr::with_seed(42L, {
+    result <- select_sample_points(pts, 5L, min_distance = 0)
+  })
+
+  expect_equal(nrow(result$primary), 5L)
+  expect_equal(nrow(result$secondary), 2L)
+  # All 7 points accounted for
   expect_equal(
-    nrow(result$primary) + nrow(result$secondary),
-    nrow(pts)
+    sort(c(result$primary$id, result$secondary$id)),
+    1:7
   )
 })
 
