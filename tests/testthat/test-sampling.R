@@ -90,7 +90,7 @@ test_that("auto_utm_crs returns correct UTM zone for known locations", {
 test_that("filter_buildings path A: removes tagged buildings", {
   buildings <- make_buildings(10L)
   buildings$building[1:3] <- c("hospital", "school", "church")
-  result <- filter_buildings(buildings)
+  result <- filter_buildings(buildings, building_col = "building")
   expect_equal(nrow(result), 7L)
   expect_false(any(result$building %in% c("hospital", "school", "church")))
 })
@@ -98,7 +98,11 @@ test_that("filter_buildings path A: removes tagged buildings", {
 test_that("filter_buildings path A: custom remove_tags", {
   buildings <- make_buildings(5L)
   buildings$building <- c("yes", "residential", "hospital", "yes", "warehouse")
-  result <- filter_buildings(buildings, remove_tags = c("hospital"))
+  result <- filter_buildings(
+    buildings,
+    remove_tags = c("hospital"),
+    building_col = "building"
+  )
   expect_equal(nrow(result), 4L)
 })
 
@@ -112,7 +116,8 @@ test_that("filter_buildings path B: user footprints + OSM labeling", {
   result <- filter_buildings(
     user_buildings,
     osm_buildings_sf = osm_buildings,
-    remove_tags = c("hospital", "school")
+    remove_tags = c("hospital", "school"),
+    building_col = "building"
   )
   expect_true("osm_building_tag" %in% names(result))
   # hospital and school should be removed
@@ -135,7 +140,8 @@ test_that("filter_buildings path B: keep_untagged = FALSE", {
     result <- filter_buildings(
       user_buildings,
       osm_buildings_sf = osm_buildings,
-      keep_untagged = FALSE
+      keep_untagged = FALSE,
+      building_col = "building"
     ),
     "filtered out"
   )

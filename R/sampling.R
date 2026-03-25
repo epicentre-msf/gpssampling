@@ -173,17 +173,21 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
 #' @param osm_buildings_sf Optional `sf` POLYGON of OSM buildings (output
 #'   of [fetch_osm_buildings()]). Required when `buildings_sf` is
 #'   user-provided and lacks a `building` column.
-#' @param remove_tags Character vector of OSM `building=*` tag values to
+#' @param remove_tags Character vector of building type values to
 #'   exclude. Defaults to common non-residential types.
 #' @param keep_untagged Logical. When intersecting user footprints with
 #'   OSM, keep buildings that have no OSM match? Default `TRUE` (assumes
 #'   unlabeled buildings are residential).
+#' @param building_col Character. Name of the column containing
+#'   building type tags. Default `"type"`. For OSM data from
+#'   [fetch_osm_buildings()], use `"building"`.
 #' @return An `sf` POLYGON of filtered buildings.
 #' @export
 #' @examples
 #' \dontrun{
 #' # OSM-only
-#' buildings <- fetch_osm_buildings(area) |> filter_buildings()
+#' buildings <- fetch_osm_buildings(area) |>
+#'   filter_buildings(building_col = "building")
 #'
 #' # User footprints + OSM labeling
 #' osm <- fetch_osm_buildings(area)
@@ -203,18 +207,20 @@ filter_buildings <- function(
     "government",
     "public"
   ),
-  keep_untagged = TRUE
+  keep_untagged = TRUE,
+  building_col = "type"
 ) {
   checkmate::assert_class(buildings_sf, "sf")
   checkmate::assert_character(remove_tags, min.len = 1L)
   checkmate::assert_flag(keep_untagged)
+  checkmate::assert_string(building_col)
 
-  has_building_col <- "building" %in% names(buildings_sf)
+  has_building_col <- building_col %in% names(buildings_sf)
 
-  # Path A: OSM-only
+  # Path A: Direct filtering (buildings_sf has the type column)
   if (has_building_col && is.null(osm_buildings_sf)) {
     result <- buildings_sf |>
-      dplyr::filter(!(.data$building %in% remove_tags))
+      dplyr::filter(!(.data[[building_col]] %in% remove_tags))
     if (nrow(result) == 0L) {
       cli::cli_warn("All buildings were filtered out.")
     }
@@ -226,6 +232,17 @@ filter_buildings <- function(
   if (!is.null(osm_buildings_sf)) {
     checkmate::assert_class(osm_buildings_sf, "sf")
 
+    # Determine the type column in the OSM data
+    osm_type_col <- if ("building" %in% names(osm_buildings_sf)) {
+      "building"
+    } else if (building_col %in% names(osm_buildings_sf)) {
+      building_col
+    } else {
+      cli::cli_abort(
+        "Column {.val {building_col}} not found in {.arg osm_buildings_sf}."
+      )
+    }
+
     buildings_crs <- sf::st_crs(buildings_sf)
     osm_crs <- sf::st_crs(osm_buildings_sf)
     if (buildings_crs != osm_crs) {
@@ -235,8 +252,11 @@ filter_buildings <- function(
       )
     }
 
+    buildings_sf <- sf::st_make_valid(buildings_sf)
+    osm_buildings_sf <- sf::st_make_valid(osm_buildings_sf)
     sf::st_agr(buildings_sf) <- "constant"
-    osm_sub <- osm_buildings_sf |> dplyr::select("osm_id", "building")
+    osm_sub <- osm_buildings_sf |>
+      dplyr::select(dplyr::any_of(c("osm_id", osm_type_col)))
     sf::st_agr(osm_sub) <- "constant"
     joined <- suppressWarnings(sf::st_join(
       buildings_sf,
@@ -245,10 +265,10 @@ filter_buildings <- function(
       largest = TRUE
     ))
 
-    joined$osm_building_tag <- joined$building
-    if ("building" %in% names(buildings_sf)) {
+    joined$osm_building_tag <- joined[[osm_type_col]]
+    if (osm_type_col %in% names(buildings_sf)) {
       joined <- joined |>
-        dplyr::select(-"building")
+        dplyr::select(-dplyr::all_of(osm_type_col))
     }
 
     has_match <- !is.na(joined$osm_building_tag)
@@ -270,7 +290,7 @@ filter_buildings <- function(
   # Path C: User footprints without OSM
 
   cli::cli_warn(c(
-    "No OSM data provided and no {.field building} column found.",
+    "No OSM data provided and no {.field {building_col}} column found.",
     "i" = "Returning all buildings as-is."
   ))
   buildings_sf

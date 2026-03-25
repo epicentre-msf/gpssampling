@@ -141,6 +141,101 @@ test_that("map_all_communities returns named list of ggplots", {
   }
 })
 
+# map_cropped_buildings
+# ............................................................................
+
+test_that("map_cropped_buildings returns a patchwork object", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  community_a <- sf::st_sf(
+    name = "alpha",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
+        ncol = 2L,
+        byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+  community_b <- sf::st_sf(
+    name = "beta",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0.05, 0.05, 0.1, 0.05, 0.1, 0.1, 0.05, 0.1, 0.05, 0.05),
+        ncol = 2L,
+        byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+  communities <- rbind(community_a, community_b)
+
+  pts_a <- sf::st_sf(
+    id = 1:3,
+    community = "alpha",
+    geometry = sf::st_sfc(
+      sf::st_point(c(0.01, 0.01)),
+      sf::st_point(c(0.02, 0.03)),
+      sf::st_point(c(0.04, 0.02)),
+      crs = 4326L
+    )
+  )
+  pts_b <- sf::st_sf(
+    id = 1:2,
+    community = "beta",
+    geometry = sf::st_sfc(
+      sf::st_point(c(0.06, 0.06)),
+      sf::st_point(c(0.08, 0.09)),
+      crs = 4326L
+    )
+  )
+
+  buildings_list <- list(alpha = pts_a, beta = pts_b)
+
+  p <- map_cropped_buildings(
+    buildings_list,
+    communities,
+    community_id_col = "name"
+  )
+  expect_s3_class(p, "patchwork")
+})
+
+test_that("map_cropped_buildings handles single community", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  community <- sf::st_sf(
+    name = "solo",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
+        ncol = 2L,
+        byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+
+  pts <- sf::st_sf(
+    id = 1:2,
+    community = "solo",
+    geometry = sf::st_sfc(
+      sf::st_point(c(0.01, 0.01)),
+      sf::st_point(c(0.03, 0.04)),
+      crs = 4326L
+    )
+  )
+
+  p <- map_cropped_buildings(
+    list(solo = pts),
+    community,
+    community_id_col = "name"
+  )
+  expect_s3_class(p, "ggplot")
+})
+
 test_that("map_all_communities saves PNGs when out_dir given", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("ggspatial")

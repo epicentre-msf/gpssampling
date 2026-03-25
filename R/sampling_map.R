@@ -377,3 +377,122 @@ map_all_communities <- function(
 
   invisible(result)
 }
+
+
+#' Map cropped buildings per community
+#'
+#' Produces a horizontal strip of maps (one per community) showing the
+#' community boundary and its building centroids after cropping. Uses
+#' `patchwork` for layout (`p1 | p2 | p3`).
+#'
+#' @param buildings_list Named list of `sf` POINT objects (output of
+#'   [crop_buildings()]).
+#' @param communities_sf Community polygons (`sf`).
+#' @param community_id_col Column name for community ID in
+#'   `communities_sf`. Default `"name"`.
+#' @param building_color Fill color for building points.
+#'   Default `"#8B4513"` (saddle brown).
+#' @param building_size Point size. Default `1.5`.
+#' @param community_color Boundary stroke color. Default `"#4a4a4a"`.
+#' @param community_fill Boundary fill color. Default `"#faf8f4"`.
+#' @param title Overall plot title. Default `"Cropped communities"`.
+#' @return A `patchwork` object (composable `ggplot`).
+#' @export
+#' @examples
+#' \dontrun{
+#' buildings_list <- crop_buildings(buildings, communities, "name")
+#' p <- map_cropped_buildings(buildings_list, communities)
+#' ggplot2::ggsave("cropped.png", p, width = 18, height = 6)
+#' }
+map_cropped_buildings <- function(
+  buildings_list,
+  communities_sf,
+  community_id_col = "name",
+  building_color = "#8B4513",
+  building_size = 1.5,
+  community_color = "#4a4a4a",
+  community_fill = "#faf8f4",
+  title = "Cropped communities"
+) {
+  rlang::check_installed("ggplot2", reason = "for static maps")
+  rlang::check_installed("patchwork", reason = "for composing panels")
+
+  checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
+  checkmate::assert_class(communities_sf, "sf")
+  checkmate::assert_string(community_id_col)
+  checkmate::assert_choice(community_id_col, names(communities_sf))
+
+  panels <- list()
+
+  for (nm in names(buildings_list)) {
+    pts <- buildings_list[[nm]]
+    community_row <- communities_sf[communities_sf[[community_id_col]] == nm, ]
+
+    if (nrow(community_row) == 0L) {
+      cli::cli_warn("Community {.val {nm}} not found in {.arg communities_sf}.")
+      next
+    }
+
+    n_buildings <- nrow(pts)
+
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_sf(
+        data = community_row,
+        fill = community_fill,
+        color = community_color,
+        linewidth = 0.8
+      ) +
+      ggplot2::geom_sf(
+        data = pts,
+        color = building_color,
+        fill = building_color,
+        size = building_size,
+        shape = 21,
+        stroke = 0.3,
+        alpha = 0.85
+      ) +
+      ggplot2::labs(
+        title = nm,
+        subtitle = paste0("n = ", n_buildings)
+      ) +
+      ggplot2::theme_void() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          face = "bold",
+          size = 12,
+          hjust = 0.5
+        ),
+        plot.subtitle = ggplot2::element_text(
+          size = 9,
+          hjust = 0.5,
+          color = "grey40"
+        ),
+        panel.background = ggplot2::element_rect(
+          fill = "#f0ede6",
+          color = NA
+        ),
+        plot.margin = ggplot2::margin(5, 5, 5, 5)
+      )
+
+    panels[[nm]] <- p
+  }
+
+  if (length(panels) == 0L) {
+    cli::cli_abort("No valid communities to plot.")
+  }
+
+  combined <- patchwork::wrap_plots(panels, nrow = 1L)
+  combined <- combined +
+    patchwork::plot_annotation(
+      title = title,
+      theme = ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          face = "bold",
+          size = 16,
+          hjust = 0.5
+        )
+      )
+    )
+
+  combined
+}
