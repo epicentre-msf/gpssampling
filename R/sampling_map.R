@@ -475,9 +475,17 @@ map_cropped_buildings <- function(
 
   # Dissolve communities by ID: a community may span multiple rows
   # (e.g. multipolygon stored as separate features with the same name).
+  n_rows_raw <- nrow(communities_sf)
+  n_unique <- length(unique(communities_sf[[community_id_col]]))
+  if (n_unique < n_rows_raw) {
+    cli::cli_inform(
+      "Dissolving {n_rows_raw} feature{?s} into {n_unique} unique communit{?y/ies}..."
+    )
+  }
   communities_sf <- communities_sf |>
-    dplyr::group_by(.data[[community_id_col]]) |>
-    dplyr::summarise(geometry = sf::st_union(.data$geometry), .groups = "drop")
+    dplyr::select(dplyr::all_of(community_id_col)) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(community_id_col))) |>
+    dplyr::summarise(.groups = "drop")
   sf::st_agr(communities_sf) <- "constant"
 
   n_communities <- nrow(communities_sf)
