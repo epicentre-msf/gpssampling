@@ -263,6 +263,133 @@ test_that("map_cropped_buildings handles single community", {
   expect_s3_class(result[["solo"]], "ggplot")
 })
 
+test_that("map_cropped_buildings clip = TRUE works", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("tidyterra")
+
+  community <- sf::st_sf(
+    name = "solo",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
+        ncol = 2L,
+        byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+
+  set.seed(42L)
+  n <- 10L
+  cx <- runif(n, 0.001, 0.049)
+  cy <- runif(n, 0.001, 0.049)
+  polys <- lapply(seq_len(n), function(i) {
+    dx <- 0.0002
+    sf::st_polygon(list(matrix(
+      c(
+        cx[i] - dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] - dx
+      ),
+      ncol = 2L,
+      byrow = TRUE
+    )))
+  })
+  buildings <- sf::st_sf(
+    osm_id = as.character(seq_len(n)),
+    building = rep("yes", n),
+    geometry = sf::st_sfc(polys, crs = 4326L)
+  )
+
+  result <- map_cropped_buildings(
+    buildings,
+    community,
+    community_id_col = "name",
+    clip = TRUE
+  )
+  expect_type(result, "list")
+  expect_equal(length(result), 1L)
+  expect_s3_class(result[["solo"]], "ggplot")
+})
+
+test_that("map_cropped_buildings handles NA values in character columns", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("tidyterra")
+
+  community <- sf::st_sf(
+    name = "solo",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
+        ncol = 2L,
+        byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+
+  set.seed(42L)
+  n <- 10L
+  cx <- runif(n, 0.001, 0.049)
+  cy <- runif(n, 0.001, 0.049)
+  polys <- lapply(seq_len(n), function(i) {
+    dx <- 0.0002
+    sf::st_polygon(list(matrix(
+      c(
+        cx[i] - dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] - dx
+      ),
+      ncol = 2L,
+      byrow = TRUE
+    )))
+  })
+  # Inject NA values in character columns (triggers the vapply bug)
+  building_tags <- rep("yes", n)
+  building_tags[c(3L, 7L)] <- NA_character_
+  osm_ids <- as.character(seq_len(n))
+  osm_ids[5L] <- NA_character_
+
+  buildings <- sf::st_sf(
+    osm_id = osm_ids,
+    building = building_tags,
+    geometry = sf::st_sfc(polys, crs = 4326L)
+  )
+
+  # Both clip modes should work without vapply errors
+  result_fast <- map_cropped_buildings(
+    buildings,
+    community,
+    community_id_col = "name",
+    clip = FALSE
+  )
+  expect_s3_class(result_fast[["solo"]], "ggplot")
+
+  result_clip <- map_cropped_buildings(
+    buildings,
+    community,
+    community_id_col = "name",
+    clip = TRUE
+  )
+  expect_s3_class(result_clip[["solo"]], "ggplot")
+})
+
 test_that("map_all_communities saves PNGs when out_dir given", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("ggspatial")

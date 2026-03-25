@@ -59,6 +59,11 @@ map_community <- function(
   checkmate::assert_class(points_sf, "sf")
   checkmate::assert_flag(batch_colors)
 
+  cli::cli_inform(
+    "Rendering map for {.val {community_name}} ({nrow(points_sf)} point{?s})..."
+  )
+  cli::cli_inform("  Downloading basemap tiles...")
+
   tiles <- tryCatch(
     suppressWarnings(
       maptiles::get_tiles(community_sf, provider = basemap, crop = TRUE)
@@ -123,7 +128,7 @@ map_community <- function(
       style = ggspatial::north_arrow_minimal()
     ) +
     ggplot2::labs(title = title, subtitle = subtitle) +
-    ggplot2::theme_void() +
+    ggplot2::theme_light() +
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", size = 14),
       plot.subtitle = ggplot2::element_text(size = 10, color = "grey40")
@@ -179,6 +184,8 @@ map_overview <- function(
   checkmate::assert_class(communities_sf, "sf")
   checkmate::assert_string(community_id_col)
 
+  cli::cli_inform("Rendering overview map...")
+
   all_points <- list()
   for (nm in names(samples_list)) {
     pts <- if (inherits(samples_list[[nm]], "sf")) {
@@ -198,8 +205,12 @@ map_overview <- function(
   }
 
   combined_pts <- dplyr::bind_rows(all_points)
+  cli::cli_inform(
+    "  {nrow(combined_pts)} total point{?s} across {length(all_points)} communit{?y/ies}."
+  )
   all_buffers <- buffer_sf(combined_pts, buffer_radius)
 
+  cli::cli_inform("  Downloading basemap tiles...")
   tiles <- tryCatch(
     suppressWarnings(
       maptiles::get_tiles(communities_sf, provider = basemap, crop = TRUE)
@@ -255,7 +266,7 @@ map_overview <- function(
       style = ggspatial::north_arrow_minimal()
     ) +
     ggplot2::labs(title = title, subtitle = subtitle) +
-    ggplot2::theme_void() +
+    ggplot2::theme_light() +
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", size = 14),
       plot.subtitle = ggplot2::element_text(size = 10, color = "grey40")
@@ -382,18 +393,25 @@ map_all_communities <- function(
 #' Map cropped buildings per community
 #'
 #' Produces one large map per community showing the community boundary
-#' and the actual building footprint shapes over an OSM basemap. The
-#' building polygons are clipped to each community boundary internally.
-#' Returns a named list of `ggplot` objects (one per community).
+#' and building footprint shapes over an OSM basemap. Returns a named
+#' list of `ggplot` objects (one per community).
+#'
+#' By default, buildings are filtered to those overlapping each community
+#' (fast spatial predicate) but not geometrically clipped. Set
+#' `clip = TRUE` for exact boundary clipping (slower, needed only when
+#' boundary-edge precision matters for publication).
 #'
 #' Requires `ggplot2`, `ggspatial`, and `tidyterra` (all in Suggests).
 #'
 #' @param buildings_sf An `sf` POLYGON of building footprints (the same
-#'   input you passed to [crop_buildings()]). The function clips them
-#'   to each community internally.
+#'   input you passed to [crop_buildings()]).
 #' @param communities_sf Community polygons (`sf`).
 #' @param community_id_col Column name for community ID in
 #'   `communities_sf`. Default `"name"`.
+#' @param clip Logical. If `TRUE`, buildings are geometrically clipped
+#'   to the community boundary (slower but precise). If `FALSE`
+#'   (default), buildings that intersect the community are drawn with
+#'   their full footprint (fast).
 #' @param building_fill Fill color for building footprints.
 #'   Default `"#8B6914"` (brown).
 #' @param building_stroke Stroke color for building outlines.
@@ -419,6 +437,7 @@ map_cropped_buildings <- function(
   buildings_sf,
   communities_sf,
   community_id_col = "name",
+  clip = FALSE,
   building_fill = "#8B6914",
   building_stroke = "#5B3A29",
   community_color = "#c98585",
@@ -437,48 +456,94 @@ map_cropped_buildings <- function(
   checkmate::assert_class(communities_sf, "sf")
   checkmate::assert_string(community_id_col)
   checkmate::assert_choice(community_id_col, names(communities_sf))
+  checkmate::assert_flag(clip)
+
+  n_buildings <- nrow(buildings_sf)
 
   if (sf::st_crs(buildings_sf) != sf::st_crs(communities_sf)) {
+    cli::cli_inform("Aligning CRS...")
     buildings_sf <- sf::st_transform(
       buildings_sf,
       sf::st_crs(communities_sf)
     )
   }
-  buildings_sf <- sf::st_make_valid(buildings_sf)
-  sf::st_agr(buildings_sf) <- "constant"
+  if (clip) {
+    cli::cli_inform("Validating geometries...")
+    buildings_sf <- sf::st_make_valid(buildings_sf)
+    sf::st_agr(buildings_sf) <- "constant"
+  }
+
+  # Dissolve communities by ID: a community may span multiple rows
+  # (e.g. multipolygon stored as separate features with the same name).
+  communities_sf <- communities_sf |>
+    dplyr::group_by(.data[[community_id_col]]) |>
+    dplyr::summarise(geometry = sf::st_union(.data$geometry), .groups = "drop")
   sf::st_agr(communities_sf) <- "constant"
+
+  n_communities <- nrow(communities_sf)
+  clip_label <- if (clip) "clipping" else "filtering"
+  cli::cli_inform(
+    "Mapping {n_buildings} building footprint{?s} across {n_communities} communit{?y/ies} ({clip_label} mode)..."
+  )
 
   community_names <- communities_sf[[community_id_col]]
   result <- list()
 
-  for (nm in community_names) {
-    community_row <- communities_sf[communities_sf[[community_id_col]] == nm, ]
+  # Pre-compute all intersections at once (spatial index)
+  hits_list <- sf::st_intersects(communities_sf, buildings_sf)
 
-    clipped <- tryCatch(
-      suppressWarnings(
-        sf::st_intersection(buildings_sf, sf::st_geometry(community_row))
-      ),
-      error = function(e) {
-        cli::cli_warn("Clipping failed for {.val {nm}}: {e$message}")
-        NULL
-      }
-    )
+  for (i in seq_along(community_names)) {
+    nm <- community_names[i]
+    community_row <- communities_sf[i, ]
 
-    if (is.null(clipped) || nrow(clipped) == 0L) {
+    # Fast spatial predicate: find buildings that overlap this community
+    cli::cli_inform("  {.val {nm}}: finding overlapping buildings...")
+    hits <- hits_list[[i]]
+
+    if (length(hits) == 0L) {
       cli::cli_warn("No buildings in {.val {nm}}, skipping.")
       next
     }
 
-    # Keep only polygon geometries after clipping
-    geom_types <- sf::st_geometry_type(clipped)
-    is_poly <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-    if (!all(is_poly)) {
-      clipped <- clipped[is_poly, ]
-    }
-    if (nrow(clipped) == 0L) next
+    if (clip) {
+      # Exact geometric clip (slower)
+      cli::cli_inform(
+        "  {.val {nm}}: clipping {length(hits)} building{?s} to boundary..."
+      )
+      plot_buildings <- tryCatch(
+        suppressWarnings(
+          sf::st_intersection(
+            buildings_sf[hits, ],
+            sf::st_geometry(community_row)
+          )
+        ),
+        error = function(e) {
+          cli::cli_warn("Clipping failed for {.val {nm}}: {e$message}")
+          NULL
+        }
+      )
 
-    n_buildings <- nrow(clipped)
-    cli::cli_inform("Generating cropped buildings map for {.val {nm}}...")
+      if (is.null(plot_buildings) || nrow(plot_buildings) == 0L) {
+        cli::cli_warn("No buildings in {.val {nm}}, skipping.")
+        next
+      }
+
+      # Keep only polygon geometries after clipping
+      geom_types <- sf::st_geometry_type(plot_buildings)
+      is_poly <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+      if (!all(is_poly)) {
+        plot_buildings <- plot_buildings[is_poly, ]
+      }
+      if (nrow(plot_buildings) == 0L) next
+    } else {
+      # Fast: use pre-filtered buildings as-is (no geometric clipping)
+      plot_buildings <- buildings_sf[hits, ]
+    }
+
+    n_plot <- nrow(plot_buildings)
+    cli::cli_inform(
+      "  {.val {nm}}: rendering map ({n_plot} building{?s})..."
+    )
 
     tiles <- tryCatch(
       suppressWarnings(
@@ -496,6 +561,11 @@ map_cropped_buildings <- function(
       p <- p + tidyterra::geom_spatraster_rgb(data = tiles)
     }
 
+    # Strip attribute columns — only geometry is needed for fixed-aesthetic
+    # rendering. This avoids jsonlite serialization errors when character
+    # columns contain logical NA values from upstream spatial operations.
+    plot_geom <- sf::st_sf(geometry = sf::st_geometry(plot_buildings))
+
     p <- p +
       ggplot2::geom_sf(
         data = community_row,
@@ -504,7 +574,7 @@ map_cropped_buildings <- function(
         linewidth = 0.6
       ) +
       ggplot2::geom_sf(
-        data = clipped,
+        data = plot_geom,
         fill = building_fill,
         color = building_stroke,
         linewidth = 0.15,
@@ -517,9 +587,9 @@ map_cropped_buildings <- function(
       ) +
       ggplot2::labs(
         title = nm,
-        subtitle = paste0(n_buildings, " buildings")
+        subtitle = paste0(n_plot, " buildings")
       ) +
-      ggplot2::theme_void() +
+      ggplot2::theme_light() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(
           face = "bold",
@@ -541,8 +611,13 @@ map_cropped_buildings <- function(
     cli::cli_abort("No valid communities to plot.")
   }
 
+  cli::cli_inform(
+    "Generated {length(result)} building map{?s}."
+  )
+
   if (!is.null(out_dir)) {
     fs::dir_create(out_dir, recurse = TRUE)
+    cli::cli_inform("Saving maps to {.path {out_dir}}...")
     for (nm in names(result)) {
       fpath <- fs::path(out_dir, paste0(nm, "_buildings.png"))
       suppressWarnings(ggplot2::ggsave(

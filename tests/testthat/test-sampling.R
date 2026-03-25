@@ -276,6 +276,36 @@ test_that("crop_buildings sorts deterministically", {
   }
 })
 
+test_that("crop_buildings handles multipolygon / duplicate community names", {
+  # Simulate a community stored as two separate rows (same name)
+  poly_a1 <- sf::st_polygon(list(matrix(
+    c(0, 0, 0.025, 0, 0.025, 0.025, 0, 0.025, 0, 0),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  poly_a2 <- sf::st_polygon(list(matrix(
+    c(0.03, 0.03, 0.05, 0.03, 0.05, 0.05, 0.03, 0.05, 0.03, 0.03),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  # Both rows have name = "alpha" (multipolygon split into separate features)
+  communities <- sf::st_sf(
+    name = c("alpha", "alpha"),
+    geometry = sf::st_sfc(list(poly_a1, poly_a2), crs = 4326L)
+  )
+
+  buildings <- make_buildings(20L)
+  result <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  # Should produce exactly one "alpha" entry, not two
+  expect_equal(length(result), 1L)
+  expect_true("alpha" %in% names(result))
+  # Buildings from both polygon parts should be included
+  expect_true(nrow(result[["alpha"]]) > 0L)
+  # IDs should be sequential
+  expect_equal(result[["alpha"]]$id, seq_len(nrow(result[["alpha"]])))
+})
+
 test_that("crop_buildings handles empty intersection", {
   buildings <- make_buildings(
     5L,

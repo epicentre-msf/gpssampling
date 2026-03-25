@@ -67,6 +67,10 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
   tile_grid <- slippymath::bbox_to_tile_grid(bbox, zoom = zoom)
   n_tiles <- nrow(tile_grid$tiles)
 
+  cli::cli_inform(
+    "Fetching OSM buildings across {n_tiles} tile{?s} at zoom {zoom}..."
+  )
+
   if (n_tiles > OSM_MAX_TILES) {
     cli::cli_warn(c(
       "Area spans {n_tiles} tiles (max recommended: {OSM_MAX_TILES}).",
@@ -95,6 +99,8 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
       ),
       crs = 4326L
     ))
+
+    cli::cli_inform("  Tile {i}/{n_tiles}...")
 
     osm <- tryCatch(
       osmdata::opq(bbox = sf::st_bbox(tile_sfc)) |>
@@ -129,6 +135,11 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
     return(empty_result)
   }
 
+  n_raw <- sum(vapply(all_buildings, nrow, integer(1L)))
+  cli::cli_inform(
+    "Merging {n_raw} raw building{?s} from {length(all_buildings)} tile{?s}..."
+  )
+
   buildings_sf <- dplyr::bind_rows(all_buildings) |>
     sf::st_make_valid()
 
@@ -139,6 +150,7 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
     buildings_sf$building <- "yes"
   }
 
+  cli::cli_inform("Clipping buildings to area boundary...")
   buildings_sf <- buildings_sf |>
     dplyr::select("osm_id", "building")
   sf::st_agr(buildings_sf) <- "constant"
@@ -157,6 +169,9 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
   }
 
   buildings_sf <- buildings_sf[!duplicated(buildings_sf$osm_id), ]
+  cli::cli_inform(
+    "Done: {nrow(buildings_sf)} unique building{?s} fetched."
+  )
   buildings_sf
 }
 
@@ -373,49 +388,96 @@ crop_buildings <- function(
   checkmate::assert_string(community_id_col)
   checkmate::assert_choice(community_id_col, names(communities_sf))
 
+  n_buildings <- nrow(buildings_sf)
+
   if (sf::st_crs(buildings_sf) != sf::st_crs(communities_sf)) {
+    cli::cli_inform("Aligning CRS...")
     buildings_sf <- sf::st_transform(
       buildings_sf,
       sf::st_crs(communities_sf)
     )
   }
 
+  # Dissolve communities by ID: a community may span multiple rows
+  # (e.g. multipolygon stored as separate features with the same name).
+  # Union merges them into one geometry per community name.
+  communities_sf <- communities_sf |>
+    dplyr::group_by(.data[[community_id_col]]) |>
+    dplyr::summarise(geometry = sf::st_union(.data$geometry), .groups = "drop")
+
+  n_communities <- nrow(communities_sf)
+  cli::cli_inform(
+    "Cropping {n_buildings} building{?s} to {n_communities} communit{?y/ies}..."
+  )
+
   keep_cols <- intersect(c("osm_id"), names(buildings_sf))
+  community_names <- sort(communities_sf[[community_id_col]])
 
-  sf::st_agr(buildings_sf) <- "constant"
-  sf::st_agr(communities_sf) <- "constant"
-  cropped <- sf::st_intersection(buildings_sf, communities_sf)
+  # Fast per-community approach: use st_intersects (spatial index) to find
+  # overlapping buildings per community, then compute centroids only for
+  # the matched subset. Avoids centroids on ALL buildings + st_join.
+  cli::cli_inform("Finding buildings per community (spatial index)...")
+  hits_list <- sf::st_intersects(communities_sf, buildings_sf)
 
-  if (nrow(cropped) == 0L) {
+  result <- list()
+
+  for (i in seq_along(community_names)) {
+    nm <- community_names[i]
+    hits <- hits_list[[i]]
+
+    if (length(hits) == 0L) {
+      cli::cli_inform("  {.val {nm}}: 0 buildings, skipping.")
+      next
+    }
+
+    cli::cli_inform(
+      "  {.val {nm}}: computing centroids for {length(hits)} building{?s}..."
+    )
+    subset_sf <- buildings_sf[hits, ]
+    centroids <- suppressWarnings(sf::st_centroid(subset_sf))
+
+    # Keep only centroids that actually fall within the community polygon
+    community_geom <- sf::st_geometry(communities_sf[i, ])
+    within_mask <- as.logical(
+      sf::st_within(centroids, community_geom, sparse = FALSE)
+    )
+    centroids <- centroids[within_mask, ]
+
+    if (nrow(centroids) == 0L) {
+      cli::cli_inform("  {.val {nm}}: 0 centroids within boundary, skipping.")
+      next
+    }
+
+    centroids <- centroids |>
+      dplyr::select(dplyr::all_of(keep_cols))
+    centroids$community <- nm
+
+    coords <- sf::st_coordinates(centroids)
+    centroids <- centroids |>
+      dplyr::mutate(
+        .lon = coords[, 1L],
+        .lat = coords[, 2L]
+      ) |>
+      dplyr::arrange(.data$.lon, .data$.lat) |>
+      dplyr::select(-".lon", -".lat")
+
+    centroids$id <- seq_len(nrow(centroids))
+    result[[nm]] <- centroids
+  }
+
+  if (length(result) == 0L) {
     cli::cli_warn("No buildings intersect any community polygon.")
     return(list())
   }
 
-  cropped$community <- cropped[[community_id_col]]
-
-  centroids <- suppressWarnings(sf::st_centroid(cropped))
-
-  select_cols <- c(keep_cols, "community")
-  centroids <- centroids |>
-    dplyr::select(dplyr::all_of(select_cols))
-
-  coords <- sf::st_coordinates(centroids)
-  centroids <- centroids |>
-    dplyr::mutate(
-      .lon = coords[, 1L],
-      .lat = coords[, 2L]
-    ) |>
-    dplyr::arrange(.data$community, .data$.lon, .data$.lat) |>
-    dplyr::select(-".lon", -".lat")
-
-  community_names <- sort(unique(centroids$community))
-  result <- list()
-
-  for (nm in community_names) {
-    pts <- centroids[centroids$community == nm, ]
-    pts$id <- seq_len(nrow(pts))
-    result[[nm]] <- pts
-  }
+  counts <- vapply(result, nrow, integer(1L))
+  counts_str <- paste(
+    names(counts),
+    counts,
+    sep = ": ",
+    collapse = ", "
+  )
+  cli::cli_inform("Done: {counts_str}.")
 
   result
 }
@@ -454,14 +516,23 @@ find_start_points <- function(
   checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
   checkmate::assert_character(road_types, min.len = 1L)
 
+  n_communities <- length(buildings_list)
+  cli::cli_inform(
+    "Finding road-nearest start points for {n_communities} communit{?y/ies}..."
+  )
+
   start_ids <- integer(length(buildings_list))
   names(start_ids) <- names(buildings_list)
 
   for (nm in names(buildings_list)) {
     pts <- buildings_list[[nm]]
+    cli::cli_inform(
+      "  {.val {nm}}: querying roads for {nrow(pts)} point{?s}..."
+    )
 
     if (nrow(pts) == 1L) {
       start_ids[[nm]] <- pts$id[1L]
+      cli::cli_inform("  {.val {nm}}: single point, using id {pts$id[1L]}.")
       next
     }
 
@@ -488,6 +559,7 @@ find_start_points <- function(
     )
 
     if (is.null(roads) || nrow(roads) == 0L) {
+      cli::cli_inform("  {.val {nm}}: no roads in bbox, expanding search...")
       bbox_expanded <- bbox + c(-0.005, -0.005, 0.005, 0.005)
       roads <- tryCatch(
         {
@@ -517,6 +589,9 @@ find_start_points <- function(
       next
     }
 
+    cli::cli_inform(
+      "  {.val {nm}}: computing distances to {nrow(roads)} road segment{?s}..."
+    )
     roads_utm <- sf::st_transform(roads, utm_crs)
     nearest_road_idx <- sf::st_nearest_feature(pts_utm, roads_utm)
     dists <- sf::st_distance(
@@ -528,6 +603,7 @@ find_start_points <- function(
     ties <- which(dists == min_dist)
     idx <- ties[which.min(pts$id[ties])]
     start_ids[[nm]] <- pts$id[idx]
+    cli::cli_inform("  {.val {nm}}: start point id {start_ids[[nm]]}.")
   }
 
   start_ids
@@ -567,6 +643,11 @@ select_sample_points <- function(
       "Requested {n_required} points but only {nrow(points_sf)} available."
     )
   }
+
+  n_total <- nrow(points_sf)
+  cli::cli_inform(
+    "    Selecting {n_required}/{n_total} points (min distance: {min_distance}m)..."
+  )
 
   utm_crs <- auto_utm_crs(points_sf)
   pts_utm <- sf::st_transform(points_sf, utm_crs)
@@ -609,6 +690,10 @@ select_sample_points <- function(
     remaining_idx <- remaining_idx[-pick]
   }
 
+  cli::cli_inform(
+    "    Selected {length(selected_idx)} point{?s}, {length(remaining_idx)} remaining."
+  )
+
   primary <- sf::st_transform(pts_utm[selected_idx, ], 4326L)
 
   secondary <- if (length(remaining_idx) > 0L) {
@@ -650,6 +735,8 @@ order_selected_points <- function(
     selected_sf$selection_order <- seq_len(n)
     return(selected_sf)
   }
+
+  cli::cli_inform("    Ordering {n} selected point{?s} by road proximity...")
 
   utm_crs <- auto_utm_crs(selected_sf)
   pts_utm <- sf::st_transform(selected_sf, utm_crs)
@@ -712,6 +799,7 @@ order_selected_points <- function(
   }
 
   # --- nearest-neighbour chain from the start point ---
+  cli::cli_inform("    Building nearest-neighbour chain...")
   ordered_idx <- integer(n)
   ordered_idx[1L] <- start_idx
   remaining <- setdiff(seq_len(n), start_idx)

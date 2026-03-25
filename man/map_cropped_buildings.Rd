@@ -8,6 +8,7 @@ map_cropped_buildings(
   buildings_sf,
   communities_sf,
   community_id_col = "name",
+  clip = FALSE,
   building_fill = "#8B6914",
   building_stroke = "#5B3A29",
   community_color = "#c98585",
@@ -21,13 +22,17 @@ map_cropped_buildings(
 }
 \arguments{
 \item{buildings_sf}{An \code{sf} POLYGON of building footprints (the same
-input you passed to \code{\link[=crop_buildings]{crop_buildings()}}). The function clips them
-to each community internally.}
+input you passed to \code{\link[=crop_buildings]{crop_buildings()}}).}
 
 \item{communities_sf}{Community polygons (\code{sf}).}
 
 \item{community_id_col}{Column name for community ID in
 \code{communities_sf}. Default \code{"name"}.}
+
+\item{clip}{Logical. If \code{TRUE}, buildings are geometrically clipped
+to the community boundary (slower but precise). If \code{FALSE}
+(default), buildings that intersect the community are drawn with
+their full footprint (fast).}
 
 \item{building_fill}{Fill color for building footprints.
 Default \code{"#8B6914"} (brown).}
@@ -57,11 +62,15 @@ A named list of \code{ggplot} objects, one per community.
 }
 \description{
 Produces one large map per community showing the community boundary
-and the actual building footprint shapes over an OSM basemap. The
-building polygons are clipped to each community boundary internally.
-Returns a named list of \code{ggplot} objects (one per community).
+and building footprint shapes over an OSM basemap. Returns a named
+list of \code{ggplot} objects (one per community).
 }
 \details{
+By default, buildings are filtered to those overlapping each community
+(fast spatial predicate) but not geometrically clipped. Set
+\code{clip = TRUE} for exact boundary clipping (slower, needed only when
+boundary-edge precision matters for publication).
+
 Requires \code{ggplot2}, \code{ggspatial}, and \code{tidyterra} (all in Suggests).
 }
 \examples{

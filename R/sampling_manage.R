@@ -39,6 +39,10 @@ split_batches <- function(
 
   checkmate::assert_integerish(n_batches, lower = 1L, names = "named")
 
+  cli::cli_inform(
+    "Splitting {set} points into batches for {length(community_names)} communit{?y/ies}..."
+  )
+
   result <- list()
 
   for (nm in community_names) {
@@ -89,10 +93,16 @@ create_buffers <- function(x, radius = 50, set = c("primary", "secondary")) {
   checkmate::assert_number(radius, lower = 0)
 
   if (inherits(x, "sf")) {
+    cli::cli_inform(
+      "Creating {radius}m buffers for {nrow(x)} point{?s}..."
+    )
     return(buffer_sf(x, radius))
   }
 
   checkmate::assert_list(x, min.len = 1L)
+  cli::cli_inform(
+    "Creating {radius}m buffers for {length(x)} communit{?y/ies}..."
+  )
 
   result <- list()
   for (nm in names(x)) {
@@ -159,6 +169,11 @@ create_buffer_tiles <- function(
   buffers_4326 <- sf::st_transform(buffers_sf, 4326L)
   bbox <- sf::st_bbox(buffers_4326)
 
+  n_zooms <- max_zoom - min_zoom + 1L
+  cli::cli_inform(
+    "Rendering buffer tiles ({nrow(buffers_sf)} buffer{?s}, zoom {min_zoom}-{max_zoom})..."
+  )
+
   con <- DBI::dbConnect(RSQLite::SQLite(), out_file)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
@@ -183,6 +198,9 @@ create_buffer_tiles <- function(
   for (z in seq(min_zoom, max_zoom)) {
     tile_grid <- slippymath::bbox_to_tile_grid(bbox, zoom = z)
     tiles <- tile_grid$tiles
+    cli::cli_inform(
+      "  Zoom {z}: {nrow(tiles)} tile{?s}..."
+    )
 
     for (j in seq_len(nrow(tiles))) {
       tx <- tiles$x[j]
@@ -292,6 +310,11 @@ export_points <- function(
   checkmate::assert_flag(include_buffers)
   checkmate::assert_number(buffer_radius, lower = 0)
 
+  n_communities <- length(samples_list)
+  cli::cli_inform(
+    "Exporting {set} points for {n_communities} communit{?y/ies} to {.path {out_dir}}..."
+  )
+
   manifest <- tibble::tibble(
     community = character(),
     set = character(),
@@ -310,6 +333,7 @@ export_points <- function(
 
     community_dir <- fs::path(out_dir, set, nm)
     fs::dir_create(community_dir, recurse = TRUE)
+    cli::cli_inform("  {.val {nm}}: {nrow(pts)} point{?s}...")
 
     # Write all points
     for (fmt in formats) {
