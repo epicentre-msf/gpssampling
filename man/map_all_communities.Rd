@@ -5,11 +5,17 @@
 \title{Generate all maps and optionally save to files}
 \usage{
 map_all_communities(
-  samples_list,
+  primary_batches,
   communities_sf,
   community_id_col = "name",
+  secondary_batches = NULL,
+  color_batches = TRUE,
   out_dir = NULL,
   buffer_radius = 50,
+  primary_shape = 16,
+  secondary_shape = 17,
+  primary_buffer_color = "#90EE9066",
+  secondary_buffer_color = "#ADD8E666",
   width = 10,
   height = 12,
   dpi = 300,
@@ -17,17 +23,36 @@ map_all_communities(
 )
 }
 \arguments{
-\item{samples_list}{Output of \code{\link[=sample_communities]{sample_communities()}} or
-\code{\link[=split_batches]{split_batches()}}.}
+\item{primary_batches}{Named list of \code{sf} POINT objects (output of
+\code{\link[=split_batches]{split_batches()}} with \code{set = "primary"}).}
 
 \item{communities_sf}{Community polygons (\code{sf}).}
 
 \item{community_id_col}{Column name for community ID.}
 
-\item{out_dir}{Optional output directory. If provided, maps are saved
-as PNG. If \code{NULL}, maps are only returned.}
+\item{secondary_batches}{Optional named list of \code{sf} POINT objects
+(output of \code{\link[=split_batches]{split_batches()}} with \code{set = "secondary"}). If
+\code{NULL}, only primary maps are created.}
+
+\item{color_batches}{Logical. If \code{TRUE} (default) and points have
+\code{assigned_batch}, color by batch.}
+
+\item{out_dir}{Optional output directory. If provided, maps are
+saved as PNG. If \code{NULL}, maps are only returned.}
 
 \item{buffer_radius}{Buffer radius in meters. Default \code{50}.}
+
+\item{primary_shape}{Marker shape for primary maps. Default \code{16}
+(filled circle).}
+
+\item{secondary_shape}{Marker shape for secondary maps. Default
+\code{17} (filled triangle).}
+
+\item{primary_buffer_color}{Buffer fill for primary maps. Default
+\code{"#90EE9066"}.}
+
+\item{secondary_buffer_color}{Buffer fill for secondary maps.
+Default \code{"#ADD8E666"}.}
 
 \item{width}{Plot width in inches. Default \code{10}.}
 
@@ -35,23 +60,26 @@ as PNG. If \code{NULL}, maps are only returned.}
 
 \item{dpi}{Plot resolution. Default \code{300}.}
 
-\item{...}{Additional arguments passed to \code{\link[=map_community]{map_community()}} (colors,
-basemap, etc.).}
+\item{...}{Additional arguments passed to \code{\link[=map_community]{map_community()}}
+(basemap, label_size, etc.).}
 }
 \value{
 A named list of \code{ggplot} objects: \code{overview},
-\verb{\{name\}_primary}, \verb{\{name\}_secondary} for each community.
+\verb{\{name\}_primary}, and \verb{\{name\}_secondary} for each community.
 }
 \description{
-Creates per-community maps (primary + secondary, batch-colored) and
-an overview map. Always returns the ggplot objects. Optionally saves
-as PNG files.
+Creates separate primary and secondary maps per community
+(batch-colored), plus an overview map. Each map shows one point set
+with its buffers, point IDs, and min pairwise distance. Always
+returns the ggplot objects. Optionally saves as PNG files.
 }
 \examples{
 \dontrun{
+pri <- split_batches(samples, n_batches = 5L, set = "primary")
+sec <- split_batches(samples, n_batches = 5L, set = "secondary")
 maps <- map_all_communities(
-  samples, communities,
-  community_id_col = "name",
+  pri, communities,
+  secondary_batches = sec,
   out_dir = "output/maps"
 )
 }

@@ -198,7 +198,7 @@ create_buffer_tiles <- function(
   )
 
   for (z in seq(min_zoom, max_zoom)) {
-    tile_grid <- slippymath::bbox_to_tile_grid(bbox, zoom = z)
+    tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox, zoom = z))
     tiles <- tile_grid$tiles
     cli::cli_inform(
       "  Zoom {z}: {nrow(tiles)} tile{?s}..."
@@ -521,10 +521,10 @@ write_gpx <- function(sf_obj, path) {
       delete_dsn = TRUE
     )
   } else {
-    lines <- sf::st_cast(
+    lines <- suppressWarnings(sf::st_cast(
       sf::st_cast(sf_obj, "MULTILINESTRING"),
       "LINESTRING"
-    )
+    ))
     gpx_lines <- lines |>
       dplyr::select(
         dplyr::any_of(c("point_id", "id", "community", "assigned_batch"))

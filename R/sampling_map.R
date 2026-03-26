@@ -3,42 +3,55 @@
 # Publication-quality static maps showing communities, sampled points,
 # and buffers. Uses ggplot2 + maptiles + ggspatial (all in Suggests).
 
+#' Compute minimum pairwise distance (meters) for a set of points
+#' @noRd
+min_pairwise_dist <- function(pts_sf) {
+  if (nrow(pts_sf) < 2L) return(NA_real_)
+  utm_crs <- auto_utm_crs(pts_sf)
+  pts_utm <- sf::st_transform(pts_sf, utm_crs)
+  dmat <- sf::st_distance(pts_utm)
+  diag(dmat) <- units::set_units(Inf, "m")
+  round(as.numeric(min(dmat)), 1)
+}
+
+
 #' Create a static map for one community
 #'
-#' Renders a publication-quality map showing a community polygon, sampled
-#' points (optionally colored by batch), and buffer zones. Returns a
-#' `ggplot` object that can be further customized before saving.
+#' Renders a publication-quality map showing a community polygon,
+#' sampled points (colored by batch), and buffer zones for a single
+#' point set (primary or secondary). Returns a `ggplot` object.
 #'
 #' Requires `ggplot2`, `ggspatial`, and `tidyterra` (all in Suggests).
 #'
 #' @param community_name Character, community name (used in title).
 #' @param community_sf An `sf` POLYGON for the community boundary.
 #' @param points_sf An `sf` POINT of sampled points. If it has an
-#'   `assigned_batch` column, batch coloring is available.
-#' @param buffers_sf Optional `sf` POLYGON of buffers. If `NULL`, no
-#'   buffers are drawn.
-#' @param batch_colors Logical. If `TRUE` and `points_sf` has
-#'   `assigned_batch`, color by batch. Default `TRUE`.
+#'   `assigned_batch` column, batch coloring is applied.
+#' @param buffers_sf Optional `sf` POLYGON of buffers.
+#' @param color_batches Logical. If `TRUE` and `points_sf` has an
+#'   `assigned_batch` column, color points by batch. Default `TRUE`.
 #' @param show_labels Logical. If `TRUE` and `points_sf` has a
 #'   `point_id` column, display point IDs as text labels. Default
 #'   `TRUE`.
 #' @param label_size Numeric, text size for point ID labels. Default
 #'   `1.8`.
+#' @param point_shape Marker shape. Default `16` (filled circle).
 #' @param basemap Tile provider name for [maptiles::get_tiles()].
 #'   Default `"OpenStreetMap.HOT"`.
-#' @param point_color Uniform color when `batch_colors = FALSE`.
-#'   Default `"#e97a52"`.
-#' @param buffer_color Buffer fill color (with alpha).
-#'   Default `"#90EE9066"`.
+#' @param point_color Uniform color when no `assigned_batch`. Default
+#'   `"#e97a52"`.
+#' @param buffer_color Buffer fill color (with alpha). Default
+#'   `"#90EE9066"`.
 #' @param community_color Boundary stroke color. Default `"#808380"`.
 #' @param community_fill Boundary fill color. Default `"#f6efdd"`.
 #' @param title Map title. Defaults to `community_name`.
-#' @param subtitle Optional subtitle.
+#' @param subtitle Optional subtitle. If `NULL`, auto-generated from
+#'   point count, ID range, and min pairwise distance.
 #' @return A `ggplot` object.
 #' @export
 #' @examples
 #' \dontrun{
-#' p <- map_community("community_one", community_poly, sampled_pts, bufs)
+#' p <- map_community("community_one", comm_poly, pri_pts, bufs)
 #' ggplot2::ggsave("community_one.png", p, width = 10, height = 12)
 #' }
 map_community <- function(
@@ -46,9 +59,10 @@ map_community <- function(
   community_sf,
   points_sf,
   buffers_sf = NULL,
-  batch_colors = TRUE,
+  color_batches = TRUE,
   show_labels = TRUE,
   label_size = 1.8,
+  point_shape = 16,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
   buffer_color = "#90EE9066",
@@ -64,10 +78,11 @@ map_community <- function(
   checkmate::assert_string(community_name)
   checkmate::assert_class(community_sf, "sf")
   checkmate::assert_class(points_sf, "sf")
-  checkmate::assert_flag(batch_colors)
+
+  n_pts <- nrow(points_sf)
 
   cli::cli_inform(
-    "Rendering map for {.val {community_name}} ({nrow(points_sf)} point{?s})..."
+    "Rendering map for {.val {community_name}} ({n_pts} point{?s})..."
   )
   cli::cli_inform("  Downloading basemap tiles...")
 
@@ -81,6 +96,27 @@ map_community <- function(
     }
   )
 
+  # --- Auto-generate subtitle if not provided ---
+  if (is.null(subtitle)) {
+    sub_label <- paste0(n_pts, " points")
+    if ("point_id" %in% names(points_sf)) {
+      sub_label <- paste0(
+        sub_label,
+        " (",
+        min(points_sf$point_id),
+        "-",
+        max(points_sf$point_id),
+        ")"
+      )
+    }
+    mdist <- min_pairwise_dist(points_sf)
+    if (!is.na(mdist)) {
+      sub_label <- paste0(sub_label, " | min dist: ", mdist, "m")
+    }
+    subtitle <- sub_label
+  }
+
+  # --- Build ggplot ---
   p <- ggplot2::ggplot()
 
   if (!is.null(tiles)) {
@@ -96,7 +132,7 @@ map_community <- function(
       alpha = 0.3
     )
 
-  if (!is.null(buffers_sf)) {
+  if (!is.null(buffers_sf) && nrow(buffers_sf) > 0L) {
     p <- p +
       ggplot2::geom_sf(
         data = buffers_sf,
@@ -105,8 +141,7 @@ map_community <- function(
       )
   }
 
-  has_batch <- batch_colors &&
-    "assigned_batch" %in% names(points_sf)
+  has_batch <- color_batches && "assigned_batch" %in% names(points_sf)
 
   if (has_batch) {
     points_sf$assigned_batch <- factor(points_sf$assigned_batch)
@@ -115,7 +150,7 @@ map_community <- function(
         data = points_sf,
         ggplot2::aes(color = .data$assigned_batch),
         size = 2,
-        shape = 16
+        shape = point_shape
       ) +
       ggplot2::scale_color_brewer(palette = "Set1", name = "Batch")
   } else {
@@ -124,7 +159,7 @@ map_community <- function(
         data = points_sf,
         color = point_color,
         size = 2,
-        shape = 16
+        shape = point_shape
       )
   }
 
@@ -162,11 +197,10 @@ map_community <- function(
 #' points (uniform color), and buffers. No batch coloring on the
 #' overview for clarity.
 #'
-#' @param samples_list Output of [sample_communities()] or
-#'   [split_batches()].
+#' @param points_list Named list of `sf` POINT objects (output of
+#'   [split_batches()], or raw `sf` per community).
 #' @param communities_sf All community polygons (`sf`).
 #' @param community_id_col Column name for community ID.
-#' @param set Which point set: `"primary"` or `"secondary"`.
 #' @param buffer_radius Buffer radius in meters. Default `50`.
 #' @param basemap Tile provider name. Default `"OpenStreetMap.HOT"`.
 #' @param point_color Uniform point color. Default `"#e97a52"`.
@@ -179,13 +213,12 @@ map_community <- function(
 #' @export
 #' @examples
 #' \dontrun{
-#' p <- map_overview(samples, communities, community_id_col = "name")
+#' p <- map_overview(primary_batches, communities, community_id_col = "name")
 #' }
 map_overview <- function(
-  samples_list,
+  points_list,
   communities_sf,
   community_id_col = "name",
-  set = "primary",
   buffer_radius = 50,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
@@ -205,13 +238,13 @@ map_overview <- function(
   cli::cli_inform("Rendering overview map...")
 
   all_points <- list()
-  for (nm in names(samples_list)) {
-    pts <- if (inherits(samples_list[[nm]], "sf")) {
-      samples_list[[nm]]
+  for (nm in names(points_list)) {
+    pts <- if (inherits(points_list[[nm]], "sf")) {
+      points_list[[nm]]
     } else if (
-      is.list(samples_list[[nm]]) && set %in% names(samples_list[[nm]])
+      is.list(points_list[[nm]]) && "primary" %in% names(points_list[[nm]])
     ) {
-      samples_list[[nm]][[set]]
+      points_list[[nm]][["primary"]]
     } else {
       next
     }
@@ -219,7 +252,7 @@ map_overview <- function(
   }
 
   if (length(all_points) == 0L) {
-    cli::cli_abort("No points found in {.arg samples_list}.")
+    cli::cli_abort("No points found in {.arg points_list}.")
   }
 
   combined_pts <- dplyr::bind_rows(all_points)
@@ -296,39 +329,61 @@ map_overview <- function(
 
 #' Generate all maps and optionally save to files
 #'
-#' Creates per-community maps (primary + secondary, batch-colored) and
-#' an overview map. Always returns the ggplot objects. Optionally saves
-#' as PNG files.
+#' Creates separate primary and secondary maps per community
+#' (batch-colored), plus an overview map. Each map shows one point set
+#' with its buffers, point IDs, and min pairwise distance. Always
+#' returns the ggplot objects. Optionally saves as PNG files.
 #'
-#' @param samples_list Output of [sample_communities()] or
-#'   [split_batches()].
+#' @param primary_batches Named list of `sf` POINT objects (output of
+#'   [split_batches()] with `set = "primary"`).
 #' @param communities_sf Community polygons (`sf`).
 #' @param community_id_col Column name for community ID.
-#' @param out_dir Optional output directory. If provided, maps are saved
-#'   as PNG. If `NULL`, maps are only returned.
+#' @param secondary_batches Optional named list of `sf` POINT objects
+#'   (output of [split_batches()] with `set = "secondary"`). If
+#'   `NULL`, only primary maps are created.
+#' @param color_batches Logical. If `TRUE` (default) and points have
+#'   `assigned_batch`, color by batch.
+#' @param out_dir Optional output directory. If provided, maps are
+#'   saved as PNG. If `NULL`, maps are only returned.
 #' @param buffer_radius Buffer radius in meters. Default `50`.
+#' @param primary_shape Marker shape for primary maps. Default `16`
+#'   (filled circle).
+#' @param secondary_shape Marker shape for secondary maps. Default
+#'   `17` (filled triangle).
+#' @param primary_buffer_color Buffer fill for primary maps. Default
+#'   `"#90EE9066"`.
+#' @param secondary_buffer_color Buffer fill for secondary maps.
+#'   Default `"#ADD8E666"`.
 #' @param width Plot width in inches. Default `10`.
 #' @param height Plot height in inches. Default `12`.
 #' @param dpi Plot resolution. Default `300`.
-#' @param ... Additional arguments passed to [map_community()] (colors,
-#'   basemap, etc.).
+#' @param ... Additional arguments passed to [map_community()]
+#'   (basemap, label_size, etc.).
 #' @return A named list of `ggplot` objects: `overview`,
-#'   `{name}_primary`, `{name}_secondary` for each community.
+#'   `{name}_primary`, and `{name}_secondary` for each community.
 #' @export
 #' @examples
 #' \dontrun{
+#' pri <- split_batches(samples, n_batches = 5L, set = "primary")
+#' sec <- split_batches(samples, n_batches = 5L, set = "secondary")
 #' maps <- map_all_communities(
-#'   samples, communities,
-#'   community_id_col = "name",
+#'   pri, communities,
+#'   secondary_batches = sec,
 #'   out_dir = "output/maps"
 #' )
 #' }
 map_all_communities <- function(
-  samples_list,
+  primary_batches,
   communities_sf,
   community_id_col = "name",
+  secondary_batches = NULL,
+  color_batches = TRUE,
   out_dir = NULL,
   buffer_radius = 50,
+  primary_shape = 16,
+  secondary_shape = 17,
+  primary_buffer_color = "#90EE9066",
+  secondary_buffer_color = "#ADD8E666",
   width = 10,
   height = 12,
   dpi = 300,
@@ -336,54 +391,72 @@ map_all_communities <- function(
 ) {
   rlang::check_installed("ggplot2", reason = "for static maps")
 
+  checkmate::assert_list(primary_batches, min.len = 1L)
   checkmate::assert_class(communities_sf, "sf")
   checkmate::assert_string(community_id_col)
   checkmate::assert_choice(community_id_col, names(communities_sf))
 
   result <- list()
 
+  # --- Overview map (primary points only) ---
   cli::cli_inform("Generating overview map...")
   result$overview <- map_overview(
-    samples_list,
+    primary_batches,
     communities_sf,
     community_id_col = community_id_col,
-    set = "primary",
     buffer_radius = buffer_radius,
     ...
   )
 
-  for (nm in names(samples_list)) {
+  # --- Per-community maps (separate primary and secondary) ---
+  for (nm in names(primary_batches)) {
     community_row <- communities_sf[communities_sf[[community_id_col]] == nm, ]
     if (nrow(community_row) == 0L) {
-      cli::cli_warn("Community {.val {nm}} not found in {.arg communities_sf}.")
+      cli::cli_warn(
+        "Community {.val {nm}} not found in {.arg communities_sf}."
+      )
       next
     }
 
-    for (s in c("primary", "secondary")) {
-      pts <- if (inherits(samples_list[[nm]], "sf")) {
-        if (s == "primary") samples_list[[nm]] else next
-      } else if (
-        is.list(samples_list[[nm]]) && s %in% names(samples_list[[nm]])
-      ) {
-        samples_list[[nm]][[s]]
-      } else {
-        next
-      }
+    # Primary map
+    pri_pts <- primary_batches[[nm]]
+    if (inherits(pri_pts, "sf") && nrow(pri_pts) > 0L) {
+      pri_bufs <- buffer_sf(pri_pts, buffer_radius)
+      map_name <- paste0(nm, "_primary")
 
-      if (nrow(pts) == 0L) {
-        next
-      }
-
-      bufs <- buffer_sf(pts, buffer_radius)
-      map_name <- paste0(nm, "_", s)
-
-      cli::cli_inform("Generating map for {.val {nm}} ({s})...")
+      cli::cli_inform("Generating map for {.val {nm}} (primary)...")
       result[[map_name]] <- map_community(
         community_name = nm,
         community_sf = community_row,
-        points_sf = pts,
-        buffers_sf = bufs,
-        subtitle = s,
+        points_sf = pri_pts,
+        buffers_sf = pri_bufs,
+        color_batches = color_batches,
+        point_shape = primary_shape,
+        buffer_color = primary_buffer_color,
+        ...
+      )
+    }
+
+    # Secondary map
+    if (
+      !is.null(secondary_batches) &&
+        nm %in% names(secondary_batches) &&
+        inherits(secondary_batches[[nm]], "sf") &&
+        nrow(secondary_batches[[nm]]) > 0L
+    ) {
+      sec_pts <- secondary_batches[[nm]]
+      sec_bufs <- buffer_sf(sec_pts, buffer_radius)
+      map_name <- paste0(nm, "_secondary")
+
+      cli::cli_inform("Generating map for {.val {nm}} (secondary)...")
+      result[[map_name]] <- map_community(
+        community_name = nm,
+        community_sf = community_row,
+        points_sf = sec_pts,
+        buffers_sf = sec_bufs,
+        color_batches = color_batches,
+        point_shape = secondary_shape,
+        buffer_color = secondary_buffer_color,
         ...
       )
     }
@@ -658,4 +731,263 @@ map_cropped_buildings <- function(
   }
 
   invisible(result)
+}
+
+
+#' Interactive leaflet map of all communities
+#'
+#' Creates an interactive [leaflet::leaflet()] map with toggleable
+#' layers for primary points, secondary points, and their buffers
+#' (per community). Points are colored by batch when
+#' `color_batches = TRUE`. Satellite imagery and OpenStreetMap are
+#' available as base layers.
+#'
+#' @param primary_batches Named list of `sf` POINT objects (output of
+#'   [split_batches()] with `set = "primary"`).
+#' @param communities_sf Community polygons (`sf`).
+#' @param community_id_col Column name for community ID.
+#' @param secondary_batches Optional named list of `sf` POINT objects
+#'   (output of [split_batches()] with `set = "secondary"`).
+#' @param color_batches Logical. If `TRUE` (default) and points have
+#'   `assigned_batch`, color by batch.
+#' @param buffer_radius Buffer radius in meters. Default `50`.
+#' @param primary_color Default color for primary points. Default
+#'   `"#e97a52"`.
+#' @param secondary_color Default color for secondary points. Default
+#'   `"#1E90FF"`.
+#' @param primary_buffer_color Fill for primary buffers. Default
+#'   `"#90EE90"`.
+#' @param secondary_buffer_color Fill for secondary buffers. Default
+#'   `"#ADD8E6"`.
+#' @param community_color Boundary stroke color. Default `"#808380"`.
+#' @param out_file Optional file path for saving as a self-contained
+#'   HTML file. Requires `htmlwidgets`. If `NULL` (default), no file
+#'   is saved.
+#' @return A `leaflet` htmlwidget object.
+#' @export
+#' @examples
+#' \dontrun{
+#' pri <- split_batches(samples, n_batches = 5L, set = "primary")
+#' sec <- split_batches(samples, n_batches = 5L, set = "secondary")
+#' m <- leaflet_communities(pri, communities, secondary_batches = sec)
+#' m
+#' }
+leaflet_communities <- function(
+  primary_batches,
+  communities_sf,
+  community_id_col = "name",
+  secondary_batches = NULL,
+  color_batches = TRUE,
+  buffer_radius = 50,
+  primary_color = "#e97a52",
+  secondary_color = "#1E90FF",
+  primary_buffer_color = "#90EE90",
+  secondary_buffer_color = "#ADD8E6",
+  community_color = "#808380",
+  out_file = NULL
+) {
+  checkmate::assert_list(primary_batches, min.len = 1L)
+  checkmate::assert_class(communities_sf, "sf")
+  checkmate::assert_string(community_id_col)
+
+  cli::cli_inform("Building interactive map...")
+
+  m <- leaflet::leaflet() |>
+    leaflet::addTiles(group = "OpenStreetMap") |>
+    leaflet::addProviderTiles(
+      "Esri.WorldImagery",
+      group = "Satellite"
+    ) |>
+    leaflet::addProviderTiles(
+      "OpenStreetMap.HOT",
+      group = "OSM Humanitarian"
+    )
+
+  m <- m |>
+    leaflet::addPolygons(
+      data = communities_sf,
+      color = community_color,
+      weight = 2,
+      fillOpacity = 0.1,
+      label = ~ get(community_id_col),
+      group = "Communities"
+    )
+
+  # Batch color palette
+  all_batches <- sort(unique(unlist(lapply(
+    primary_batches,
+    function(x) {
+      if ("assigned_batch" %in% names(x)) unique(x$assigned_batch)
+    }
+  ))))
+  batch_pal <- if (length(all_batches) > 0L && color_batches) {
+    leaflet::colorFactor("Set1", domain = all_batches)
+  }
+
+  community_names <- names(primary_batches)
+
+  for (nm in community_names) {
+    pri_pts <- primary_batches[[nm]]
+    if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
+
+    pri_group <- paste0(nm, " - Primary")
+    has_batch <- color_batches && "assigned_batch" %in% names(pri_pts)
+    has_pid <- "point_id" %in% names(pri_pts)
+
+    pri_colors <- if (has_batch && !is.null(batch_pal)) {
+      batch_pal(pri_pts$assigned_batch)
+    } else {
+      primary_color
+    }
+    pri_labels <- if (has_pid) {
+      as.character(pri_pts$point_id)
+    } else {
+      as.character(seq_len(nrow(pri_pts)))
+    }
+    pri_popups <- if (has_batch) {
+      paste0(
+        "<b>ID:</b> ",
+        pri_labels,
+        "<br><b>Batch:</b> ",
+        pri_pts$assigned_batch,
+        "<br><b>Community:</b> ",
+        nm
+      )
+    } else {
+      paste0("<b>ID:</b> ", pri_labels, "<br><b>Community:</b> ", nm)
+    }
+
+    m <- m |>
+      leaflet::addCircleMarkers(
+        data = pri_pts,
+        radius = 5,
+        color = pri_colors,
+        fillOpacity = 0.8,
+        stroke = TRUE,
+        weight = 1,
+        label = pri_labels,
+        popup = pri_popups,
+        group = pri_group
+      )
+
+    pri_bufs <- buffer_sf(pri_pts, buffer_radius)
+    m <- m |>
+      leaflet::addPolygons(
+        data = pri_bufs,
+        color = primary_buffer_color,
+        fillColor = primary_buffer_color,
+        fillOpacity = 0.2,
+        weight = 1,
+        group = paste0(nm, " - Primary Buffers")
+      )
+
+    if (
+      !is.null(secondary_batches) &&
+        nm %in% names(secondary_batches) &&
+        inherits(secondary_batches[[nm]], "sf") &&
+        nrow(secondary_batches[[nm]]) > 0L
+    ) {
+      sec_pts <- secondary_batches[[nm]]
+      sec_group <- paste0(nm, " - Secondary")
+      has_sec_batch <- color_batches &&
+        "assigned_batch" %in% names(sec_pts)
+      has_sec_pid <- "point_id" %in% names(sec_pts)
+
+      sec_colors <- if (has_sec_batch && !is.null(batch_pal)) {
+        batch_pal(sec_pts$assigned_batch)
+      } else {
+        secondary_color
+      }
+      sec_labels <- if (has_sec_pid) {
+        as.character(sec_pts$point_id)
+      } else {
+        as.character(seq_len(nrow(sec_pts)))
+      }
+      sec_popups <- if (has_sec_batch) {
+        paste0(
+          "<b>ID:</b> ",
+          sec_labels,
+          "<br><b>Batch:</b> ",
+          sec_pts$assigned_batch,
+          "<br><b>Community:</b> ",
+          nm
+        )
+      } else {
+        paste0(
+          "<b>ID:</b> ",
+          sec_labels,
+          "<br><b>Community:</b> ",
+          nm
+        )
+      }
+
+      m <- m |>
+        leaflet::addCircleMarkers(
+          data = sec_pts,
+          radius = 4,
+          color = sec_colors,
+          fillOpacity = 0.8,
+          stroke = TRUE,
+          weight = 1,
+          label = sec_labels,
+          popup = sec_popups,
+          group = sec_group
+        )
+
+      sec_bufs <- buffer_sf(sec_pts, buffer_radius)
+      m <- m |>
+        leaflet::addPolygons(
+          data = sec_bufs,
+          color = secondary_buffer_color,
+          fillColor = secondary_buffer_color,
+          fillOpacity = 0.2,
+          weight = 1,
+          group = paste0(nm, " - Secondary Buffers")
+        )
+    }
+  }
+
+  # Layer control
+  overlay_groups <- "Communities"
+  for (nm in community_names) {
+    overlay_groups <- c(
+      overlay_groups,
+      paste0(nm, " - Primary"),
+      paste0(nm, " - Primary Buffers")
+    )
+    if (!is.null(secondary_batches) && nm %in% names(secondary_batches)) {
+      overlay_groups <- c(
+        overlay_groups,
+        paste0(nm, " - Secondary"),
+        paste0(nm, " - Secondary Buffers")
+      )
+    }
+  }
+
+  m <- m |>
+    leaflet::addLayersControl(
+      baseGroups = c("OpenStreetMap", "Satellite", "OSM Humanitarian"),
+      overlayGroups = overlay_groups,
+      options = leaflet::layersControlOptions(collapsed = FALSE)
+    )
+
+  if (!is.null(batch_pal) && length(all_batches) > 0L) {
+    m <- m |>
+      leaflet::addLegend(
+        position = "bottomright",
+        pal = batch_pal,
+        values = all_batches,
+        title = "Batch"
+      )
+  }
+
+  if (!is.null(out_file)) {
+    rlang::check_installed("htmlwidgets", reason = "to save leaflet as HTML")
+    fs::dir_create(fs::path_dir(out_file), recurse = TRUE)
+    htmlwidgets::saveWidget(m, file = out_file, selfcontained = TRUE)
+    cli::cli_inform("Saved interactive map to {.path {out_file}}")
+  }
+
+  cli::cli_inform("Interactive map ready.")
+  m
 }

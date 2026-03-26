@@ -165,7 +165,7 @@ test_that('MULTIPOLYGON can be cast to POLYGON for splitting', {
   mp <- sf::st_multipolygon(list(p1, p2))
   mp_sf <- sf::st_sf(id = 'ZN_1', geometry = sf::st_sfc(mp, crs = 4326L))
 
-  cast <- sf::st_cast(mp_sf, 'POLYGON')
+  cast <- suppressWarnings(sf::st_cast(mp_sf, 'POLYGON'))
   expect_equal(nrow(cast), 2L)
   expect_true(all(sf::st_geometry_type(cast) == 'POLYGON'))
 })

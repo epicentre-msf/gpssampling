@@ -478,8 +478,12 @@ test_that("sample_communities is reproducible", {
   sizes <- vapply(bl, nrow, integer(1L))
   n_req <- pmin(sizes, 3L)
 
-  r1 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
-  r2 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  r1 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
+  r2 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
 
   for (nm in names(r1)) {
     expect_equal(
@@ -499,8 +503,12 @@ test_that("sample_communities different seed gives different result", {
   # Need at least some community with > 3 buildings for randomness to matter
   skip_if(all(sizes <= 3L), "Not enough buildings for seed test")
 
-  r1 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
-  r2 <- sample_communities(bl, n_req, min_distance = 0, seed = 456L)
+  r1 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
+  r2 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 456L)
+  )
 
   any_different <- any(vapply(
     names(r1),
@@ -524,7 +532,9 @@ test_that("sample_communities scalar n_required applies to all", {
   min_size <- min(sizes)
   skip_if(min_size < 2L, "Not enough buildings")
 
-  result <- sample_communities(bl, 2L, min_distance = 0, seed = 42L)
+  result <- suppressWarnings(
+    sample_communities(bl, 2L, min_distance = 0, seed = 42L)
+  )
 
   for (nm in names(result)) {
     expect_equal(nrow(result[[nm]]$primary), 2L)
@@ -539,7 +549,9 @@ test_that("sample_communities result structure is correct", {
   sizes <- vapply(bl, nrow, integer(1L))
   n_req <- pmin(sizes, 3L)
 
-  result <- sample_communities(bl, n_req, min_distance = 50, seed = 42L)
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 50, seed = 42L)
+  )
 
   for (nm in names(result)) {
     expect_true(all(
@@ -578,7 +590,9 @@ test_that("sample_communities assigns globally unique point_id", {
   sizes <- vapply(bl, nrow, integer(1L))
   n_req <- pmin(sizes, 3L)
 
-  result <- sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  )
 
   # Collect all point_ids (unname to drop list element names)
   all_primary_ids <- unname(
@@ -630,7 +644,7 @@ test_that("fetch_osm_buildings returns sf with correct schema", {
 
   # Small area in Freetown, Sierra Leone
   area <- make_polygon(-13.235, 8.475, -13.225, 8.485)
-  result <- fetch_osm_buildings(area, zoom = 16L)
+  result <- suppressWarnings(fetch_osm_buildings(area, zoom = 16L))
 
   expect_s3_class(result, "sf")
   expect_true(all(c("osm_id", "building") %in% names(result)))

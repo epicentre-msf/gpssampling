@@ -16,10 +16,11 @@ make_map_data <- function() {
     )
   )
 
-  pts <- sf::st_sf(
+  pri_pts <- sf::st_sf(
     id = 1:6,
     community = "test_community",
     selection_order = 1:6,
+    point_id = 1:6,
     assigned_batch = rep(1:2, each = 3L),
     geometry = sf::st_sfc(
       lapply(1:6, function(i) sf::st_point(c(i * 0.008, i * 0.008))),
@@ -27,26 +28,37 @@ make_map_data <- function() {
     )
   )
 
-  buffers <- create_buffers(pts, radius = 50)
+  sec_pts <- sf::st_sf(
+    id = 7:9,
+    community = "test_community",
+    selection_order = 1:3,
+    point_id = 7:9,
+    assigned_batch = c(1L, 2L, 1L),
+    geometry = sf::st_sfc(
+      lapply(7:9, function(i) sf::st_point(c(i * 0.005, i * 0.005))),
+      crs = 4326L
+    )
+  )
 
-  list(community = community, points = pts, buffers = buffers)
+  list(community = community, primary = pri_pts, secondary = sec_pts)
 }
 
 # map_community
 # ............................................................................
 
-test_that("map_community returns a ggplot object", {
+test_that("map_community returns a ggplot object with buffers", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("ggspatial")
   skip_if_not_installed("tidyterra")
 
   d <- make_map_data()
+  bufs <- create_buffers(d$primary, radius = 50)
+
   p <- map_community(
     "test_community",
     d$community,
-    d$points,
-    buffers_sf = d$buffers,
-    basemap = "OpenStreetMap.HOT"
+    points_sf = d$primary,
+    buffers_sf = bufs
   )
   expect_s3_class(p, "ggplot")
 })
@@ -60,13 +72,12 @@ test_that("map_community works without buffers", {
   p <- map_community(
     "test_community",
     d$community,
-    d$points,
-    buffers_sf = NULL
+    points_sf = d$primary
   )
   expect_s3_class(p, "ggplot")
 })
 
-test_that("map_community uniform color mode works", {
+test_that("map_community auto-generates subtitle with min distance", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("ggspatial")
   skip_if_not_installed("tidyterra")
@@ -75,10 +86,11 @@ test_that("map_community uniform color mode works", {
   p <- map_community(
     "test_community",
     d$community,
-    d$points,
-    batch_colors = FALSE
+    points_sf = d$primary
   )
-  expect_s3_class(p, "ggplot")
+  expect_true(grepl("min dist", p$labels$subtitle))
+  expect_true(grepl("6 points", p$labels$subtitle))
+  expect_true(grepl("1-6", p$labels$subtitle))
 })
 
 # map_overview
@@ -91,18 +103,13 @@ test_that("map_overview returns a ggplot object", {
 
   d <- make_map_data()
 
-  samples_list <- list(
-    test_community = list(
-      primary = d$points,
-      secondary = d$points[1:2, ]
-    )
-  )
+  # map_overview accepts a named list of sf per community
+  points_list <- list(test_community = d$primary)
 
   p <- map_overview(
-    samples_list,
+    points_list,
     d$community,
     community_id_col = "name",
-    set = "primary",
     buffer_radius = 50
   )
   expect_s3_class(p, "ggplot")
@@ -118,15 +125,37 @@ test_that("map_all_communities returns named list of ggplots", {
 
   d <- make_map_data()
 
-  samples_list <- list(
-    test_community = list(
-      primary = d$points,
-      secondary = d$points[1:2, ]
-    )
-  )
+  pri_batches <- list(test_community = d$primary)
+  sec_batches <- list(test_community = d$secondary)
 
   result <- map_all_communities(
-    samples_list,
+    pri_batches,
+    d$community,
+    community_id_col = "name",
+    secondary_batches = sec_batches,
+    buffer_radius = 50
+  )
+
+  expect_type(result, "list")
+  expect_true("overview" %in% names(result))
+  # Separate maps for primary and secondary
+  expect_true("test_community_primary" %in% names(result))
+  expect_true("test_community_secondary" %in% names(result))
+  for (nm in names(result)) {
+    expect_s3_class(result[[nm]], "ggplot")
+  }
+})
+
+test_that("map_all_communities works without secondary", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("tidyterra")
+
+  d <- make_map_data()
+  pri_batches <- list(test_community = d$primary)
+
+  result <- map_all_communities(
+    pri_batches,
     d$community,
     community_id_col = "name",
     buffer_radius = 50
@@ -135,10 +164,7 @@ test_that("map_all_communities returns named list of ggplots", {
   expect_type(result, "list")
   expect_true("overview" %in% names(result))
   expect_true("test_community_primary" %in% names(result))
-  expect_true("test_community_secondary" %in% names(result))
-  for (nm in names(result)) {
-    expect_s3_class(result[[nm]], "ggplot")
-  }
+  expect_false("test_community_secondary" %in% names(result))
 })
 
 # map_cropped_buildings
@@ -397,20 +423,17 @@ test_that("map_all_communities saves PNGs when out_dir given", {
 
   d <- make_map_data()
 
-  samples_list <- list(
-    test_community = list(
-      primary = d$points,
-      secondary = d$points[1:2, ]
-    )
-  )
+  pri_batches <- list(test_community = d$primary)
+  sec_batches <- list(test_community = d$secondary)
 
   tmp_dir <- tempfile("map_test")
   on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
 
   result <- map_all_communities(
-    samples_list,
+    pri_batches,
     d$community,
     community_id_col = "name",
+    secondary_batches = sec_batches,
     out_dir = tmp_dir,
     buffer_radius = 50
   )

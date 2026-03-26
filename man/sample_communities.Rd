@@ -10,7 +10,8 @@ sample_communities(
   min_distance = 50,
   seed,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
-    "unclassified")
+    "unclassified"),
+  road_dir = NULL
 )
 }
 \arguments{
@@ -35,6 +36,11 @@ R >= 3.6 will differ even with the same seed.}
 
 \item{road_types}{Character vector of OSM \verb{highway=*} values used
 for the post-selection proximity ordering.}
+
+\item{road_dir}{Optional directory for cached road files. If
+provided, roads are read from / saved to
+\verb{road_dir/\{community_name\}.gpkg}. Use \code{\link[=fetch_community_roads]{fetch_community_roads()}}
+to pre-download roads. Default \code{NULL} (no caching).}
 }
 \value{
 A named list of lists. Each community element contains:

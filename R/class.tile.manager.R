@@ -468,10 +468,10 @@ TileManager <- R6::R6Class(
       grid_bbox[2L] <- grid_tile_1_bbox[2L] + 0.0001
       grid_bbox[3L] <- grid_tile_1_bbox[3L] - 0.0001
 
-      tile_grid <- slippymath::bbox_to_tile_grid(
+      tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(
         bbox = grid_bbox[c(1L, 3L, 2L, 4L)],
         zoom = data$settings$getValue('sli_identify_zoom')
-      )
+      ))
 
       tilenum_x <- tile_grid$tiles$x
       tilenum_y <- tile_grid$tiles$y
@@ -833,7 +833,7 @@ TileManager <- R6::R6Class(
 
         bbox <- sf::st_bbox(polygon_sf)
 
-        tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = ZOOM_OSM)
+        tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox = bbox, zoom = ZOOM_OSM))
         tile_grid_sf <- tile_grid_to_sf(tile_grid)
         tile_grid_intersect <- sf::st_intersects(
           tile_grid_sf,

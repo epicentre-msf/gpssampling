@@ -64,7 +64,10 @@ fetch_osm_buildings <- function(area_sf, zoom = ZOOM_OSM) {
 
   area_4326 <- sf::st_transform(area_sf, 4326L)
   bbox <- sf::st_bbox(area_4326)
-  tile_grid <- slippymath::bbox_to_tile_grid(bbox, zoom = zoom)
+  tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(
+    bbox,
+    zoom = zoom
+  ))
   n_tiles <- nrow(tile_grid$tiles)
 
   cli::cli_inform(
@@ -771,6 +774,205 @@ select_sample_points <- function(
 }
 
 
+#' Fetch OSM roads for an area with caching and retry
+#'
+#' Downloads road linestrings from the OSM Overpass API. If
+#' `cache_file` is provided and already exists on disk, reads from
+#' cache instead of downloading. On a successful download the result
+#' is saved to `cache_file` for reuse. If the initial query returns
+#' no roads, the bounding box is automatically expanded and retried.
+#'
+#' @param area An `sf`, `sfc`, or `bbox` object. Its bounding box
+#'   defines the Overpass query extent.
+#' @param road_types Character vector of OSM `highway=*` values.
+#'   Default covers main road categories.
+#' @param cache_file Optional file path (`.gpkg`) for disk caching.
+#'   If `NULL` (default), no caching.
+#' @param timeout Overpass API timeout in seconds. Default `120`.
+#' @return An `sf` LINESTRING of roads, or `NULL` if none found.
+#' @noRd
+fetch_roads <- function(
+  area,
+  road_types = c(
+    "primary",
+    "secondary",
+    "tertiary",
+    "residential",
+    "trunk",
+    "unclassified"
+  ),
+  cache_file = NULL,
+  timeout = 120
+) {
+  bbox <- if (inherits(area, "bbox")) {
+    area
+  } else {
+    sf::st_bbox(sf::st_transform(area, 4326L))
+  }
+  # --- Check cache first ---
+  if (!is.null(cache_file) && file.exists(cache_file)) {
+    cli::cli_inform("    Loading cached roads from {.path {cache_file}}...")
+    roads <- tryCatch(
+      sf::st_read(cache_file, quiet = TRUE),
+      error = function(e) {
+        cli::cli_warn("Failed to read road cache: {e$message}")
+        NULL
+      }
+    )
+    if (!is.null(roads) && nrow(roads) > 0L) {
+      return(roads)
+    }
+  }
+
+  # --- Download from Overpass ---
+  cli::cli_inform("    Downloading roads from OSM (timeout: {timeout}s)...")
+  roads <- tryCatch(
+    {
+      osm <- osmdata::opq(bbox = bbox, timeout = timeout) |>
+        osmdata::add_osm_feature(
+          key = "highway",
+          value = road_types
+        ) |>
+        osmdata::osmdata_sf()
+      osm$osm_lines
+    },
+    error = function(e) {
+      cli::cli_warn("OSM road query failed: {e$message}")
+      NULL
+    }
+  )
+
+  # --- Retry with expanded bbox if empty ---
+  if (is.null(roads) || nrow(roads) == 0L) {
+    bbox_expanded <- bbox + c(-0.005, -0.005, 0.005, 0.005)
+    cli::cli_inform("    No roads in bbox, retrying with expanded area...")
+    roads <- tryCatch(
+      {
+        osm <- osmdata::opq(
+          bbox = bbox_expanded,
+          timeout = timeout
+        ) |>
+          osmdata::add_osm_feature(
+            key = "highway",
+            value = road_types
+          ) |>
+          osmdata::osmdata_sf()
+        osm$osm_lines
+      },
+      error = function(e) NULL
+    )
+  }
+
+  # --- Save to cache ---
+  if (!is.null(roads) && nrow(roads) > 0L && !is.null(cache_file)) {
+    tryCatch(
+      {
+        fs::dir_create(fs::path_dir(cache_file), recurse = TRUE)
+        sf::st_write(roads, cache_file, quiet = TRUE, delete_dsn = TRUE)
+        cli::cli_inform("    Cached roads to {.path {cache_file}}.")
+      },
+      error = function(e) {
+        cli::cli_warn("Failed to cache roads: {e$message}")
+      }
+    )
+  }
+
+  roads
+}
+
+
+#' Fetch OSM roads for all communities
+#'
+#' Downloads and caches road linestrings for each community in a
+#' polygon layer. Roads are saved as `.gpkg` files in `road_dir`,
+#' one per community, using the community ID as filename. On
+#' subsequent calls, cached files are reused without re-downloading.
+#'
+#' This function can be called independently before
+#' [sample_communities()] to pre-download roads (e.g. while online),
+#' then pass the same `road_dir` to [sample_communities()] for
+#' offline use.
+#'
+#' @param communities_sf An `sf` POLYGON of community boundaries.
+#' @param community_id_col Column name for community ID in
+#'   `communities_sf`. Default `"name"`.
+#' @param road_dir Directory where road `.gpkg` files are cached.
+#'   Created if it does not exist.
+#' @param road_types Character vector of OSM `highway=*` values.
+#' @param timeout Overpass API timeout in seconds. Default `120`.
+#' @return A named list of `sf` LINESTRING objects (one per
+#'   community). Communities where no roads were found have `NULL`.
+#' @export
+#' @examples
+#' \dontrun{
+#' roads <- fetch_community_roads(
+#'   communities,
+#'   community_id_col = "name",
+#'   road_dir = "output/roads"
+#' )
+#' }
+fetch_community_roads <- function(
+  communities_sf,
+  community_id_col = "name",
+  road_dir,
+  road_types = c(
+    "primary",
+    "secondary",
+    "tertiary",
+    "residential",
+    "trunk",
+    "unclassified"
+  ),
+  timeout = 120
+) {
+  checkmate::assert_class(communities_sf, "sf")
+  checkmate::assert_string(community_id_col)
+  checkmate::assert_choice(community_id_col, names(communities_sf))
+  checkmate::assert_string(road_dir)
+
+  # Dissolve duplicate rows per community (multipolygon stored as
+
+  # separate features with the same name)
+  communities_sf <- communities_sf |>
+    dplyr::select(dplyr::all_of(community_id_col)) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(community_id_col))) |>
+    dplyr::summarise(.groups = "drop")
+  sf::st_agr(communities_sf) <- "constant"
+
+  community_names <- communities_sf[[community_id_col]]
+  n <- length(community_names)
+  cli::cli_inform(
+    "Fetching roads for {n} communit{?y/ies} into {.path {road_dir}}..."
+  )
+
+  fs::dir_create(road_dir, recurse = TRUE)
+  result <- list()
+
+  for (i in seq_along(community_names)) {
+    nm <- community_names[i]
+    cache_file <- as.character(
+      fs::path(road_dir, paste0(nm, ".gpkg"))
+    )
+    community_row <- communities_sf[i, ]
+
+    cli::cli_inform("  {.val {nm}} ({i}/{n})...")
+    result[[nm]] <- fetch_roads(
+      community_row,
+      road_types = road_types,
+      cache_file = cache_file,
+      timeout = timeout
+    )
+  }
+
+  n_ok <- sum(vapply(result, function(x) !is.null(x), logical(1L)))
+  cli::cli_inform(
+    "Done: {n_ok}/{n} communit{?y/ies} with roads."
+  )
+
+  result
+}
+
+
 #' Order selected points by route proximity
 #'
 #' After random selection, reorders the selected points so field workers
@@ -781,6 +983,8 @@ select_sample_points <- function(
 #' @param selected_sf An `sf` POINT of selected buildings for one
 #'   community (the `$primary` output of [select_sample_points()]).
 #' @param road_types Character vector of OSM `highway=*` values.
+#' @param roads_sf Optional pre-fetched roads `sf` LINESTRING. If
+#'   provided, skips the OSM download entirely.
 #' @return The same `sf` reordered with a `selection_order` column
 #'   (1 = closest to road, then nearest-neighbour chain).
 #' @noRd
@@ -793,7 +997,8 @@ order_selected_points <- function(
     "residential",
     "trunk",
     "unclassified"
-  )
+  ),
+  roads_sf = NULL
 ) {
   n <- nrow(selected_sf)
   if (n <= 1L) {
@@ -805,41 +1010,12 @@ order_selected_points <- function(
 
   utm_crs <- auto_utm_crs(selected_sf)
   pts_utm <- sf::st_transform(selected_sf, utm_crs)
-  bbox <- sf::st_bbox(sf::st_transform(selected_sf, 4326L))
 
   # --- find the selected point closest to a road ---
-  roads <- tryCatch(
-    {
-      osm <- osmdata::opq(bbox = bbox) |>
-        osmdata::add_osm_feature(
-          key = "highway",
-          value = road_types
-        ) |>
-        osmdata::osmdata_sf()
-      osm$osm_lines
-    },
-    error = function(e) {
-      cli::cli_warn(
-        "OSM road query failed for ordering: {e$message}"
-      )
-      NULL
-    }
-  )
-
+  roads <- roads_sf
   if (is.null(roads) || nrow(roads) == 0L) {
-    bbox_expanded <- bbox + c(-0.005, -0.005, 0.005, 0.005)
-    roads <- tryCatch(
-      {
-        osm <- osmdata::opq(bbox = bbox_expanded) |>
-          osmdata::add_osm_feature(
-            key = "highway",
-            value = road_types
-          ) |>
-          osmdata::osmdata_sf()
-        osm$osm_lines
-      },
-      error = function(e) NULL
-    )
+    bbox <- sf::st_bbox(sf::st_transform(selected_sf, 4326L))
+    roads <- fetch_roads(bbox, road_types)
   }
 
   if (is.null(roads) || nrow(roads) == 0L) {
@@ -911,6 +1087,10 @@ order_selected_points <- function(
 #'   R >= 3.6 will differ even with the same seed.
 #' @param road_types Character vector of OSM `highway=*` values used
 #'   for the post-selection proximity ordering.
+#' @param road_dir Optional directory for cached road files. If
+#'   provided, roads are read from / saved to
+#'   `road_dir/{community_name}.gpkg`. Use [fetch_community_roads()]
+#'   to pre-download roads. Default `NULL` (no caching).
 #' @return A named list of lists. Each community element contains:
 #'   `$buildings` (all candidates), `$primary` (selected points with
 #'   `selection_order` and `point_id`), `$secondary` (replacement
@@ -942,7 +1122,8 @@ sample_communities <- function(
     "residential",
     "trunk",
     "unclassified"
-  )
+  ),
+  road_dir = NULL
 ) {
   checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
   checkmate::assert_number(min_distance, lower = 0)
@@ -1003,13 +1184,24 @@ sample_communities <- function(
         min_distance
       )
     })
+    # Fetch roads once per community (cached if road_dir provided)
+    cache_file <- if (!is.null(road_dir)) {
+      as.character(fs::path(road_dir, paste0(nm, ".gpkg")))
+    }
+    roads <- fetch_roads(
+      buildings_list[[nm]],
+      road_types,
+      cache_file = cache_file
+    )
+
     cli::cli_inform("  Ordering {.val {nm}} by road proximity...")
     ordered_primary <- order_selected_points(
       sampled$primary,
-      road_types
+      road_types,
+      roads_sf = roads
     )
     ordered_secondary <- if (nrow(sampled$secondary) > 0L) {
-      order_selected_points(sampled$secondary, road_types)
+      order_selected_points(sampled$secondary, road_types, roads_sf = roads)
     } else {
       sampled$secondary
     }
