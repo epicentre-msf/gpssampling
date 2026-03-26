@@ -10,6 +10,8 @@ map_community(
   points_sf,
   buffers_sf = NULL,
   batch_colors = TRUE,
+  show_labels = TRUE,
+  label_size = 1.8,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
   buffer_color = "#90EE9066",
@@ -32,6 +34,13 @@ buffers are drawn.}
 
 \item{batch_colors}{Logical. If \code{TRUE} and \code{points_sf} has
 \code{assigned_batch}, color by batch. Default \code{TRUE}.}
+
+\item{show_labels}{Logical. If \code{TRUE} and \code{points_sf} has a
+\code{point_id} column, display point IDs as text labels. Default
+\code{TRUE}.}
+
+\item{label_size}{Numeric, text size for point ID labels. Default
+\code{1.8}.}
 
 \item{basemap}{Tile provider name for \code{\link[maptiles:get_tiles]{maptiles::get_tiles()}}.
 Default \code{"OpenStreetMap.HOT"}.}

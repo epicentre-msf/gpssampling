@@ -143,7 +143,7 @@ map_community <- function(
     ggspatial::annotation_scale(location = "bl") +
     ggspatial::annotation_north_arrow(
       location = "tr",
-      style = ggspatial::north_arrow_minimal()
+      style = ggspatial::north_arrow_minimal(line_width = 0)
     ) +
     ggplot2::labs(title = title, subtitle = subtitle) +
     ggplot2::theme_light() +
@@ -281,7 +281,7 @@ map_overview <- function(
     ggspatial::annotation_scale(location = "bl") +
     ggspatial::annotation_north_arrow(
       location = "tr",
-      style = ggspatial::north_arrow_minimal()
+      style = ggspatial::north_arrow_minimal(line_width = 0)
     ) +
     ggplot2::labs(title = title, subtitle = subtitle) +
     ggplot2::theme_light() +
