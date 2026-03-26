@@ -10,7 +10,8 @@ sample_communities(
   min_distance = 50,
   seed,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
-    "unclassified")
+    "unclassified"),
+  road_dir = NULL
 )
 }
 \arguments{
@@ -35,12 +36,22 @@ R >= 3.6 will differ even with the same seed.}
 
 \item{road_types}{Character vector of OSM \verb{highway=*} values used
 for the post-selection proximity ordering.}
+
+\item{road_dir}{Optional directory for cached road files. If
+provided, roads are read from / saved to
+\verb{road_dir/\{community_name\}.gpkg}. Use \code{\link[=fetch_community_roads]{fetch_community_roads()}}
+to pre-download roads. Default \code{NULL} (no caching).}
 }
 \value{
 A named list of lists. Each community element contains:
 \verb{$buildings} (all candidates), \verb{$primary} (selected points with
-\code{selection_order}), \verb{$secondary} (remaining points),
-\verb{$min_distance}, and \verb{$seed}.
+\code{selection_order} and \code{point_id}), \verb{$secondary} (replacement
+points with \code{selection_order} and \code{point_id}, at most \code{n_required}
+per community), \verb{$min_distance}, and \verb{$seed}. Both primary and
+secondary are ordered by road proximity (nearest-neighbour chain).
+The \code{point_id} column is globally unique across all communities
+and sets: primary IDs are numbered 1..N_total_primary, secondary
+IDs continue from N_total_primary + 1.
 }
 \description{
 Top-level function that orchestrates reproducible spatial sampling

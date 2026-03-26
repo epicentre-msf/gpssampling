@@ -131,7 +131,7 @@ addRoofsGoogle <- function(
 
     bbox <- sf::st_bbox(polygon)
 
-    tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L)
+    tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L))
     tile_grid_sf <- tile_grid_to_sf(tile_grid)
     tile_grid_intersect <- sf::st_intersects(
       tile_grid_sf,
@@ -963,7 +963,7 @@ plotMap <- function(nc, road = FALSE, force = FALSE) {
   bbox[3L] <- bbox[3L] + (bbox[3L] - bbox[1L]) / 10L
   bbox[4L] <- bbox[4L] + (bbox[4L] - bbox[2L]) / 10L
 
-  tile_grid <- slippymath::bbox_to_tile_grid(bbox, max_tiles = 100L)
+  tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox, max_tiles = 100L))
 
   if (road) {
     provider <- list(
@@ -982,7 +982,7 @@ plotMap <- function(nc, road = FALSE, force = FALSE) {
     list(sub = c('0', '1', '2', '3'), cit = '\u00a9 Google.')
   )
 
-  r <- maptiles::get_tiles(
+  r <- suppressWarnings(maptiles::get_tiles(
     x = bbox,
     zoom = tile_grid$zoom,
     provider = provider,
@@ -990,7 +990,7 @@ plotMap <- function(nc, road = FALSE, force = FALSE) {
     cachedir = fs::path_temp(),
     verbose = TRUE,
     forceDownload = force
-  )
+  ))
 
   # r_df <- data.frame(terra::xyFromCell(r, 1:terra::ncell(r)), terra::getValues(r / 255))
   # r_df <- setNames(r_df, c('x', 'y', 'red', 'green', 'blue'))
@@ -1043,10 +1043,10 @@ pointsToTiles <- function(polygon, points) {
     dplyr::ungroup()
 
   tiles <-
-    slippymath::bbox_to_tile_grid(
+    suppressWarnings(slippymath::bbox_to_tile_grid(
       bbox = sf::st_bbox(polygon),
       zoom = 18L
-    )$tiles |>
+    ))$tiles |>
     tibble::as_tibble() |>
     dplyr::mutate(
       n = seq_len(dplyr::n()),
@@ -1067,7 +1067,7 @@ pointsToTiles <- function(polygon, points) {
 polygonToRasterCells <- function(polygon) {
   bbox <- sf::st_bbox(polygon)
 
-  tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L)
+  tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L))
   tile_grid_bbox <- tile_grid_bbox(tile_grid)
 
   tile_grid_xy_min <- slippymath::tilenum_to_lonlat(
@@ -1110,7 +1110,7 @@ polygonToRasterCells <- function(polygon) {
 polygonToTiles <- function(polygon) {
   bbox <- sf::st_bbox(polygon)
 
-  tile_grid <- slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L)
+  tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox = bbox, zoom = 18L))
   tile_grid_bbox <- tile_grid_bbox(tile_grid)
 
   tiles <- tibble::as_tibble(tile_grid$tiles)
@@ -1242,10 +1242,10 @@ readBasemapGoogle <- function(polygons, async_queue = NULL) {
     polygon <- polygons[i]
     tile_grids$polygons[[i]] <- list()
     for (zoom in 20:1) {
-      tile_grid <- slippymath::bbox_to_tile_grid(
+      tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(
         bbox = sf::st_bbox(polygon),
         zoom = zoom
-      )
+      ))
 
       tile_grid_sf <- tile_grid_to_sf(tile_grid)
       tile_grid_intersect <- sf::st_intersects(

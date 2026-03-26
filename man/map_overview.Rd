@@ -5,10 +5,9 @@
 \title{Create an overview map of all communities}
 \usage{
 map_overview(
-  samples_list,
+  points_list,
   communities_sf,
   community_id_col = "name",
-  set = "primary",
   buffer_radius = 50,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
@@ -20,14 +19,12 @@ map_overview(
 )
 }
 \arguments{
-\item{samples_list}{Output of \code{\link[=sample_communities]{sample_communities()}} or
-\code{\link[=split_batches]{split_batches()}}.}
+\item{points_list}{Named list of \code{sf} POINT objects (output of
+\code{\link[=split_batches]{split_batches()}}, or raw \code{sf} per community).}
 
 \item{communities_sf}{All community polygons (\code{sf}).}
 
 \item{community_id_col}{Column name for community ID.}
-
-\item{set}{Which point set: \code{"primary"} or \code{"secondary"}.}
 
 \item{buffer_radius}{Buffer radius in meters. Default \code{50}.}
 
@@ -55,6 +52,6 @@ overview for clarity.
 }
 \examples{
 \dontrun{
-p <- map_overview(samples, communities, community_id_col = "name")
+p <- map_overview(primary_batches, communities, community_id_col = "name")
 }
 }

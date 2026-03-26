@@ -159,6 +159,80 @@ test_that("filter_buildings path C: warns when no OSM data", {
   expect_equal(nrow(result), 5L)
 })
 
+test_that("filter_buildings path B: disambiguates multiple OSM matches", {
+  # Create one large user building that overlaps two OSM buildings
+  big_poly <- sf::st_polygon(list(matrix(
+    c(0.01, 0.01, 0.05, 0.01, 0.05, 0.05, 0.01, 0.05, 0.01, 0.01),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  user_buildings <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(big_poly, crs = 4326L)
+  )
+
+  # Two small OSM buildings inside the user building
+  osm_a <- sf::st_polygon(list(matrix(
+    c(0.02, 0.02, 0.03, 0.02, 0.03, 0.03, 0.02, 0.03, 0.02, 0.02),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  osm_b <- sf::st_polygon(list(matrix(
+    c(0.04, 0.04, 0.045, 0.04, 0.045, 0.045, 0.04, 0.045, 0.04, 0.04),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  osm_buildings <- sf::st_sf(
+    osm_id = c("1", "2"),
+    building = c("residential", "hospital"),
+    geometry = sf::st_sfc(list(osm_a, osm_b), crs = 4326L)
+  )
+
+  result <- filter_buildings(
+    user_buildings,
+    osm_buildings_sf = osm_buildings,
+    remove_tags = c("hospital"),
+    building_col = "building"
+  )
+
+  # Should have a tag assigned (nearest feature wins)
+  expect_true("osm_building_tag" %in% names(result))
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$osm_building_tag, "residential")
+})
+
+test_that("filter_buildings path A: emits progress messages", {
+  buildings <- make_buildings(10L)
+  buildings$building[1:2] <- c("hospital", "school")
+
+  expect_message(
+    result <- filter_buildings(buildings, building_col = "building"),
+    "Filtering 10 buildings"
+  )
+  expect_message(
+    filter_buildings(buildings, building_col = "building"),
+    "Removed 2 non-residential"
+  )
+})
+
+test_that("filter_buildings path B: emits progress messages", {
+  user_buildings <- make_buildings(5L)
+  user_buildings$building <- NULL
+
+  osm_buildings <- make_buildings(5L)
+  osm_buildings$building <- c("yes", "hospital", "residential", "school", "yes")
+
+  expect_message(
+    filter_buildings(
+      user_buildings,
+      osm_buildings_sf = osm_buildings,
+      remove_tags = c("hospital", "school"),
+      building_col = "building"
+    ),
+    "Matching 5 buildings against 5 OSM footprints"
+  )
+})
+
 # crop_buildings
 # ............................................................................
 
@@ -202,6 +276,36 @@ test_that("crop_buildings sorts deterministically", {
   }
 })
 
+test_that("crop_buildings handles multipolygon / duplicate community names", {
+  # Simulate a community stored as two separate rows (same name)
+  poly_a1 <- sf::st_polygon(list(matrix(
+    c(0, 0, 0.025, 0, 0.025, 0.025, 0, 0.025, 0, 0),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  poly_a2 <- sf::st_polygon(list(matrix(
+    c(0.03, 0.03, 0.05, 0.03, 0.05, 0.05, 0.03, 0.05, 0.03, 0.03),
+    ncol = 2L,
+    byrow = TRUE
+  )))
+  # Both rows have name = "alpha" (multipolygon split into separate features)
+  communities <- sf::st_sf(
+    name = c("alpha", "alpha"),
+    geometry = sf::st_sfc(list(poly_a1, poly_a2), crs = 4326L)
+  )
+
+  buildings <- make_buildings(20L)
+  result <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  # Should produce exactly one "alpha" entry, not two
+  expect_equal(length(result), 1L)
+  expect_true("alpha" %in% names(result))
+  # Buildings from both polygon parts should be included
+  expect_true(nrow(result[["alpha"]]) > 0L)
+  # IDs should be sequential
+  expect_equal(result[["alpha"]]$id, seq_len(nrow(result[["alpha"]])))
+})
+
 test_that("crop_buildings handles empty intersection", {
   buildings <- make_buildings(
     5L,
@@ -236,9 +340,64 @@ test_that("select_sample_points returns correct counts", {
   })
 
   expect_equal(nrow(result$primary), 5L)
+  # Secondary is capped at n_required
+  expect_true(nrow(result$secondary) <= 5L)
+})
+
+test_that("select_sample_points caps secondary at n_required", {
+  # 25 well-spaced points, request 5 → remaining is 20 > 5,
+  # so secondary must be drawn (not all remaining)
+  coords <- expand.grid(
+    x = seq(0, 0.01, length.out = 5L),
+    y = seq(0, 0.01, length.out = 5L)
+  )
+  pts <- sf::st_sf(
+    id = seq_len(nrow(coords)),
+    community = "test",
+    geometry = sf::st_sfc(
+      lapply(seq_len(nrow(coords)), function(i) {
+        sf::st_point(c(coords$x[i], coords$y[i]))
+      }),
+      crs = 4326L
+    )
+  )
+
+  withr::with_seed(42L, {
+    result <- select_sample_points(pts, 5L, min_distance = 0)
+  })
+
+  expect_equal(nrow(result$primary), 5L)
+  expect_equal(nrow(result$secondary), 5L)
+  # No overlap between primary and secondary
+  expect_length(
+    intersect(result$primary$id, result$secondary$id),
+    0L
+  )
+})
+
+test_that("select_sample_points returns all remaining when fewer than n_required", {
+  # 7 points, request 5 → only 2 remain, both become secondary
+  pts <- sf::st_sf(
+    id = seq_len(7L),
+    community = "test",
+    geometry = sf::st_sfc(
+      lapply(seq_len(7L), function(i) {
+        sf::st_point(c(i * 0.001, 0))
+      }),
+      crs = 4326L
+    )
+  )
+
+  withr::with_seed(42L, {
+    result <- select_sample_points(pts, 5L, min_distance = 0)
+  })
+
+  expect_equal(nrow(result$primary), 5L)
+  expect_equal(nrow(result$secondary), 2L)
+  # All 7 points accounted for
   expect_equal(
-    nrow(result$primary) + nrow(result$secondary),
-    nrow(pts)
+    sort(c(result$primary$id, result$secondary$id)),
+    1:7
   )
 })
 
@@ -319,8 +478,12 @@ test_that("sample_communities is reproducible", {
   sizes <- vapply(bl, nrow, integer(1L))
   n_req <- pmin(sizes, 3L)
 
-  r1 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
-  r2 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  r1 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
+  r2 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
 
   for (nm in names(r1)) {
     expect_equal(
@@ -340,8 +503,12 @@ test_that("sample_communities different seed gives different result", {
   # Need at least some community with > 3 buildings for randomness to matter
   skip_if(all(sizes <= 3L), "Not enough buildings for seed test")
 
-  r1 <- sample_communities(bl, n_req, min_distance = 0, seed = 123L)
-  r2 <- sample_communities(bl, n_req, min_distance = 0, seed = 456L)
+  r1 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 123L)
+  )
+  r2 <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 456L)
+  )
 
   any_different <- any(vapply(
     names(r1),
@@ -365,7 +532,9 @@ test_that("sample_communities scalar n_required applies to all", {
   min_size <- min(sizes)
   skip_if(min_size < 2L, "Not enough buildings")
 
-  result <- sample_communities(bl, 2L, min_distance = 0, seed = 42L)
+  result <- suppressWarnings(
+    sample_communities(bl, 2L, min_distance = 0, seed = 42L)
+  )
 
   for (nm in names(result)) {
     expect_equal(nrow(result[[nm]]$primary), 2L)
@@ -380,7 +549,9 @@ test_that("sample_communities result structure is correct", {
   sizes <- vapply(bl, nrow, integer(1L))
   n_req <- pmin(sizes, 3L)
 
-  result <- sample_communities(bl, n_req, min_distance = 50, seed = 42L)
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 50, seed = 42L)
+  )
 
   for (nm in names(result)) {
     expect_true(all(
@@ -399,8 +570,57 @@ test_that("sample_communities result structure is correct", {
     expect_equal(result[[nm]]$min_distance, 50)
     # seed is per-community (derived from master seed + community name)
     expect_type(result[[nm]]$seed, "integer")
-    # selection_order should be present after ordering
+    # selection_order and point_id should be present on both sets
     expect_true("selection_order" %in% names(result[[nm]]$primary))
+    expect_true("point_id" %in% names(result[[nm]]$primary))
+    if (nrow(result[[nm]]$secondary) > 0L) {
+      expect_true("selection_order" %in% names(result[[nm]]$secondary))
+      expect_true("point_id" %in% names(result[[nm]]$secondary))
+    }
+    # secondary capped at n_required
+    expect_true(nrow(result[[nm]]$secondary) <= n_req[[nm]])
+  }
+})
+
+test_that("sample_communities assigns globally unique point_id", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  )
+
+  # Collect all point_ids (unname to drop list element names)
+  all_primary_ids <- unname(
+    unlist(lapply(result, function(x) x$primary$point_id))
+  )
+  all_secondary_ids <- unname(
+    unlist(lapply(result, function(x) x$secondary$point_id))
+  )
+  all_ids <- c(all_primary_ids, all_secondary_ids)
+
+  # All IDs are unique
+
+  expect_length(all_ids, length(unique(all_ids)))
+
+  # Primary IDs start at 1 and are contiguous
+  n_primary_total <- length(all_primary_ids)
+  expect_equal(sort(all_primary_ids), seq_len(n_primary_total))
+
+  # Secondary IDs start right after primary
+  if (length(all_secondary_ids) > 0L) {
+    expect_equal(min(all_secondary_ids), n_primary_total + 1L)
+    expect_equal(
+      sort(all_secondary_ids),
+      seq(
+        from = n_primary_total + 1L,
+        length.out = length(all_secondary_ids)
+      )
+    )
   }
 })
 
@@ -424,7 +644,7 @@ test_that("fetch_osm_buildings returns sf with correct schema", {
 
   # Small area in Freetown, Sierra Leone
   area <- make_polygon(-13.235, 8.475, -13.225, 8.485)
-  result <- fetch_osm_buildings(area, zoom = 16L)
+  result <- suppressWarnings(fetch_osm_buildings(area, zoom = 16L))
 
   expect_s3_class(result, "sf")
   expect_true(all(c("osm_id", "building") %in% names(result)))

@@ -36,9 +36,13 @@ make_sample_result <- function() {
       crs = 4326L
     )
   )
+  pts_a$point_id <- 1:10
+  pts_b$point_id <- 11:18
   sec_a <- sf::st_sf(
     id = 11:15,
     community = "alpha",
+    selection_order = 1:5,
+    point_id = 19:23,
     geometry = sf::st_sfc(
       lapply(11:15, function(i) sf::st_point(c(i * 0.001, i * 0.001))),
       crs = 4326L
@@ -47,6 +51,8 @@ make_sample_result <- function() {
   sec_b <- sf::st_sf(
     id = 9:12,
     community = "beta",
+    selection_order = 1:4,
+    point_id = 24:27,
     geometry = sf::st_sfc(
       lapply(
         9:12,
@@ -284,4 +290,68 @@ test_that("email_points requires emayili package", {
     email_points("fake.zip", to = "test@example.com"),
     "emayili"
   )
+})
+
+# GPX uses point_id as name
+# ............................................................................
+
+test_that("write_gpx uses point_id as waypoint name", {
+  pts <- sf::st_sf(
+    id = c("bldg_a", "bldg_b"),
+    point_id = c(42L, 43L),
+    community = "alpha",
+    geometry = sf::st_sfc(
+      sf::st_point(c(0.001, 0.001)),
+      sf::st_point(c(0.002, 0.002)),
+      crs = 4326L
+    )
+  )
+
+  tmp <- tempfile(fileext = ".gpx")
+  on.exit(unlink(tmp), add = TRUE)
+  write_gpx(pts, tmp)
+
+  gpx_back <- sf::st_read(tmp, layer = "waypoints", quiet = TRUE)
+  expect_equal(gpx_back$name, c("42", "43"))
+})
+
+# create_earth_project
+# ............................................................................
+
+test_that("create_earth_project creates valid KML", {
+  samples <- make_sample_result()
+
+  tmp_kml <- tempfile(fileext = ".kml")
+  on.exit(unlink(tmp_kml), add = TRUE)
+
+  result <- create_earth_project(
+    samples,
+    tmp_kml,
+    buffer_radius = 50
+  )
+
+  expect_equal(result, tmp_kml)
+  expect_true(file.exists(tmp_kml))
+
+  kml_text <- readLines(tmp_kml)
+  kml_full <- paste(kml_text, collapse = "\n")
+
+  # Check structure
+  expect_true(grepl("<kml", kml_full))
+  expect_true(grepl("Primary Points", kml_full))
+  expect_true(grepl("Secondary Points", kml_full))
+  expect_true(grepl("Primary Buffers", kml_full))
+  expect_true(grepl("Secondary Buffers", kml_full))
+
+  # Check point_ids appear as placemark names
+  expect_true(grepl("<name>1</name>", kml_full))
+  expect_true(grepl("<name>19</name>", kml_full))
+
+  # Check community folders
+  expect_true(grepl("<name>alpha</name>", kml_full))
+  expect_true(grepl("<name>beta</name>", kml_full))
+
+  # Check buffer placemarks
+  expect_true(grepl("<name>Buffer 1</name>", kml_full))
+  expect_true(grepl("Polygon", kml_full))
 })

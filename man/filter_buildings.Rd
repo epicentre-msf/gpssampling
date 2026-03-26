@@ -9,7 +9,8 @@ filter_buildings(
   osm_buildings_sf = NULL,
   remove_tags = c("hospital", "school", "church", "mosque", "industrial", "commercial",
     "warehouse", "government", "public"),
-  keep_untagged = TRUE
+  keep_untagged = TRUE,
+  building_col = "type"
 )
 }
 \arguments{
@@ -21,12 +22,16 @@ user-provided dataset.}
 of \code{\link[=fetch_osm_buildings]{fetch_osm_buildings()}}). Required when \code{buildings_sf} is
 user-provided and lacks a \code{building} column.}
 
-\item{remove_tags}{Character vector of OSM \verb{building=*} tag values to
+\item{remove_tags}{Character vector of building type values to
 exclude. Defaults to common non-residential types.}
 
 \item{keep_untagged}{Logical. When intersecting user footprints with
 OSM, keep buildings that have no OSM match? Default \code{TRUE} (assumes
 unlabeled buildings are residential).}
+
+\item{building_col}{Character. Name of the column containing
+building type tags. Default \code{"type"}. For OSM data from
+\code{\link[=fetch_osm_buildings]{fetch_osm_buildings()}}, use \code{"building"}.}
 }
 \value{
 An \code{sf} POLYGON of filtered buildings.
@@ -39,7 +44,8 @@ with OSM labeling, and user footprints without OSM.
 \examples{
 \dontrun{
 # OSM-only
-buildings <- fetch_osm_buildings(area) |> filter_buildings()
+buildings <- fetch_osm_buildings(area) |>
+  filter_buildings(building_col = "building")
 
 # User footprints + OSM labeling
 osm <- fetch_osm_buildings(area)

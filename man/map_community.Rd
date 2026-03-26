@@ -9,7 +9,10 @@ map_community(
   community_sf,
   points_sf,
   buffers_sf = NULL,
-  batch_colors = TRUE,
+  color_batches = TRUE,
+  show_labels = TRUE,
+  label_size = 1.8,
+  point_shape = 16,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
   buffer_color = "#90EE9066",
@@ -25,22 +28,30 @@ map_community(
 \item{community_sf}{An \code{sf} POLYGON for the community boundary.}
 
 \item{points_sf}{An \code{sf} POINT of sampled points. If it has an
-\code{assigned_batch} column, batch coloring is available.}
+\code{assigned_batch} column, batch coloring is applied.}
 
-\item{buffers_sf}{Optional \code{sf} POLYGON of buffers. If \code{NULL}, no
-buffers are drawn.}
+\item{buffers_sf}{Optional \code{sf} POLYGON of buffers.}
 
-\item{batch_colors}{Logical. If \code{TRUE} and \code{points_sf} has
-\code{assigned_batch}, color by batch. Default \code{TRUE}.}
+\item{color_batches}{Logical. If \code{TRUE} and \code{points_sf} has an
+\code{assigned_batch} column, color points by batch. Default \code{TRUE}.}
+
+\item{show_labels}{Logical. If \code{TRUE} and \code{points_sf} has a
+\code{point_id} column, display point IDs as text labels. Default
+\code{TRUE}.}
+
+\item{label_size}{Numeric, text size for point ID labels. Default
+\code{1.8}.}
+
+\item{point_shape}{Marker shape. Default \code{16} (filled circle).}
 
 \item{basemap}{Tile provider name for \code{\link[maptiles:get_tiles]{maptiles::get_tiles()}}.
 Default \code{"OpenStreetMap.HOT"}.}
 
-\item{point_color}{Uniform color when \code{batch_colors = FALSE}.
-Default \code{"#e97a52"}.}
+\item{point_color}{Uniform color when no \code{assigned_batch}. Default
+\code{"#e97a52"}.}
 
-\item{buffer_color}{Buffer fill color (with alpha).
-Default \code{"#90EE9066"}.}
+\item{buffer_color}{Buffer fill color (with alpha). Default
+\code{"#90EE9066"}.}
 
 \item{community_color}{Boundary stroke color. Default \code{"#808380"}.}
 
@@ -48,22 +59,23 @@ Default \code{"#90EE9066"}.}
 
 \item{title}{Map title. Defaults to \code{community_name}.}
 
-\item{subtitle}{Optional subtitle.}
+\item{subtitle}{Optional subtitle. If \code{NULL}, auto-generated from
+point count, ID range, and min pairwise distance.}
 }
 \value{
 A \code{ggplot} object.
 }
 \description{
-Renders a publication-quality map showing a community polygon, sampled
-points (optionally colored by batch), and buffer zones. Returns a
-\code{ggplot} object that can be further customized before saving.
+Renders a publication-quality map showing a community polygon,
+sampled points (colored by batch), and buffer zones for a single
+point set (primary or secondary). Returns a \code{ggplot} object.
 }
 \details{
 Requires \code{ggplot2}, \code{ggspatial}, and \code{tidyterra} (all in Suggests).
 }
 \examples{
 \dontrun{
-p <- map_community("community_one", community_poly, sampled_pts, bufs)
+p <- map_community("community_one", comm_poly, pri_pts, bufs)
 ggplot2::ggsave("community_one.png", p, width = 10, height = 12)
 }
 }
