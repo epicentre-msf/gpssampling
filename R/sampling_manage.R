@@ -51,8 +51,10 @@ split_batches <- function(
 
     nb <- n_batches[[nm]]
 
-    sort_col <- if (set == "primary" && "selection_order" %in% names(pts)) {
+    sort_col <- if ("selection_order" %in% names(pts)) {
       "selection_order"
+    } else if ("point_id" %in% names(pts)) {
+      "point_id"
     } else {
       "id"
     }
@@ -498,8 +500,15 @@ write_gpx <- function(sf_obj, path) {
 
   if (all(geom_type %in% c("POINT", "MULTIPOINT"))) {
     gpx_obj <- sf_obj |>
-      dplyr::select(dplyr::any_of(c("id", "community", "assigned_batch")))
-    if ("id" %in% names(gpx_obj)) {
+      dplyr::select(
+        dplyr::any_of(c("point_id", "id", "community", "assigned_batch"))
+      )
+    # Use point_id as GPX name (preferred), fall back to id
+    if ("point_id" %in% names(gpx_obj)) {
+      gpx_obj$name <- as.character(gpx_obj$point_id)
+      gpx_obj <- gpx_obj |>
+        dplyr::select(-dplyr::any_of(c("point_id", "id")))
+    } else if ("id" %in% names(gpx_obj)) {
       gpx_obj <- gpx_obj |> dplyr::rename(name = "id")
     }
     sf::st_write(
@@ -517,8 +526,14 @@ write_gpx <- function(sf_obj, path) {
       "LINESTRING"
     )
     gpx_lines <- lines |>
-      dplyr::select(dplyr::any_of(c("id", "community", "assigned_batch")))
-    if ("id" %in% names(gpx_lines)) {
+      dplyr::select(
+        dplyr::any_of(c("point_id", "id", "community", "assigned_batch"))
+      )
+    if ("point_id" %in% names(gpx_lines)) {
+      gpx_lines$name <- as.character(gpx_lines$point_id)
+      gpx_lines <- gpx_lines |>
+        dplyr::select(-dplyr::any_of(c("point_id", "id")))
+    } else if ("id" %in% names(gpx_lines)) {
       gpx_lines <- gpx_lines |> dplyr::rename(name = "id")
     }
     sf::st_write(
@@ -671,4 +686,278 @@ email_points <- function(
   result <- smtp(email)
   cli::cli_inform("Email sent to {.val {to}}")
   invisible(result)
+}
+
+
+#' Create a Google Earth (KML) project
+#'
+#' Generates a KML file with organized folders for primary points,
+#' secondary points, and buffer zones across all communities. Each set
+#' uses distinct colors, and every placemark is labeled with its
+#' `point_id`. The resulting file can be opened directly in Google
+#' Earth.
+#'
+#' @param samples_list Output of [sample_communities()].
+#' @param out_file Path for the output `.kml` file.
+#' @param buffer_radius Buffer radius in meters. Default `50`.
+#' @param primary_color Point color for primary set (`#RRGGBB` or
+#'   `#RRGGBBAA`). Default `"#FF4500"` (orange-red).
+#' @param secondary_color Point color for secondary set. Default
+#'   `"#1E90FF"` (dodger blue).
+#' @param primary_buffer_color Buffer fill for primary set. Default
+#'   `"#FF450044"` (orange-red, 27% opacity).
+#' @param secondary_buffer_color Buffer fill for secondary set. Default
+#'   `"#1E90FF44"` (dodger blue, 27% opacity).
+#' @param title Document title shown in Google Earth. Default
+#'   `"Sampling Project"`.
+#' @return Invisibly, the path to the created `.kml` file.
+#' @export
+#' @examples
+#' \dontrun{
+#' create_earth_project(samples, "output/sampling.kml", buffer_radius = 50)
+#' }
+create_earth_project <- function(
+  samples_list,
+  out_file,
+  buffer_radius = 50,
+  primary_color = "#FF4500",
+  secondary_color = "#1E90FF",
+  primary_buffer_color = "#FF450044",
+  secondary_buffer_color = "#1E90FF44",
+  title = "Sampling Project"
+) {
+  checkmate::assert_list(samples_list, min.len = 1L)
+  checkmate::assert_path_for_output(out_file, overwrite = TRUE)
+  checkmate::assert_number(buffer_radius, lower = 0)
+  checkmate::assert_string(title)
+
+  community_names <- sort(names(samples_list))
+  cli::cli_inform(
+    "Building KML for {length(community_names)} communit{?y/ies}..."
+  )
+
+  kml <- character()
+
+  # --- Header and styles ---
+  kml <- c(
+    kml,
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<kml xmlns="http://www.opengis.net/kml/2.2">',
+    "<Document>",
+    paste0("  <name>", kml_escape(title), "</name>"),
+    "",
+    kml_point_style("primary_style", primary_color),
+    kml_point_style("secondary_style", secondary_color),
+    kml_poly_style("primary_buf_style", primary_buffer_color),
+    kml_poly_style("secondary_buf_style", secondary_buffer_color)
+  )
+
+  # --- Primary points ---
+  kml <- c(kml, "  <Folder>", "    <name>Primary Points</name>")
+  for (nm in community_names) {
+    pts <- samples_list[[nm]]$primary
+    if (is.null(pts) || nrow(pts) == 0L) next
+    kml <- c(kml, kml_points_folder(pts, nm, "#primary_style"))
+  }
+  kml <- c(kml, "  </Folder>")
+
+  # --- Secondary points ---
+  kml <- c(kml, "  <Folder>", "    <name>Secondary Points</name>")
+  for (nm in community_names) {
+    pts <- samples_list[[nm]]$secondary
+    if (is.null(pts) || nrow(pts) == 0L) next
+    kml <- c(kml, kml_points_folder(pts, nm, "#secondary_style"))
+  }
+  kml <- c(kml, "  </Folder>")
+
+  # --- Primary buffers ---
+  kml <- c(kml, "  <Folder>", "    <name>Primary Buffers</name>")
+  for (nm in community_names) {
+    pts <- samples_list[[nm]]$primary
+    if (is.null(pts) || nrow(pts) == 0L) next
+    bufs <- buffer_sf(pts, buffer_radius)
+    kml <- c(kml, kml_buffers_folder(bufs, nm, "#primary_buf_style"))
+  }
+  kml <- c(kml, "  </Folder>")
+
+  # --- Secondary buffers ---
+  kml <- c(kml, "  <Folder>", "    <name>Secondary Buffers</name>")
+  for (nm in community_names) {
+    pts <- samples_list[[nm]]$secondary
+    if (is.null(pts) || nrow(pts) == 0L) next
+    bufs <- buffer_sf(pts, buffer_radius)
+    kml <- c(kml, kml_buffers_folder(bufs, nm, "#secondary_buf_style"))
+  }
+  kml <- c(kml, "  </Folder>")
+
+  # --- Footer ---
+  kml <- c(kml, "</Document>", "</kml>")
+
+  fs::dir_create(fs::path_dir(out_file), recurse = TRUE)
+  writeLines(kml, out_file)
+  cli::cli_inform("Created Google Earth project: {.path {out_file}}")
+  invisible(out_file)
+}
+
+
+# --- KML helper functions (internal) ---
+
+#' Escape XML special characters
+#' @noRd
+kml_escape <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  x <- gsub("\"", "&quot;", x, fixed = TRUE)
+  x
+}
+
+#' Convert #RRGGBB or #RRGGBBAA to KML aabbggrr
+#' @noRd
+hex_to_kml <- function(hex) {
+  hex <- sub("^#", "", hex)
+  alpha <- "ff"
+  if (nchar(hex) == 8L) {
+    alpha <- substr(hex, 7L, 8L)
+    hex <- substr(hex, 1L, 6L)
+  }
+  rr <- substr(hex, 1L, 2L)
+  gg <- substr(hex, 3L, 4L)
+  bb <- substr(hex, 5L, 6L)
+  paste0(alpha, bb, gg, rr)
+}
+
+#' Generate KML <Style> block for a point icon
+#' @noRd
+kml_point_style <- function(id, color) {
+  kml_col <- hex_to_kml(color)
+  c(
+    paste0('  <Style id="', id, '">'),
+    "    <IconStyle>",
+    paste0("      <color>", kml_col, "</color>"),
+    "      <scale>0.8</scale>",
+    "      <Icon>",
+    "        <href>http://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href>",
+    "      </Icon>",
+    "    </IconStyle>",
+    "    <LabelStyle>",
+    "      <scale>0.7</scale>",
+    "    </LabelStyle>",
+    "  </Style>"
+  )
+}
+
+#' Generate KML <Style> block for a polygon
+#' @noRd
+kml_poly_style <- function(id, color) {
+  kml_fill <- hex_to_kml(color)
+  # Border: same hue, full opacity
+  border_hex <- paste0("#", substr(sub("^#", "", color), 1L, 6L))
+  kml_border <- hex_to_kml(border_hex)
+  c(
+    paste0('  <Style id="', id, '">'),
+    "    <PolyStyle>",
+    paste0("      <color>", kml_fill, "</color>"),
+    "    </PolyStyle>",
+    "    <LineStyle>",
+    paste0("      <color>", kml_border, "</color>"),
+    "      <width>1</width>",
+    "    </LineStyle>",
+    "  </Style>"
+  )
+}
+
+#' Build a KML folder of point placemarks for one community
+#' @noRd
+kml_points_folder <- function(pts_sf, community_name, style_url) {
+  pts_4326 <- sf::st_transform(pts_sf, 4326L)
+  coords <- sf::st_coordinates(pts_4326)
+  has_pid <- "point_id" %in% names(pts_4326)
+  has_batch <- "assigned_batch" %in% names(pts_4326)
+
+  lines <- c(
+    "    <Folder>",
+    paste0("      <name>", kml_escape(community_name), "</name>")
+  )
+
+  for (i in seq_len(nrow(pts_4326))) {
+    pid <- if (has_pid) pts_4326$point_id[i] else i
+    desc_parts <- paste0("Community: ", community_name)
+    if (has_batch) {
+      desc_parts <- paste0(
+        desc_parts,
+        "\nBatch: ",
+        pts_4326$assigned_batch[i]
+      )
+    }
+    lines <- c(
+      lines,
+      "      <Placemark>",
+      paste0("        <name>", kml_escape(as.character(pid)), "</name>"),
+      paste0(
+        "        <description>",
+        kml_escape(desc_parts),
+        "</description>"
+      ),
+      paste0("        <styleUrl>", style_url, "</styleUrl>"),
+      "        <Point>",
+      paste0(
+        "          <coordinates>",
+        coords[i, 1L],
+        ",",
+        coords[i, 2L],
+        ",0",
+        "</coordinates>"
+      ),
+      "        </Point>",
+      "      </Placemark>"
+    )
+  }
+
+  c(lines, "    </Folder>")
+}
+
+#' Build a KML folder of buffer polygon placemarks for one community
+#' @noRd
+kml_buffers_folder <- function(bufs_sf, community_name, style_url) {
+  bufs_4326 <- sf::st_transform(bufs_sf, 4326L)
+  has_pid <- "point_id" %in% names(bufs_4326)
+
+  lines <- c(
+    "    <Folder>",
+    paste0("      <name>", kml_escape(community_name), "</name>")
+  )
+
+  for (i in seq_len(nrow(bufs_4326))) {
+    pid <- if (has_pid) bufs_4326$point_id[i] else i
+    geom <- sf::st_geometry(bufs_4326)[[i]]
+
+    # Extract outer ring coordinates (works for POLYGON and MULTIPOLYGON)
+    ring <- if (inherits(geom, "MULTIPOLYGON")) geom[[1L]][[1L]] else geom[[1L]]
+    coord_str <- paste(
+      paste0(ring[, 1L], ",", ring[, 2L], ",0"),
+      collapse = " "
+    )
+
+    lines <- c(
+      lines,
+      "      <Placemark>",
+      paste0(
+        "        <name>Buffer ",
+        kml_escape(as.character(pid)),
+        "</name>"
+      ),
+      paste0("        <styleUrl>", style_url, "</styleUrl>"),
+      "        <Polygon>",
+      "          <outerBoundaryIs>",
+      "            <LinearRing>",
+      paste0("              <coordinates>", coord_str, "</coordinates>"),
+      "            </LinearRing>",
+      "          </outerBoundaryIs>",
+      "        </Polygon>",
+      "      </Placemark>"
+    )
+  }
+
+  c(lines, "    </Folder>")
 }

@@ -19,6 +19,11 @@
 #'   buffers are drawn.
 #' @param batch_colors Logical. If `TRUE` and `points_sf` has
 #'   `assigned_batch`, color by batch. Default `TRUE`.
+#' @param show_labels Logical. If `TRUE` and `points_sf` has a
+#'   `point_id` column, display point IDs as text labels. Default
+#'   `TRUE`.
+#' @param label_size Numeric, text size for point ID labels. Default
+#'   `1.8`.
 #' @param basemap Tile provider name for [maptiles::get_tiles()].
 #'   Default `"OpenStreetMap.HOT"`.
 #' @param point_color Uniform color when `batch_colors = FALSE`.
@@ -42,6 +47,8 @@ map_community <- function(
   points_sf,
   buffers_sf = NULL,
   batch_colors = TRUE,
+  show_labels = TRUE,
+  label_size = 1.8,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
   buffer_color = "#90EE9066",
@@ -118,6 +125,17 @@ map_community <- function(
         color = point_color,
         size = 2,
         shape = 16
+      )
+  }
+
+  if (show_labels && "point_id" %in% names(points_sf)) {
+    p <- p +
+      ggplot2::geom_sf_text(
+        data = points_sf,
+        ggplot2::aes(label = .data$point_id),
+        size = label_size,
+        fontface = "bold",
+        vjust = -0.8
       )
   }
 
