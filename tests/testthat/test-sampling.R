@@ -558,8 +558,55 @@ test_that("sample_communities result structure is correct", {
     expect_equal(result[[nm]]$min_distance, 50)
     # seed is per-community (derived from master seed + community name)
     expect_type(result[[nm]]$seed, "integer")
-    # selection_order should be present after ordering
+    # selection_order and point_id should be present on both sets
     expect_true("selection_order" %in% names(result[[nm]]$primary))
+    expect_true("point_id" %in% names(result[[nm]]$primary))
+    if (nrow(result[[nm]]$secondary) > 0L) {
+      expect_true("selection_order" %in% names(result[[nm]]$secondary))
+      expect_true("point_id" %in% names(result[[nm]]$secondary))
+    }
+    # secondary capped at n_required
+    expect_true(nrow(result[[nm]]$secondary) <= n_req[[nm]])
+  }
+})
+
+test_that("sample_communities assigns globally unique point_id", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+
+  # Collect all point_ids (unname to drop list element names)
+  all_primary_ids <- unname(
+    unlist(lapply(result, function(x) x$primary$point_id))
+  )
+  all_secondary_ids <- unname(
+    unlist(lapply(result, function(x) x$secondary$point_id))
+  )
+  all_ids <- c(all_primary_ids, all_secondary_ids)
+
+  # All IDs are unique
+
+  expect_length(all_ids, length(unique(all_ids)))
+
+  # Primary IDs start at 1 and are contiguous
+  n_primary_total <- length(all_primary_ids)
+  expect_equal(sort(all_primary_ids), seq_len(n_primary_total))
+
+  # Secondary IDs start right after primary
+  if (length(all_secondary_ids) > 0L) {
+    expect_equal(min(all_secondary_ids), n_primary_total + 1L)
+    expect_equal(
+      sort(all_secondary_ids),
+      seq(
+        from = n_primary_total + 1L,
+        length.out = length(all_secondary_ids)
+      )
+    )
   }
 })
 

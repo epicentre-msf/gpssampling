@@ -657,7 +657,8 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
         )
       ))
       drawn <- sample(
-        remaining_idx, min(n_still_needed, length(remaining_idx))
+        remaining_idx,
+        min(n_still_needed, length(remaining_idx))
       )
       selected_idx <- c(selected_idx, drawn)
       remaining_idx <- setdiff(remaining_idx, drawn)
@@ -724,7 +725,10 @@ select_sample_points <- function(
   # --- Primary selection ---
   all_idx <- seq_len(nrow(pts_utm))
   primary_draw <- draw_with_distance(
-    pts_utm, all_idx, n_required, min_distance
+    pts_utm,
+    all_idx,
+    n_required,
+    min_distance
   )
 
   cli::cli_inform(
@@ -748,10 +752,14 @@ select_sample_points <- function(
       "    Selecting {n_required} secondary point{?s} from {length(leftover_idx)} remaining..."
     )
     secondary_draw <- draw_with_distance(
-      pts_utm, leftover_idx, n_required, min_distance
+      pts_utm,
+      leftover_idx,
+      n_required,
+      min_distance
     )
     secondary <- sf::st_transform(
-      pts_utm[secondary_draw$selected, ], 4326L
+      pts_utm[secondary_draw$selected, ],
+      4326L
     )
   }
 
@@ -905,8 +913,13 @@ order_selected_points <- function(
 #'   for the post-selection proximity ordering.
 #' @return A named list of lists. Each community element contains:
 #'   `$buildings` (all candidates), `$primary` (selected points with
-#'   `selection_order`), `$secondary` (remaining points),
-#'   `$min_distance`, and `$seed`.
+#'   `selection_order` and `point_id`), `$secondary` (replacement
+#'   points with `selection_order` and `point_id`, at most `n_required`
+#'   per community), `$min_distance`, and `$seed`. Both primary and
+#'   secondary are ordered by road proximity (nearest-neighbour chain).
+#'   The `point_id` column is globally unique across all communities
+#'   and sets: primary IDs are numbered 1..N_total_primary, secondary
+#'   IDs continue from N_total_primary + 1.
 #' @export
 #' @examples
 #' \dontrun{
@@ -995,14 +1008,48 @@ sample_communities <- function(
       sampled$primary,
       road_types
     )
+    ordered_secondary <- if (nrow(sampled$secondary) > 0L) {
+      order_selected_points(sampled$secondary, road_types)
+    } else {
+      sampled$secondary
+    }
     res[[nm]] <- list(
       buildings = buildings_list[[nm]],
       primary = ordered_primary,
-      secondary = sampled$secondary,
+      secondary = ordered_secondary,
       min_distance = min_distance,
       seed = community_seed
     )
   }
+
+  # --- Assign globally unique point_id across all communities ---
+  # Primary: 1..N_total_primary (sequentially across communities)
+  # Secondary: (N_total_primary + 1).. (sequentially across communities)
+  primary_offset <- 0L
+  for (nm in sorted_names) {
+    n_pri <- nrow(res[[nm]]$primary)
+    res[[nm]]$primary$point_id <- seq(
+      from = primary_offset + 1L,
+      length.out = n_pri
+    )
+    primary_offset <- primary_offset + n_pri
+  }
+
+  secondary_offset <- primary_offset
+  for (nm in sorted_names) {
+    n_sec <- nrow(res[[nm]]$secondary)
+    if (n_sec > 0L) {
+      res[[nm]]$secondary$point_id <- seq(
+        from = secondary_offset + 1L,
+        length.out = n_sec
+      )
+      secondary_offset <- secondary_offset + n_sec
+    }
+  }
+
+  cli::cli_inform(
+    "Assigned {primary_offset} primary + {secondary_offset - primary_offset} secondary point IDs."
+  )
 
   res
 }
