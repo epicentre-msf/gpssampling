@@ -10,7 +10,9 @@ StepSample <- R6::R6Class(
       ..('Are you sure you want to permanently delete this sample(s)?')
     },
     lbl_cancel_info = function() {
-      ..('If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.')
+      ..(
+        'If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.'
+      )
     },
     lbl_ok = function() {
       ..('Are you sure you want to permanently save this sample(s)?')
@@ -49,7 +51,13 @@ StepSample <- R6::R6Class(
       private$status
     },
     invalidatePolygons = function() {
-      data$displayPolygons(map, only_selected = TRUE, sample = TRUE, cells = TRUE, status = FALSE)
+      data$displayPolygons(
+        map,
+        only_selected = TRUE,
+        sample = TRUE,
+        cells = TRUE,
+        status = FALSE
+      )
       super$invalidatePolygons()
     }
   ),
@@ -66,7 +74,9 @@ StepSample <- R6::R6Class(
       shiny::tagList(
         super$getUIMap(),
         shiny::absolutePanel(
-          bottom = 18L, left = 78L, fixed = TRUE,
+          bottom = 18L,
+          left = 78L,
+          fixed = TRUE,
           shiny::uiOutput(outputId = self$ns('legend'))
         )
       )
@@ -106,9 +116,16 @@ StepSample <- R6::R6Class(
             id = ns('pnl_help'),
             icon = icon('help-circle-outline', size = 's'),
             shiny::br(),
-            shiny::tags$p(class = 'intro', .('Get Started with Step-by-Step Guide'), style = 'font-size: 14px'),
+            shiny::tags$p(
+              class = 'intro',
+              .('Get Started with Step-by-Step Guide'),
+              style = 'font-size: 14px'
+            ),
             shiny::tags$ul(
-              shiny::tags$li(actionLink(inputId = ns('link_guide_ui'), label = .('Interface')))
+              shiny::tags$li(actionLink(
+                inputId = ns('link_guide_ui'),
+                label = .('Interface')
+              ))
             )
           )
         )
@@ -117,26 +134,46 @@ StepSample <- R6::R6Class(
     getOutputMap = function(session) {
       map <- super$getOutputMap(session)
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_layers'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_upload'), icon = icon('layers-plus'), title = ..('Add a sample layer...'))
+        easyButtonShiny(
+          inputId = ns('act_upload'),
+          icon = icon('layers-plus'),
+          title = ..('Add a sample layer...')
+        )
       )
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_sample_1'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_generate_modal'), icon = icon('map-marker-multiple-outline'), title = ..('New Sample [SPACE]'))
+        easyButtonShiny(
+          inputId = ns('act_generate_modal'),
+          icon = icon('map-marker-multiple-outline'),
+          title = ..('New Sample [SPACE]')
+        )
       )
 
-      map <- leaflet::addEasyButtonBar(map,
+      map <- leaflet::addEasyButtonBar(
+        map,
         id = ns('bar_sample_2'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_sample_generate'), icon = icon('map-marker-radius-outline'), title = ..('New Sample [SPACE]')),
-        easyButtonShiny(inputId = ns('act_sample_save'), icon = icon('map-marker-check-outline'), title = ..('Save [ENTER]'))
+        easyButtonShiny(
+          inputId = ns('act_sample_generate'),
+          icon = icon('map-marker-radius-outline'),
+          title = ..('New Sample [SPACE]')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_sample_save'),
+          icon = icon('map-marker-check-outline'),
+          title = ..('Save [ENTER]')
+        )
       )
 
-      map <- pm_attach_dependencies(map,
+      map <- pm_attach_dependencies(
+        map,
         targetGroup = 'sample_quadrat',
         drawOptions = leafpm::pmDrawOptions(
           snappable = TRUE,
@@ -157,10 +194,6 @@ StepSample <- R6::R6Class(
           ),
           markerStyle = list(
             draggable = TRUE
-          ),
-          pathOptions = list(
-            color = 'yellow',
-            weight = 2L
           )
         )
       )
@@ -202,13 +235,17 @@ StepSample <- R6::R6Class(
 
         if (
           data$project_method == 'RS_SMP' &&
-            data$polygon_focused$roofs_count < 2L) {
+            data$polygon_focused$roofs_count < 2L
+        ) {
           return()
         }
 
         shiny::showModal(
           shiny::modalDialog(
-            title = sprintf('Settings for %s', df_sampling_method[data$project_method, 'label']),
+            title = sprintf(
+              'Settings for %s',
+              df_sampling_method[data$project_method, 'label']
+            ),
             size = 's',
             shiny::fillPage(
               shiny::fillCol(
@@ -221,7 +258,11 @@ StepSample <- R6::R6Class(
                       inputId = self$ns('opt_sample_method'),
                       inline = TRUE,
                       label = ..('Method:'),
-                      choiceNames = c(..('Random'), ..('Regular'), ..('Stratified')),
+                      choiceNames = c(
+                        ..('Random'),
+                        ..('Regular'),
+                        ..('Stratified')
+                      ),
                       choiceValues = c('random', 'regular', 'stratified'),
                       selected = polygon$method,
                       width = '100%'
@@ -235,7 +276,15 @@ StepSample <- R6::R6Class(
 
                   shiny::div(
                     style = 'height: 105px',
-                    shiny::sliderInput(inputId = self$ns('sli_roofs_count'), label = ..('Count:'), min = 1L, max = roofs_count, value = roofs_count %/% 10L, step = 1L, width = '100%')
+                    shiny::sliderInput(
+                      inputId = self$ns('sli_roofs_count'),
+                      label = ..('Count:'),
+                      min = 1L,
+                      max = roofs_count,
+                      value = roofs_count %/% 10L,
+                      step = 1L,
+                      width = '100%'
+                    )
                   )
                 } else {
                   shiny::div()
@@ -243,7 +292,15 @@ StepSample <- R6::R6Class(
                 if (data$project_method %in% c('SP_SMP', 'SP_QDR', 'SP_TSQ')) {
                   shiny::div(
                     style = 'height: 105px',
-                    shiny::sliderInput(inputId = self$ns('sli_sample_count'), label = ..('Count:'), min = 1L, max = 1000L, value = polygon$count, step = 1L, width = '100%')
+                    shiny::sliderInput(
+                      inputId = self$ns('sli_sample_count'),
+                      label = ..('Count:'),
+                      min = 1L,
+                      max = 1000L,
+                      value = polygon$count,
+                      step = 1L,
+                      width = '100%'
+                    )
                   )
                 } else {
                   shiny::div()
@@ -251,7 +308,15 @@ StepSample <- R6::R6Class(
                 if (data$project_method == 'SP_QDR') {
                   shiny::div(
                     style = 'height: 105px',
-                    shiny::sliderInput(inputId = self$ns('sli_sample_size'), label = ..('Size (meter):'), min = 5L, max = 500L, value = polygon$size, step = 1L, width = '100%')
+                    shiny::sliderInput(
+                      inputId = self$ns('sli_sample_size'),
+                      label = ..('Size (meter):'),
+                      min = 5L,
+                      max = 500L,
+                      value = polygon$size,
+                      step = 1L,
+                      width = '100%'
+                    )
                   )
                 } else {
                   shiny::div()
@@ -259,7 +324,13 @@ StepSample <- R6::R6Class(
               )
             ),
             footer = shiny::tagList(
-              buttonLoading(inputId = self$ns('act_generate'), label = ..('Generate'), style = 'float: left', semantic = 'primary', loadingLabel = ..('Generating...')),
+              buttonLoading(
+                inputId = self$ns('act_generate'),
+                label = ..('Generate'),
+                style = 'float: left',
+                semantic = 'primary',
+                loadingLabel = ..('Generating...')
+              ),
               button(inputId = self$ns('act_generate_ok'), label = ..('Ok'))
             )
           )
@@ -281,14 +352,16 @@ StepSample <- R6::R6Class(
         if (data$project_method == 'RS_SMP') {
           sample_count <- input$sli_roofs_count
 
-          r <- data$generateSamples(map,
+          r <- data$generateSamples(
+            map,
             type = data$project_method,
             count = sample_count
           )
         } else {
           sample_count <- input$sli_sample_count
 
-          r <- data$generateSamples(map,
+          r <- data$generateSamples(
+            map,
             type = data$project_method,
             method = input$opt_sample_method,
             count = sample_count,
@@ -296,7 +369,13 @@ StepSample <- R6::R6Class(
           )
         }
 
-        if ((data$project_method == 'SP_QDR') && (any(rowSums(sf::st_intersects(r$quadrat, r$quadrat, sparse = FALSE)) > 1L))) {
+        if (
+          (data$project_method == 'SP_QDR') &&
+            (any(
+              rowSums(sf::st_intersects(r$quadrat, r$quadrat, sparse = FALSE)) >
+                1L
+            ))
+        ) {
           shinyFeedback::showFeedbackWarning(
             inputId = 'sli_sample_size',
             text = ..('Quadrats are too big or intersect.')
@@ -331,20 +410,24 @@ StepSample <- R6::R6Class(
         data$settings$setValue('sli_sample_zoom', input$sli_sample_zoom)
       })
 
-
       # --------------------------------------------------------------------------------------
       # Shortcuts
 
-      shiny::observeEvent(application$keypress$key_up, ignoreInit = TRUE, ignoreNULL = TRUE, {
-        if (data$step == 'step_sample') {
-          key <- application$keypress$key_up
-          if (key$code == 'Enter') {
-            data$sampleAppend(map)
-          } else if (key$code == 'Space') {
-            data$addSample(map)
+      shiny::observeEvent(
+        application$keypress$key_up,
+        ignoreInit = TRUE,
+        ignoreNULL = TRUE,
+        {
+          if (data$step == 'step_sample') {
+            key <- application$keypress$key_up
+            if (key$code == 'Enter') {
+              data$sampleAppend(map)
+            } else if (key$code == 'Space') {
+              data$addSample(map)
+            }
           }
         }
-      })
+      )
 
       # --------------------------------------------------------------------------------------
       # Upload Samples
@@ -391,14 +474,13 @@ StepSample <- R6::R6Class(
         shiny::insertUI(
           selector = sprintf('#%s', self$ns('pnl_settings')),
           where = 'afterBegin',
-          ui =
-            shiny::absolutePanel(
-              top = 45L,
-              left = 5L,
-              bottom = 5L,
-              right = 5L,
-              style = 'overflow: hidden'
-            )
+          ui = shiny::absolutePanel(
+            top = 45L,
+            left = 5L,
+            bottom = 5L,
+            right = 5L,
+            style = 'overflow: hidden'
+          )
         )
       })
 
@@ -415,8 +497,10 @@ StepSample <- R6::R6Class(
                 '
                   <b>%s %s</b><br><br>
                   <b>%s</b> %s.',
-                .('Polygon'), polygon$id_n,
-                nrow(polygon$samples_sf[[1L]]), .('sample(s)')
+                .('Polygon'),
+                polygon$id_n,
+                nrow(polygon$samples_sf[[1L]]),
+                .('sample(s)')
               )
             )
           )
@@ -432,7 +516,10 @@ StepSample <- R6::R6Class(
         console_out('Map Marker Click %s', input$map_marker_click$id)
 
         if (input$map_marker_click$group == 'sample') {
-          vars$sample_quadrat <- match(input$map_marker_click$id, vars$sample$quadrats_sf$id)
+          vars$sample_quadrat <- match(
+            input$map_marker_click$id,
+            vars$sample$quadrats_sf$id
+          )
         }
       })
 
@@ -440,7 +527,11 @@ StepSample <- R6::R6Class(
         if (grepl('QDR_', input$map_shape_click$group, fixed = TRUE)) {
           data$sampleQuadratEdit(map = map, id = input$map_shape_click$id)
         } else if (input$map_shape_click$group == 'polygons') {
-          data$togglePolygonFocused(map, id = input$map_shape_click$id, step = 'sample')
+          data$togglePolygonFocused(
+            map,
+            id = input$map_shape_click$id,
+            step = 'sample'
+          )
           invalidateState()
         }
       })
@@ -463,7 +554,12 @@ StepSample <- R6::R6Class(
           getSampleFilename(data$polygon_focused, ext = 'kml')
         },
         content = function(file) {
-          writeSpatialLayer(sf = data$samples, file = file, layer = 'samples', fieldname = 'id_user')
+          writeSpatialLayer(
+            sf = data$samples,
+            file = file,
+            layer = 'samples',
+            fieldname = 'id_user'
+          )
         }
       )
 
@@ -472,7 +568,12 @@ StepSample <- R6::R6Class(
           getSampleFilename(data$polygon_focused, ext = 'zip')
         },
         content = function(file) {
-          writeSpatialLayer(sf = data$samples, file = file, layer = 'samples', fieldname = 'id_user')
+          writeSpatialLayer(
+            sf = data$samples,
+            file = file,
+            layer = 'samples',
+            fieldname = 'id_user'
+          )
         }
       )
 
@@ -480,7 +581,8 @@ StepSample <- R6::R6Class(
         shiny::tagList(
           shiny::tags$div(
             class = 'tip',
-            shiny::tags$strong(..('Sample: ')), shiny::HTML(text = self$state$info)
+            shiny::tags$strong(..('Sample: ')),
+            shiny::HTML(text = self$state$info)
           )
         )
       })
@@ -489,27 +591,26 @@ StepSample <- R6::R6Class(
       shiny::insertUI(
         selector = sprintf('#%s', ns('pnl_settings')),
         where = 'beforeEnd',
-        ui =
-          shiny::tagList(
-            shiny::br(),
-            shiny::h6('Sample:'),
-            p(shiny::sliderInput(
-              inputId = ns('sli_sample_radius'),
-              label = .('Sample Radius (meter):'),
-              min = 5L,
-              max = 200L,
-              value = data$settings$getValue('sli_sample_radius'),
-              step = 1L
-            )),
-            p(shiny::sliderInput(
-              inputId = ns('sli_sample_zoom'),
-              label = .('Sample Zoom:'),
-              min = 17L,
-              max = 20L,
-              value = data$settings$getValue('sli_sample_zoom'),
-              step = 1L
-            ))
-          )
+        ui = shiny::tagList(
+          shiny::br(),
+          shiny::h6('Sample:'),
+          p(shiny::sliderInput(
+            inputId = ns('sli_sample_radius'),
+            label = .('Sample Radius (meter):'),
+            min = 5L,
+            max = 200L,
+            value = data$settings$getValue('sli_sample_radius'),
+            step = 1L
+          )),
+          p(shiny::sliderInput(
+            inputId = ns('sli_sample_zoom'),
+            label = .('Sample Zoom:'),
+            min = 17L,
+            max = 20L,
+            value = data$settings$getValue('sli_sample_zoom'),
+            step = 1L
+          ))
+        )
       )
       super$renderMap()
     },
@@ -528,7 +629,9 @@ StepSample <- R6::R6Class(
           as.character(icon('map-marker-multiple-outline'))
         )
       } else {
-        value$info <- ..('Before generate new sample, please click on the map to select the target Polygon.')
+        value$info <- ..(
+          'Before generate new sample, please click on the map to select the target Polygon.'
+        )
       }
 
       value

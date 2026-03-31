@@ -9,6 +9,7 @@ sample_communities(
   n_required,
   min_distance = 50,
   seed,
+  joint = FALSE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
   road_dir = NULL
@@ -33,6 +34,12 @@ machines given the same seed, input data, and R version (>= 3.6.0).
 R 3.6.0 changed the default sampling algorithm
 (\code{sample.kind = "Rejection"}), so results from R < 3.6 and
 R >= 3.6 will differ even with the same seed.}
+
+\item{joint}{Logical. If \code{TRUE}, primary and secondary points are
+drawn together in a single pass, enforcing the minimum distance
+across both sets. This reduces clustering in the secondary points.
+The first \code{n_required} drawn become primary; the rest become
+secondary. Default \code{FALSE} (independent draws).}
 
 \item{road_types}{Character vector of OSM \verb{highway=*} values used
 for the post-selection proximity ordering.}
@@ -66,6 +73,15 @@ samples <- sample_communities(
   n_required = c(community_one = 30, community_two = 80),
   min_distance = 50,
   seed = 12345L
+)
+
+# Joint sampling (less clustered secondary points)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = 50,
+  seed = 12345L,
+  joint = TRUE
 )
 }
 }

@@ -688,6 +688,12 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
 #' pool using the same distance algorithm. If fewer than `n_required`
 #' points remain after primary selection, all remaining become secondary.
 #'
+#' When `joint = TRUE`, primary and secondary points are drawn together
+#' in a single pass (up to `2 * n_required`), enforcing the minimum
+#' distance across all points. The first `n_required` drawn become
+#' primary; the rest become secondary. This produces less clustered
+#' secondary points than drawing them separately.
+#'
 #' All points (including the first) are chosen at random. Does NOT
 #' manage its own RNG seed; the caller ([sample_communities()]) wraps
 #' the loop in [withr::with_seed()].
@@ -697,6 +703,8 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
 #' @param n_required Integer, number of points to select.
 #' @param min_distance Numeric, minimum distance in meters between any
 #'   two selected points. Default `50`.
+#' @param joint Logical. If `TRUE`, draw primary and secondary in a
+#'   single pass to reduce clustering. Default `FALSE`.
 #' @return A list with `$primary` (`sf` POINT of selected points) and
 #'   `$secondary` (`sf` POINT of replacement points, at most
 #'   `n_required` rows). The primary set has no `selection_order`
@@ -705,11 +713,13 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
 select_sample_points <- function(
   points_sf,
   n_required,
-  min_distance = 50
+  min_distance = 50,
+  joint = FALSE
 ) {
   checkmate::assert_class(points_sf, "sf")
   checkmate::assert_int(n_required, lower = 1L)
   checkmate::assert_number(min_distance, lower = 0)
+  checkmate::assert_flag(joint)
 
   if (n_required > nrow(points_sf)) {
     cli::cli_abort(
@@ -718,15 +728,59 @@ select_sample_points <- function(
   }
 
   n_total <- nrow(points_sf)
+  utm_crs <- auto_utm_crs(points_sf)
+  pts_utm <- sf::st_transform(points_sf, utm_crs)
+  all_idx <- seq_len(nrow(pts_utm))
+
+  if (joint) {
+    # --- Joint draw: primary + secondary in a single pass ---
+    n_draw <- min(2L * n_required, n_total)
+    cli::cli_inform(
+      "    Joint draw: {n_draw}/{n_total} points (min distance: {min_distance}m)..."
+    )
+
+    joint_draw <- draw_with_distance(
+      pts_utm,
+      all_idx,
+      n_draw,
+      min_distance
+    )
+
+    selected <- joint_draw$selected
+    n_selected <- length(selected)
+
+    # First n_required become primary, rest become secondary
+    n_pri <- min(n_required, n_selected)
+    primary_idx <- selected[seq_len(n_pri)]
+    secondary_idx <- if (n_selected > n_pri) {
+      selected[seq(n_pri + 1L, n_selected)]
+    } else {
+      integer(0L)
+    }
+
+    # Any remaining unselected points go to secondary (pool exhaustion)
+    leftover_idx <- joint_draw$remaining
+    if (length(secondary_idx) < n_required && length(leftover_idx) > 0L) {
+      n_still_needed <- n_required - length(secondary_idx)
+      extra <- leftover_idx[seq_len(min(n_still_needed, length(leftover_idx)))]
+      secondary_idx <- c(secondary_idx, extra)
+    }
+
+    primary <- sf::st_transform(pts_utm[primary_idx, ], 4326L)
+    secondary <- sf::st_transform(pts_utm[secondary_idx, ], 4326L)
+
+    cli::cli_inform(
+      "    {nrow(primary)} primary + {nrow(secondary)} secondary point{?s} (joint)."
+    )
+
+    return(list(primary = primary, secondary = secondary))
+  }
+
+  # --- Independent draw (default): primary then secondary separately ---
   cli::cli_inform(
     "    Selecting {n_required}/{n_total} points (min distance: {min_distance}m)..."
   )
 
-  utm_crs <- auto_utm_crs(points_sf)
-  pts_utm <- sf::st_transform(points_sf, utm_crs)
-
-  # --- Primary selection ---
-  all_idx <- seq_len(nrow(pts_utm))
   primary_draw <- draw_with_distance(
     pts_utm,
     all_idx,
@@ -1085,6 +1139,11 @@ order_selected_points <- function(
 #'   R 3.6.0 changed the default sampling algorithm
 #'   (`sample.kind = "Rejection"`), so results from R < 3.6 and
 #'   R >= 3.6 will differ even with the same seed.
+#' @param joint Logical. If `TRUE`, primary and secondary points are
+#'   drawn together in a single pass, enforcing the minimum distance
+#'   across both sets. This reduces clustering in the secondary points.
+#'   The first `n_required` drawn become primary; the rest become
+#'   secondary. Default `FALSE` (independent draws).
 #' @param road_types Character vector of OSM `highway=*` values used
 #'   for the post-selection proximity ordering.
 #' @param road_dir Optional directory for cached road files. If
@@ -1109,12 +1168,22 @@ order_selected_points <- function(
 #'   min_distance = 50,
 #'   seed = 12345L
 #' )
+#'
+#' # Joint sampling (less clustered secondary points)
+#' samples <- sample_communities(
+#'   buildings_list,
+#'   n_required = c(community_one = 30, community_two = 80),
+#'   min_distance = 50,
+#'   seed = 12345L,
+#'   joint = TRUE
+#' )
 #' }
 sample_communities <- function(
   buildings_list,
   n_required,
   min_distance = 50,
   seed,
+  joint = FALSE,
   road_types = c(
     "primary",
     "secondary",
@@ -1128,6 +1197,7 @@ sample_communities <- function(
   checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
   checkmate::assert_number(min_distance, lower = 0)
   checkmate::assert_int(seed)
+  checkmate::assert_flag(joint)
 
   community_names <- names(buildings_list)
 
@@ -1181,7 +1251,8 @@ sample_communities <- function(
       select_sample_points(
         buildings_list[[nm]],
         n_required[[nm]],
-        min_distance
+        min_distance,
+        joint = joint
       )
     })
     # Fetch roads once per community (cached if road_dir provided)

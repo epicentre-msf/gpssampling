@@ -635,6 +635,147 @@ test_that("sample_communities errors on unknown community", {
   )
 })
 
+# select_sample_points joint mode
+# ............................................................................
+
+test_that("select_sample_points joint=TRUE returns correct counts", {
+  buildings <- make_buildings(200L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  nm <- names(bl)[1L]
+  pts <- bl[[nm]]
+
+  n_req <- min(5L, floor(nrow(pts) / 2L))
+  skip_if(n_req < 2L, "Not enough points for joint test")
+
+  result <- withr::with_seed(99L, {
+    select_sample_points(pts, n_req, min_distance = 10, joint = TRUE)
+  })
+
+  expect_equal(nrow(result$primary), n_req)
+  expect_true(nrow(result$secondary) > 0L)
+  expect_true(nrow(result$secondary) <= n_req)
+})
+
+test_that("select_sample_points joint=TRUE with tight pool", {
+  buildings <- make_buildings(30L, xmin = 0, ymin = 0, xmax = 0.05, ymax = 0.05)
+  communities <- sf::st_sf(
+    name = "tight",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
+        ncol = 2L, byrow = TRUE
+      ))),
+      crs = 4326L
+    )
+  )
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  pts <- bl[["tight"]]
+  n_available <- nrow(pts)
+  skip_if(n_available < 3L, "Not enough points")
+
+  # Request more than half the pool for n_required
+  n_req <- min(as.integer(floor(n_available * 0.8)), n_available - 1L)
+  skip_if(n_req < 2L, "Not enough points")
+
+  result <- withr::with_seed(42L, {
+    select_sample_points(pts, n_req, min_distance = 10, joint = TRUE)
+  })
+
+  expect_equal(nrow(result$primary), n_req)
+  # Secondary should have fewer than n_req (pool exhausted)
+  expect_true(nrow(result$secondary) <= n_req)
+  expect_true(nrow(result$secondary) >= 0L)
+  # Total drawn should not exceed pool
+  expect_true(nrow(result$primary) + nrow(result$secondary) <= n_available)
+})
+
+test_that("select_sample_points joint=FALSE (default) unchanged", {
+  buildings <- make_buildings(200L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  nm <- names(bl)[1L]
+  pts <- bl[[nm]]
+  n_req <- min(5L, floor(nrow(pts) / 2L))
+  skip_if(n_req < 2L, "Not enough points")
+
+  result_default <- withr::with_seed(42L, {
+    select_sample_points(pts, n_req, min_distance = 10)
+  })
+  result_explicit <- withr::with_seed(42L, {
+    select_sample_points(pts, n_req, min_distance = 10, joint = FALSE)
+  })
+
+  expect_equal(nrow(result_default$primary), nrow(result_explicit$primary))
+  expect_equal(
+    sort(result_default$primary$id),
+    sort(result_explicit$primary$id)
+  )
+})
+
+test_that("sample_communities joint=TRUE produces valid output", {
+  buildings <- make_buildings(200L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  skip_if(any(n_req < 2L), "Not enough points")
+
+  result <- sample_communities(
+    bl,
+    n_required = n_req,
+    min_distance = 10,
+    seed = 42L,
+    joint = TRUE
+  )
+
+  for (nm in names(bl)) {
+    expect_equal(nrow(result[[nm]]$primary), n_req[[nm]])
+    expect_true(nrow(result[[nm]]$secondary) > 0L)
+    expect_true("point_id" %in% names(result[[nm]]$primary))
+    expect_true("selection_order" %in% names(result[[nm]]$primary))
+  }
+})
+
+test_that("sample_communities joint=TRUE is reproducible", {
+  buildings <- make_buildings(200L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  skip_if(any(n_req < 2L), "Not enough points")
+
+  r1 <- sample_communities(bl, n_req, min_distance = 10, seed = 99L, joint = TRUE)
+  r2 <- sample_communities(bl, n_req, min_distance = 10, seed = 99L, joint = TRUE)
+
+  for (nm in names(bl)) {
+    expect_equal(
+      sort(r1[[nm]]$primary$id),
+      sort(r2[[nm]]$primary$id)
+    )
+    expect_equal(
+      sort(r1[[nm]]$secondary$id),
+      sort(r2[[nm]]$secondary$id)
+    )
+  }
+})
+
+test_that("sample_communities joint point_id is globally unique", {
+  buildings <- make_buildings(200L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  skip_if(any(n_req < 2L), "Not enough points")
+
+  result <- sample_communities(bl, n_req, min_distance = 10, seed = 42L, joint = TRUE)
+
+  all_ids <- unlist(lapply(result, function(x) {
+    c(x$primary$point_id, x$secondary$point_id)
+  }))
+  expect_false(anyDuplicated(all_ids) > 0L)
+})
+
 # Integration tests (network required)
 # ............................................................................
 

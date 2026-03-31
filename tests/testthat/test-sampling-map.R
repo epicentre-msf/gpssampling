@@ -446,3 +446,94 @@ test_that("map_all_communities saves PNGs when out_dir given", {
     fs::path(tmp_dir, "test_community_secondary.png")
   ))
 })
+
+# leaflet_communities
+# ............................................................................
+
+test_that("leaflet_communities returns a leaflet widget", {
+  d <- make_map_data()
+  pri_batches <- list(test_community = d$primary)
+
+  m <- leaflet_communities(pri_batches, d$community)
+
+  expect_s3_class(m, "leaflet")
+  expect_s3_class(m, "htmlwidget")
+})
+
+test_that("leaflet_communities with secondary batches", {
+  d <- make_map_data()
+  pri_batches <- list(test_community = d$primary)
+  sec_batches <- list(test_community = d$secondary)
+
+  m <- leaflet_communities(
+    pri_batches,
+    d$community,
+    secondary_batches = sec_batches
+  )
+
+  expect_s3_class(m, "leaflet")
+})
+
+test_that("leaflet_communities with buildings and roads", {
+  d <- make_map_data()
+  pri_batches <- list(test_community = d$primary)
+
+  # Synthetic buildings
+  set.seed(42L)
+  n <- 5L
+  cx <- runif(n, 0.001, 0.049)
+  cy <- runif(n, 0.001, 0.049)
+  polys <- lapply(seq_len(n), function(i) {
+    dx <- 0.0002
+    sf::st_polygon(list(matrix(
+      c(
+        cx[i] - dx, cy[i] - dx,
+        cx[i] + dx, cy[i] - dx,
+        cx[i] + dx, cy[i] + dx,
+        cx[i] - dx, cy[i] + dx,
+        cx[i] - dx, cy[i] - dx
+      ),
+      ncol = 2L, byrow = TRUE
+    )))
+  })
+  buildings <- sf::st_sf(
+    osm_id = as.character(seq_len(n)),
+    geometry = sf::st_sfc(polys, crs = 4326L)
+  )
+
+  # Synthetic roads
+  road_line <- sf::st_sf(
+    highway = "residential",
+    geometry = sf::st_sfc(
+      sf::st_linestring(matrix(c(0, 0, 0.05, 0.05), ncol = 2L, byrow = TRUE)),
+      crs = 4326L
+    )
+  )
+  roads_list <- list(test_community = road_line)
+
+  m <- leaflet_communities(
+    pri_batches,
+    d$community,
+    buildings_sf = buildings,
+    roads_list = roads_list
+  )
+
+  expect_s3_class(m, "leaflet")
+})
+
+test_that("leaflet_communities saves HTML when out_file given", {
+  d <- make_map_data()
+  pri_batches <- list(test_community = d$primary)
+
+  tmp_file <- tempfile("leaflet_test", fileext = ".html")
+  on.exit(unlink(tmp_file), add = TRUE)
+
+  m <- leaflet_communities(
+    pri_batches,
+    d$community,
+    out_file = tmp_file
+  )
+
+  expect_true(file.exists(tmp_file))
+  expect_true(file.size(tmp_file) > 0L)
+})

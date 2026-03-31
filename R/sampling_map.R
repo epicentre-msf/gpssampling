@@ -737,10 +737,15 @@ map_cropped_buildings <- function(
 #' Interactive leaflet map of all communities
 #'
 #' Creates an interactive [leaflet::leaflet()] map with toggleable
-#' layers for primary points, secondary points, and their buffers
-#' (per community). Points are colored by batch when
-#' `color_batches = TRUE`. Satellite imagery and OpenStreetMap are
-#' available as base layers.
+#' layers for communities, buildings, roads, primary points, and
+#' secondary points. Points are colored by batch when
+#' `color_batches = TRUE`. Primary points are shown as circles,
+#' secondary as triangles. Layers are z-ordered via custom panes:
+#' communities (bottom), roads, buildings, buffers, points (top).
+#'
+#' Includes fullscreen control (if `leaflet.extras` is installed),
+#' a community navigation panel for quick zoom, and multiple base
+#' map options.
 #'
 #' @param primary_batches Named list of `sf` POINT objects (output of
 #'   [split_batches()] with `set = "primary"`).
@@ -748,6 +753,10 @@ map_cropped_buildings <- function(
 #' @param community_id_col Column name for community ID.
 #' @param secondary_batches Optional named list of `sf` POINT objects
 #'   (output of [split_batches()] with `set = "secondary"`).
+#' @param buildings_sf Optional `sf` POLYGON of building footprints.
+#'   Hidden by default; toggle via layer control.
+#' @param roads_list Optional named list of `sf` LINESTRING objects
+#'   (output of [fetch_community_roads()]). One entry per community.
 #' @param color_batches Logical. If `TRUE` (default) and points have
 #'   `assigned_batch`, color by batch.
 #' @param buffer_radius Buffer radius in meters. Default `50`.
@@ -760,6 +769,9 @@ map_cropped_buildings <- function(
 #' @param secondary_buffer_color Fill for secondary buffers. Default
 #'   `"#ADD8E6"`.
 #' @param community_color Boundary stroke color. Default `"#808380"`.
+#' @param building_color Fill/stroke for building footprints. Default
+#'   `"#8B6914"`.
+#' @param road_color Stroke color for roads. Default `"#555555"`.
 #' @param out_file Optional file path for saving as a self-contained
 #'   HTML file. Requires `htmlwidgets`. If `NULL` (default), no file
 #'   is saved.
@@ -769,7 +781,12 @@ map_cropped_buildings <- function(
 #' \dontrun{
 #' pri <- split_batches(samples, n_batches = 5L, set = "primary")
 #' sec <- split_batches(samples, n_batches = 5L, set = "secondary")
-#' m <- leaflet_communities(pri, communities, secondary_batches = sec)
+#' m <- leaflet_communities(
+#'   pri, communities,
+#'   secondary_batches = sec,
+#'   buildings_sf = buildings,
+#'   roads_list = roads
+#' )
 #' m
 #' }
 leaflet_communities <- function(
@@ -777,6 +794,8 @@ leaflet_communities <- function(
   communities_sf,
   community_id_col = "name",
   secondary_batches = NULL,
+  buildings_sf = NULL,
+  roads_list = NULL,
   color_batches = TRUE,
   buffer_radius = 50,
   primary_color = "#e97a52",
@@ -784,6 +803,8 @@ leaflet_communities <- function(
   primary_buffer_color = "#90EE90",
   secondary_buffer_color = "#ADD8E6",
   community_color = "#808380",
+  building_color = "#8B6914",
+  road_color = "#555555",
   out_file = NULL
 ) {
   checkmate::assert_list(primary_batches, min.len = 1L)
@@ -792,17 +813,77 @@ leaflet_communities <- function(
 
   cli::cli_inform("Building interactive map...")
 
-  m <- leaflet::leaflet() |>
-    leaflet::addTiles(group = "OpenStreetMap") |>
-    leaflet::addProviderTiles(
-      "Esri.WorldImagery",
-      group = "Satellite"
-    ) |>
-    leaflet::addProviderTiles(
-      "OpenStreetMap.HOT",
-      group = "OSM Humanitarian"
-    )
+  community_names <- names(primary_batches)
 
+  # --- Compute community bounding boxes for navigation ---
+  bbox_list <- lapply(seq_len(nrow(communities_sf)), function(i) {
+    bb <- sf::st_bbox(communities_sf[i, ])
+    c(
+      unname(bb[["ymin"]]),
+      unname(bb[["xmin"]]),
+      unname(bb[["ymax"]]),
+      unname(bb[["xmax"]])
+    )
+  })
+  names(bbox_list) <- communities_sf[[community_id_col]]
+  bbox_json <- jsonlite::toJSON(bbox_list, auto_unbox = TRUE)
+
+  # --- Create map with custom panes via onRender ---
+  pane_js <- sprintf(
+    "
+    function(el, x) {
+      var map = this;
+
+      // Custom panes for z-ordering
+      map.createPane('communities'); map.getPane('communities').style.zIndex = 410;
+      map.createPane('roads');       map.getPane('roads').style.zIndex = 415;
+      map.createPane('buildings');   map.getPane('buildings').style.zIndex = 420;
+      map.createPane('buffers');     map.getPane('buffers').style.zIndex = 425;
+      map.createPane('points');      map.getPane('points').style.zIndex = 430;
+
+      // Community navigation panel
+      var communityBounds = %s;
+      var nav = L.control({position: 'topleft'});
+      nav.onAdd = function() {
+        var div = L.DomUtil.create('div', 'community-nav');
+        div.style.cssText = 'background:rgba(246,246,248,0.92); padding:6px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.12); max-height:300px; overflow-y:auto; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);';
+        var html = '<div style=\"font-weight:600; font-size:10px; margin-bottom:4px; text-align:center; color:#86868B; text-transform:uppercase; letter-spacing:0.5px;\">Communities</div>';
+        for (var cname in communityBounds) {
+          html += '<button class=\"comm-nav-btn\" data-community=\"' + cname + '\" style=\"display:block; width:100%%; margin:2px 0; padding:6px 12px; background:#FFFFFF; color:#1D1D1F; border:0.5px solid #D2D2D7; border-radius:6px; cursor:pointer; font-weight:500; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,sans-serif; text-align:left; transition:background 0.15s ease;\">' + cname + '</button>';
+        }
+        div.innerHTML = html;
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+        return div;
+      };
+      nav.addTo(map);
+
+      setTimeout(function() {
+        var buttons = document.querySelectorAll('.comm-nav-btn');
+        buttons.forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var bounds = communityBounds[btn.getAttribute('data-community')];
+            if (bounds) {
+              map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {padding: [50, 50], maxZoom: 15});
+            }
+          });
+          btn.addEventListener('mouseenter', function() { btn.style.background = '#E8E8ED'; });
+          btn.addEventListener('mouseleave', function() { btn.style.background = '#FFFFFF'; });
+        });
+      }, 500);
+    }
+    ",
+    bbox_json
+  )
+
+  m <- leaflet::leaflet(width = "100%", height = "800px") |>
+    leaflet::addTiles(group = "OpenStreetMap") |>
+    leaflet::addProviderTiles("CartoDB.Positron", group = "Light") |>
+    leaflet::addProviderTiles("Esri.WorldImagery", group = "Satellite") |>
+    leaflet::addProviderTiles("OpenStreetMap.HOT", group = "OSM Humanitarian")
+
+  # --- Communities layer (pane: communities) ---
   m <- m |>
     leaflet::addPolygons(
       data = communities_sf,
@@ -810,10 +891,68 @@ leaflet_communities <- function(
       weight = 2,
       fillOpacity = 0.1,
       label = ~ get(community_id_col),
-      group = "Communities"
+      labelOptions = leaflet::labelOptions(
+        noHide = TRUE,
+        direction = "center",
+        textOnly = FALSE,
+        style = list(
+          "background-color" = "#FFEACC",
+          "color" = "#1D1D1F",
+          "font-weight" = "bold",
+          "font-size" = "12px",
+          "padding" = "4px 10px",
+          "border-radius" = "4px",
+          "border" = "1px solid #E8C99B",
+          "box-shadow" = "0 1px 3px rgba(0,0,0,0.3)"
+        )
+      ),
+      highlightOptions = leaflet::highlightOptions(
+        weight = 4,
+        fillOpacity = 0.2,
+        bringToFront = FALSE
+      ),
+      group = "Communities",
+      options = leaflet::pathOptions(pane = "communities")
     )
 
-  # Batch color palette
+  # --- Roads layer (pane: roads) ---
+  if (!is.null(roads_list)) {
+    all_roads <- tryCatch(
+      dplyr::bind_rows(roads_list),
+      error = function(e) NULL
+    )
+    if (!is.null(all_roads) && nrow(all_roads) > 0L) {
+      # Keep only geometry to avoid column conflicts
+      roads_geom <- sf::st_sf(geometry = sf::st_geometry(all_roads))
+      m <- m |>
+        leaflet::addPolylines(
+          data = roads_geom,
+          color = road_color,
+          weight = 2,
+          opacity = 0.7,
+          group = "Roads",
+          options = leaflet::pathOptions(pane = "roads")
+        )
+    }
+  }
+
+  # --- Buildings layer (pane: buildings, hidden by default) ---
+  if (!is.null(buildings_sf) && nrow(buildings_sf) > 0L) {
+    # Keep only geometry for performance
+    bldg_geom <- sf::st_sf(geometry = sf::st_geometry(buildings_sf))
+    m <- m |>
+      leaflet::addPolygons(
+        data = bldg_geom,
+        color = building_color,
+        weight = 0.5,
+        fillColor = building_color,
+        fillOpacity = 0.4,
+        group = "Buildings",
+        options = leaflet::pathOptions(pane = "buildings")
+      )
+  }
+
+  # --- Batch color palette ---
   all_batches <- sort(unique(unlist(lapply(
     primary_batches,
     function(x) {
@@ -824,13 +963,11 @@ leaflet_communities <- function(
     leaflet::colorFactor("Set1", domain = all_batches)
   }
 
-  community_names <- names(primary_batches)
-
+  # --- Primary and secondary points/buffers ---
   for (nm in community_names) {
     pri_pts <- primary_batches[[nm]]
     if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
 
-    pri_group <- paste0(nm, " - Primary")
     has_batch <- color_batches && "assigned_batch" %in% names(pri_pts)
     has_pid <- "point_id" %in% names(pri_pts)
 
@@ -857,19 +994,7 @@ leaflet_communities <- function(
       paste0("<b>ID:</b> ", pri_labels, "<br><b>Community:</b> ", nm)
     }
 
-    m <- m |>
-      leaflet::addCircleMarkers(
-        data = pri_pts,
-        radius = 5,
-        color = pri_colors,
-        fillOpacity = 0.8,
-        stroke = TRUE,
-        weight = 1,
-        label = pri_labels,
-        popup = pri_popups,
-        group = pri_group
-      )
-
+    # Primary buffers
     pri_bufs <- buffer_sf(pri_pts, buffer_radius)
     m <- m |>
       leaflet::addPolygons(
@@ -878,9 +1003,27 @@ leaflet_communities <- function(
         fillColor = primary_buffer_color,
         fillOpacity = 0.2,
         weight = 1,
-        group = paste0(nm, " - Primary Buffers")
+        group = "Primary Buffers",
+        options = leaflet::pathOptions(pane = "buffers")
       )
 
+    # Primary points (circles)
+    m <- m |>
+      leaflet::addCircleMarkers(
+        data = pri_pts,
+        radius = 6,
+        color = pri_colors,
+        fillColor = pri_colors,
+        fillOpacity = 0.9,
+        stroke = TRUE,
+        weight = 2,
+        label = pri_labels,
+        popup = pri_popups,
+        group = "Primary Points",
+        options = leaflet::pathOptions(pane = "points")
+      )
+
+    # Secondary points + buffers
     if (
       !is.null(secondary_batches) &&
         nm %in% names(secondary_batches) &&
@@ -888,7 +1031,6 @@ leaflet_communities <- function(
         nrow(secondary_batches[[nm]]) > 0L
     ) {
       sec_pts <- secondary_batches[[nm]]
-      sec_group <- paste0(nm, " - Secondary")
       has_sec_batch <- color_batches &&
         "assigned_batch" %in% names(sec_pts)
       has_sec_pid <- "point_id" %in% names(sec_pts)
@@ -921,19 +1063,7 @@ leaflet_communities <- function(
         )
       }
 
-      m <- m |>
-        leaflet::addCircleMarkers(
-          data = sec_pts,
-          radius = 4,
-          color = sec_colors,
-          fillOpacity = 0.8,
-          stroke = TRUE,
-          weight = 1,
-          label = sec_labels,
-          popup = sec_popups,
-          group = sec_group
-        )
-
+      # Secondary buffers
       sec_bufs <- buffer_sf(sec_pts, buffer_radius)
       m <- m |>
         leaflet::addPolygons(
@@ -942,35 +1072,74 @@ leaflet_communities <- function(
           fillColor = secondary_buffer_color,
           fillOpacity = 0.2,
           weight = 1,
-          group = paste0(nm, " - Secondary Buffers")
+          group = "Secondary Buffers",
+          options = leaflet::pathOptions(pane = "buffers")
+        )
+
+      # Secondary points (triangle markers via SVG data URI icons)
+      svg_template <- '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,14 0,14" fill="%s" stroke="white" stroke-width="1.5"/></svg>'
+      icon_urls <- vapply(
+        sec_colors,
+        function(clr) {
+          svg_str <- sprintf(svg_template, clr)
+          paste0(
+            "data:image/svg+xml;base64,",
+            base64enc::base64encode(charToRaw(svg_str))
+          )
+        },
+        character(1L)
+      )
+
+      sec_icons <- leaflet::icons(
+        iconUrl = icon_urls,
+        iconWidth = 14,
+        iconHeight = 14,
+        iconAnchorX = 7,
+        iconAnchorY = 7
+      )
+
+      m <- m |>
+        leaflet::addMarkers(
+          data = sec_pts,
+          icon = sec_icons,
+          label = sec_labels,
+          popup = sec_popups,
+          group = "Secondary Points",
+          options = leaflet::markerOptions(pane = "points")
         )
     }
   }
 
-  # Layer control
+  # --- Layer control ---
   overlay_groups <- "Communities"
-  for (nm in community_names) {
+  if (!is.null(roads_list)) overlay_groups <- c(overlay_groups, "Roads")
+  if (!is.null(buildings_sf)) overlay_groups <- c(overlay_groups, "Buildings")
+  overlay_groups <- c(
+    overlay_groups,
+    "Primary Points",
+    "Primary Buffers"
+  )
+  if (!is.null(secondary_batches)) {
     overlay_groups <- c(
       overlay_groups,
-      paste0(nm, " - Primary"),
-      paste0(nm, " - Primary Buffers")
+      "Secondary Points",
+      "Secondary Buffers"
     )
-    if (!is.null(secondary_batches) && nm %in% names(secondary_batches)) {
-      overlay_groups <- c(
-        overlay_groups,
-        paste0(nm, " - Secondary"),
-        paste0(nm, " - Secondary Buffers")
-      )
-    }
   }
 
   m <- m |>
     leaflet::addLayersControl(
-      baseGroups = c("OpenStreetMap", "Satellite", "OSM Humanitarian"),
+      baseGroups = c("OpenStreetMap", "Light", "Satellite", "OSM Humanitarian"),
       overlayGroups = overlay_groups,
       options = leaflet::layersControlOptions(collapsed = FALSE)
     )
 
+  # Hide buildings by default (heavy layer)
+  if (!is.null(buildings_sf)) {
+    m <- m |> leaflet::hideGroup("Buildings")
+  }
+
+  # Batch legend
   if (!is.null(batch_pal) && length(all_batches) > 0L) {
     m <- m |>
       leaflet::addLegend(
@@ -981,6 +1150,15 @@ leaflet_communities <- function(
       )
   }
 
+  # --- Fullscreen control ---
+  if (requireNamespace("leaflet.extras", quietly = TRUE)) {
+    m <- m |> leaflet.extras::addFullscreenControl(position = "topleft")
+  }
+
+  # --- Apply panes + navigation JS ---
+  m <- m |> htmlwidgets::onRender(pane_js)
+
+  # --- Save to file ---
   if (!is.null(out_file)) {
     rlang::check_installed("htmlwidgets", reason = "to save leaflet as HTML")
     fs::dir_create(fs::path_dir(out_file), recurse = TRUE)

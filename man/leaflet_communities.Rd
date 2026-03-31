@@ -9,6 +9,8 @@ leaflet_communities(
   communities_sf,
   community_id_col = "name",
   secondary_batches = NULL,
+  buildings_sf = NULL,
+  roads_list = NULL,
   color_batches = TRUE,
   buffer_radius = 50,
   primary_color = "#e97a52",
@@ -16,6 +18,8 @@ leaflet_communities(
   primary_buffer_color = "#90EE90",
   secondary_buffer_color = "#ADD8E6",
   community_color = "#808380",
+  building_color = "#8B6914",
+  road_color = "#555555",
   out_file = NULL
 )
 }
@@ -29,6 +33,12 @@ leaflet_communities(
 
 \item{secondary_batches}{Optional named list of \code{sf} POINT objects
 (output of \code{\link[=split_batches]{split_batches()}} with \code{set = "secondary"}).}
+
+\item{buildings_sf}{Optional \code{sf} POLYGON of building footprints.
+Hidden by default; toggle via layer control.}
+
+\item{roads_list}{Optional named list of \code{sf} LINESTRING objects
+(output of \code{\link[=fetch_community_roads]{fetch_community_roads()}}). One entry per community.}
 
 \item{color_batches}{Logical. If \code{TRUE} (default) and points have
 \code{assigned_batch}, color by batch.}
@@ -49,6 +59,11 @@ leaflet_communities(
 
 \item{community_color}{Boundary stroke color. Default \code{"#808380"}.}
 
+\item{building_color}{Fill/stroke for building footprints. Default
+\code{"#8B6914"}.}
+
+\item{road_color}{Stroke color for roads. Default \code{"#555555"}.}
+
 \item{out_file}{Optional file path for saving as a self-contained
 HTML file. Requires \code{htmlwidgets}. If \code{NULL} (default), no file
 is saved.}
@@ -58,16 +73,27 @@ A \code{leaflet} htmlwidget object.
 }
 \description{
 Creates an interactive \code{\link[leaflet:leaflet]{leaflet::leaflet()}} map with toggleable
-layers for primary points, secondary points, and their buffers
-(per community). Points are colored by batch when
-\code{color_batches = TRUE}. Satellite imagery and OpenStreetMap are
-available as base layers.
+layers for communities, buildings, roads, primary points, and
+secondary points. Points are colored by batch when
+\code{color_batches = TRUE}. Primary points are shown as circles,
+secondary as triangles. Layers are z-ordered via custom panes:
+communities (bottom), roads, buildings, buffers, points (top).
+}
+\details{
+Includes fullscreen control (if \code{leaflet.extras} is installed),
+a community navigation panel for quick zoom, and multiple base
+map options.
 }
 \examples{
 \dontrun{
 pri <- split_batches(samples, n_batches = 5L, set = "primary")
 sec <- split_batches(samples, n_batches = 5L, set = "secondary")
-m <- leaflet_communities(pri, communities, secondary_batches = sec)
+m <- leaflet_communities(
+  pri, communities,
+  secondary_batches = sec,
+  buildings_sf = buildings,
+  roads_list = roads
+)
 m
 }
 }

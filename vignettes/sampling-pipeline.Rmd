@@ -138,6 +138,27 @@ The result is a named list of lists. Each community contains `$primary`
 (selected points with `selection_order`), `$secondary` (remaining points),
 `$buildings` (all candidates), and metadata (`$min_distance`, `$seed`).
 
+#### Joint sampling (less clustered secondary points)
+
+By default, primary and secondary points are drawn independently. The
+secondary draw restarts on the reduced pool, which can cluster when the
+pool is sparse. Pass `joint = TRUE` to draw both sets in a single pass:
+
+```{r sample-joint, eval = FALSE}
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 80, community_two = 60),
+  min_distance = 50,
+  seed = 250292L,
+  joint = TRUE
+)
+```
+
+With `joint = TRUE`, the algorithm draws `2 * n_required` points in one
+call, enforcing the distance constraint across all of them. The first
+`n_required` drawn become primary; the rest become secondary. If the pool
+is too small for the full secondary set, all remaining points fill in.
+
 **Reproducibility:** Same `seed` + same inputs = same output on any platform.
 The algorithm uses `withr::with_seed()` (not `set.seed()`), deterministic
 point sorting, and alphabetical community processing order.
@@ -153,6 +174,16 @@ batched <- split_batches(samples, n_batches = 5L, set = "primary")
 ```
 
 Each community's points get an `assigned_batch` column (1 to 5).
+
+If different communities need different team counts, pass a named vector:
+
+```{r batches-named, eval = FALSE}
+batched <- split_batches(
+  samples,
+  n_batches = c(community_one = 5, community_two = 3, community_three = 4),
+  set = "primary"
+)
+```
 
 ### Create buffers
 
@@ -254,6 +285,39 @@ p + ggplot2::theme(legend.position = "bottom")
 ggplot2::ggsave("community_one.png", p, width = 10, height = 12, dpi = 300)
 ```
 
+### Interactive leaflet map
+
+`leaflet_communities()` creates an interactive map with layer toggles,
+community navigation, fullscreen, and multiple base maps:
+
+```{r leaflet, eval = FALSE}
+pri <- split_batches(samples, n_batches = 5L, set = "primary")
+sec <- split_batches(samples, n_batches = 5L, set = "secondary")
+roads <- fetch_community_roads(
+  communities, community_id_col = "name",
+  road_dir = "output/roads"
+)
+
+m <- leaflet_communities(
+  pri,
+  communities,
+  community_id_col = "name",
+  secondary_batches = sec,
+  buildings_sf = buildings,
+  roads_list = roads,
+  out_file = "output/maps/sampling_map.html"
+)
+```
+
+Features:
+
+- **Z-ordered layers**: communities (bottom) > roads > buildings > buffers > points (top)
+- **Grouped toggles**: "Primary Points", "Secondary Points", "Buildings", "Roads"
+- **Distinct shapes**: circles for primary, triangles for secondary
+- **Community navigation**: panel with quick-zoom buttons per community
+- **Fullscreen**: via `leaflet.extras` (if installed)
+- **Buildings**: hidden by default (toggle via layer control)
+
 ## Complete Workflow
 
 ```{r full-pipeline}
@@ -265,9 +329,11 @@ communities <- st_read("communities.gpkg")
 state_boundary <- st_read("boundary.gpkg")
 
 # 2. Fetch, filter, crop buildings
-buildings_list <- fetch_osm_buildings(state_boundary) |>
-  filter_buildings() |>
-  crop_buildings(communities, community_id_col = "name")
+buildings <- fetch_osm_buildings(state_boundary)
+buildings_filtered <- filter_buildings(buildings)
+buildings_list <- crop_buildings(
+  buildings_filtered, communities, community_id_col = "name"
+)
 
 # 3. Sample (seed is required — choose any integer for reproducibility)
 samples <- sample_communities(
@@ -277,7 +343,8 @@ samples <- sample_communities(
     community_three = 85, community_four = 60
   ),
   min_distance = 50,
-  seed = 250292L
+  seed = 250292L,
+  joint = TRUE
 )
 
 # 4. Batch and export
@@ -291,11 +358,24 @@ export_points(
 # 5. Zip for field teams
 zips <- zip_points("output", prefix = "project-")
 
-# 6. Generate maps
+# 6. Generate static maps
 map_all_communities(
   samples, communities,
   community_id_col = "name",
   out_dir = "output/maps"
+)
+
+# 7. Generate interactive map
+roads <- fetch_community_roads(
+  communities, community_id_col = "name",
+  road_dir = "output/roads"
+)
+leaflet_communities(
+  batched, communities,
+  secondary_batches = split_batches(samples, n_batches = 5L, set = "secondary"),
+  buildings_sf = buildings_filtered,
+  roads_list = roads,
+  out_file = "output/maps/sampling_map.html"
 )
 ```
 
@@ -309,24 +389,26 @@ map_all_communities(
 | `filter_buildings()` | Remove non-residential buildings by OSM tags |
 | `crop_buildings()` | Clip buildings to community polygons, convert to centroids |
 | `find_start_points()` | Find closest-to-road building per community (utility) |
-| `sample_communities()` | Random sampling with proximity-based ordering |
+| `sample_communities()` | Random sampling with proximity-based ordering (`joint` option) |
+| `fetch_community_roads()` | Pre-download OSM roads per community (with caching) |
 
 ### GPS Management
 
 | Function | Purpose |
 |----------|---------|
-| `split_batches()` | Assign round-robin batch numbers to points |
+| `split_batches()` | Assign round-robin batch numbers (uniform or per-community) |
 | `create_buffers()` | Generate circular buffer polygons |
 | `create_buffer_tiles()` | Create OsmAnd-compatible SQLite tile overlays |
 | `export_points()` | Export points, buffers, and tiles to disk |
 | `zip_points()` | Bundle GPX + SQLite files into zip archives |
 | `email_points()` | Send zip files via SMTP email |
 
-### Static Mapping
+### Mapping
 
 | Function | Purpose |
 |----------|---------|
-| `map_cropped_buildings()` | Side-by-side panels of cropped buildings per community |
-| `map_community()` | Per-community map with batch coloring |
-| `map_overview()` | Zoomed-out overview of all communities |
-| `map_all_communities()` | Generate and optionally save all maps |
+| `map_cropped_buildings()` | Building footprint maps per community |
+| `map_community()` | Per-community static map with batch coloring |
+| `map_overview()` | Zoomed-out static overview of all communities |
+| `map_all_communities()` | Generate and optionally save all static maps |
+| `leaflet_communities()` | Interactive leaflet map with layer controls |

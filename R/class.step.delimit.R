@@ -7,7 +7,9 @@ StepDelimit <- R6::R6Class(
       .('Delimit')
     },
     lbl_cancel_info = function() {
-      ..('If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.')
+      ..(
+        'If <b>yes</b>, all depend work will be deleted <b>permanently</b>. You can\'t undo this action.'
+      )
     },
     lbl_ok = function() {
       ..('Are you sure you want to permanently save this polygon layer.')
@@ -52,10 +54,14 @@ StepDelimit <- R6::R6Class(
             id = ns('pnl_step'),
             icon = icon('menu', size = 's'),
             shiny::br(),
-            p(.('
+            p(.(
+              '
             The page allows to set the geographical boundaries
-            within which the population is to be estimated.')),
-            p(.('The first step is to define one or more area of interest for yours samples.')),
+            within which the population is to be estimated.'
+            )),
+            p(.(
+              'The first step is to define one or more area of interest for yours samples.'
+            )),
             p(.('You have several ways to proceed.')),
             shiny::h6('Option 1:'),
             p(.('You can draw the polygons directly.')),
@@ -68,7 +74,9 @@ StepDelimit <- R6::R6Class(
             ),
             shiny::br(),
             shiny::h6('Option 2:'),
-            p(.('You can either import the polygons from a file in your computer.')),
+            p(.(
+              'You can either import the polygons from a file in your computer.'
+            )),
             p(
               button(
                 inputId = ns('act_upload_side'),
@@ -128,61 +136,98 @@ StepDelimit <- R6::R6Class(
             id = ns('pnl_help'),
             icon = icon('help-circle-outline', size = 's'),
             shiny::br(),
-            shiny::tags$p(class = 'intro', .('Get Started with Step-by-Step Guide'), style = 'font-size: 14px'),
+            shiny::tags$p(
+              class = 'intro',
+              .('Get Started with Step-by-Step Guide'),
+              style = 'font-size: 14px'
+            ),
             shiny::tags$ul(
-              shiny::tags$li(actionLink(inputId = ns('link_guide'), label = .('Instruction: How add a new polygon.'))),
-              shiny::tags$li(actionLink(inputId = ns('link_guide_ui'), label = .('Interface')))
+              shiny::tags$li(actionLink(
+                inputId = ns('link_guide'),
+                label = .('Instruction: How add a new polygon.')
+              )),
+              shiny::tags$li(actionLink(
+                inputId = ns('link_guide_ui'),
+                label = .('Interface')
+              ))
             )
           )
         )
       )
     },
     getOutputMap = function(session) {
-
       lf <- super$getOutputMap(session)
 
       lf <-
-        leaflet.extras::addSearchOSM(lf,
-          options =
-            leaflet.extras::searchOptions(
-              autoType = TRUE,
-              autoResize = TRUE,
-              # autoCollapse = TRUE,
-              firstTipSubmit = TRUE,
-              hideMarkerOnCollapse = TRUE,
-              minLength = 2L,
-              position = 'bottomleft',
-              textErr = .('Location Not Found'),
-              textCancel = .('Cancel'),
-              # textPlaceholder = .('Search...'),
-              tipAutoSubmit = TRUE
-            )
+        leaflet.extras::addSearchOSM(
+          lf,
+          options = leaflet.extras::searchOptions(
+            autoType = TRUE,
+            autoResize = TRUE,
+            # autoCollapse = TRUE,
+            firstTipSubmit = TRUE,
+            hideMarkerOnCollapse = TRUE,
+            minLength = 2L,
+            position = 'bottomleft',
+            textErr = .('Location Not Found'),
+            textCancel = .('Cancel'),
+            # textPlaceholder = .('Search...'),
+            tipAutoSubmit = TRUE
+          )
         )
 
-      lf <- leaflet::addEasyButtonBar(lf,
+      lf <- leaflet::addEasyButtonBar(
+        lf,
         id = ns('bar_layers'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_upload'), icon = icon('layers-plus'), title = ..('Add a polygon layer...'))
+        easyButtonShiny(
+          inputId = ns('act_upload'),
+          icon = icon('layers-plus'),
+          title = ..('Add a polygon layer...')
+        )
       )
 
-      lf <- leaflet::addEasyButtonBar(lf,
+      lf <- leaflet::addEasyButtonBar(
+        lf,
         id = ns('bar_draw_2'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_draw_polygon'), icon = icon('shape-square-plus'), title = ..('Draw a new polygon')),
-        easyButtonShiny(inputId = ns('act_edit_polygon'), icon = icon('shape-square-edit'), title = ..('Edit a polygon')),
-        easyButtonShiny(inputId = ns('act_remove_polygon'), icon = icon('shape-square-remove'), title = ..('Remove polygon(s)'))
+        easyButtonShiny(
+          inputId = ns('act_draw_polygon'),
+          icon = icon('shape-square-plus'),
+          title = ..('Draw a new polygon')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_edit_polygon'),
+          icon = icon('shape-square-edit'),
+          title = ..('Edit a polygon')
+        ),
+        easyButtonShiny(
+          inputId = ns('act_remove_polygon'),
+          icon = icon('shape-square-remove'),
+          title = ..('Remove polygon(s)')
+        )
       )
 
-      lf <- leaflet::addEasyButtonBar(lf,
+      lf <- leaflet::addEasyButtonBar(
+        lf,
         id = ns('bar_draw_3'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_cut_polygon'), icon = icon('scissors-cutting'), title = ..('Cut a polygon'))
+        easyButtonShiny(
+          inputId = ns('act_cut_polygon'),
+          icon = icon('scissors-cutting'),
+          title = ..('Cut a polygon')
+        )
       )
 
-      lf <- leaflet::addEasyButtonBar(lf,
+      lf <- leaflet::addEasyButtonBar(
+        lf,
         id = ns('bar_tool'),
         position = 'topleft',
-        easyButtonShiny(inputId = ns('act_select_invert'), icon = icon('yin-yang'), title = ..('Inverse Selection'))
+        easyButtonShiny(
+          inputId = ns('act_select_invert'),
+          icon = icon('yin-yang'),
+          title = ..('Inverse Selection')
+        )
       )
 
       # map <- leaflet::addEasyButtonBar(map,
@@ -192,7 +237,8 @@ StepDelimit <- R6::R6Class(
       #   easyButtonShiny(inputId = session$ns('act_ungroup'), icon = icon('select-group'), title = .('Ungroup polygon'))
       # )
 
-      lf <- pm_attach_dependencies(lf,
+      lf <- pm_attach_dependencies(
+        lf,
         targetGroup = 'polygons',
         drawOptions = leafpm::pmDrawOptions(
           snappable = TRUE,
@@ -213,10 +259,6 @@ StepDelimit <- R6::R6Class(
           ),
           markerStyle = list(
             draggable = TRUE
-          ),
-          pathOptions = list(
-            color = 'yellow',
-            weight = 2L
           )
         )
       )
@@ -224,7 +266,6 @@ StepDelimit <- R6::R6Class(
       lf
     },
     getServer = function(input, output, session) {
-
       super$getServer(input, output, session)
 
       # --------------------------------------------------------------------------------------
@@ -268,24 +309,18 @@ StepDelimit <- R6::R6Class(
         # } else {
         #   self$mode <- 'ungroup_polygon'
         # }
-
         # selection <- getPolygon() |> dplyr::filter(selected)
         # selection <- selection[sf::st_is(selection, 'MULTIPOLYGON'), ]
-
         # if (nrow(selection) == 0) {
         #   return()
         # }
-
         # polygons_ungroup <- sf::st_cast(selection, 'POLYGON')
         # polygons_ungroup$id <- as.character(max(as.integer(getPolygon()$id)) + seq_len(nrow(polygons_ungroup)))
-
         # for (i in seq_len(nrow(selection))) {
         #   leaflet::removeShape(map, layerId = selection$id[i])
         # }
-
         # getPolygon() %<>% dplyr::filter(!(id %in% selection$id))
         # getPolygon() %<>% dplyr::bind_rows(polygons_ungroup)
-
       })
 
       # --------------------------------------------------------------------------------------
@@ -312,7 +347,10 @@ StepDelimit <- R6::R6Class(
           ui = shiny::tagList(
             p(.('Export')),
             p(
-              buttonDownload(outputId = ns('act_download_tiles'), label = .('Export')),
+              buttonDownload(
+                outputId = ns('act_download_tiles'),
+                label = .('Export')
+              ),
               button(
                 inputId = ns('act_basemap'),
                 icon = 'map-search-outline',
@@ -322,8 +360,11 @@ StepDelimit <- R6::R6Class(
             p(.('Import')),
             p(
               fileInput(
-                inputId = ns('file'), label = NULL, buttonLabel = ..('Import...'),
-                placeholder = ..('Select basemap file...'), width = '100%',
+                inputId = ns('file'),
+                label = NULL,
+                buttonLabel = ..('Import...'),
+                placeholder = ..('Select basemap file...'),
+                width = '100%',
                 accept = '.zip'
               )
             )
@@ -337,11 +378,13 @@ StepDelimit <- R6::R6Class(
         },
         content = function(file) {
           sf <-
-            dplyr::transmute(data$polygons,
-              name = id,
-              description = label
-            )
-          writeSpatialLayer(sf = sf, file = file, layer = sprintf('polygons - %s', Sys.Date()), fieldname = 'lf_name')
+            dplyr::transmute(data$polygons, name = id, description = label)
+          writeSpatialLayer(
+            sf = sf,
+            file = file,
+            layer = sprintf('polygons - %s', Sys.Date()),
+            fieldname = 'lf_name'
+          )
         }
       )
 
@@ -351,11 +394,13 @@ StepDelimit <- R6::R6Class(
         },
         content = function(file) {
           sf <-
-            dplyr::transmute(data$polygons,
-              name = id,
-              description = label
-            )
-          writeSpatialLayer(sf = sf, file = file, layer = sprintf('polygons - %s', Sys.Date()), fieldname = 'lf_name')
+            dplyr::transmute(data$polygons, name = id, description = label)
+          writeSpatialLayer(
+            sf = sf,
+            file = file,
+            layer = sprintf('polygons - %s', Sys.Date()),
+            fieldname = 'lf_name'
+          )
         }
       )
 
@@ -417,7 +462,10 @@ StepDelimit <- R6::R6Class(
 
       shiny::observeEvent(input$act_guide_polygon_clear, {
         data$guide_polygon <- NULL
-        self$state <- utils::modifyList(self$state, list(modified = TRUE, void = rnorm(1L)))
+        self$state <- utils::modifyList(
+          self$state,
+          list(modified = TRUE, void = rnorm(1L))
+        )
       })
 
       shiny::observeEvent(input$act_guide_polygon, {
@@ -426,7 +474,10 @@ StepDelimit <- R6::R6Class(
 
       shiny::observeEvent(dlg_guide_polygon$ok, ignoreInit = TRUE, {
         data$guide_polygon <- dlg_guide_polygon$out$sf
-        self$state <- utils::modifyList(self$state, list(modified = TRUE, void = rnorm(1L)))
+        self$state <- utils::modifyList(
+          self$state,
+          list(modified = TRUE, void = rnorm(1L))
+        )
       })
 
       # --------------------------------------------------------------------------------------
@@ -444,7 +495,10 @@ StepDelimit <- R6::R6Class(
 
       shiny::observeEvent(input$act_guide_point_clear, {
         data$guide_point <- NULL
-        self$state <- utils::modifyList(self$state, list(modified = TRUE, void = rnorm(1L)))
+        self$state <- utils::modifyList(
+          self$state,
+          list(modified = TRUE, void = rnorm(1L))
+        )
       })
 
       shiny::observeEvent(input$act_guide_point, {
@@ -453,7 +507,10 @@ StepDelimit <- R6::R6Class(
 
       shiny::observeEvent(dlg_guide_point$ok, ignoreInit = TRUE, {
         data$guide_point <- dlg_guide_point$out$sf
-        self$state <- utils::modifyList(self$state, list(modified = TRUE, void = rnorm(1L)))
+        self$state <- utils::modifyList(
+          self$state,
+          list(modified = TRUE, void = rnorm(1L))
+        )
       })
 
       # --------------------------------------------------------------------------------------
@@ -479,7 +536,6 @@ StepDelimit <- R6::R6Class(
       # Map Observers
 
       shiny::observeEvent(input$map_shape_click, {
-
         if (input$map_shape_click$group == 'extent') {
           return()
         }
@@ -514,7 +570,6 @@ StepDelimit <- R6::R6Class(
         #       vars$polygon_selected <- input$map_shape_click$id
 
         #     } else {
-
 
         #     }
 
@@ -588,7 +643,8 @@ StepDelimit <- R6::R6Class(
         shiny::tagList(
           shiny::tags$div(
             class = 'tip',
-            shiny::tags$strong(..('Delimit: ')), shiny::HTML(text = self$state$info)
+            shiny::tags$strong(..('Delimit: ')),
+            shiny::HTML(text = self$state$info)
           )
         )
       })
@@ -604,31 +660,56 @@ StepDelimit <- R6::R6Class(
       })
 
       shiny::observeEvent(input$link_guide, {
-
         steps <-
           tibble::tribble(
-            ~tab, ~view, ~selector,
-            'steps', 'step_delimit', 'map',
-            'steps', 'step_delimit', 'act_draw_polygon_btn',
-            'steps', 'step_delimit', 'act_edit_polygon_btn',
-            'steps', 'step_delimit', 'act_remove_polygon_btn',
-            'steps', 'step_delimit', 'act_cut_polygon_btn',
-            'steps', 'step_delimit', 'act_select_invert_btn',
-            'steps', 'step_delimit', 'act_group_btn',
-            'steps', 'step_delimit', 'act_ok_btn',
-            'steps', 'step_delimit', 'act_clear_btn'
+            ~tab,
+            ~view,
+            ~selector,
+            'steps',
+            'step_delimit',
+            'map',
+            'steps',
+            'step_delimit',
+            'act_draw_polygon_btn',
+            'steps',
+            'step_delimit',
+            'act_edit_polygon_btn',
+            'steps',
+            'step_delimit',
+            'act_remove_polygon_btn',
+            'steps',
+            'step_delimit',
+            'act_cut_polygon_btn',
+            'steps',
+            'step_delimit',
+            'act_select_invert_btn',
+            'steps',
+            'step_delimit',
+            'act_group_btn',
+            'steps',
+            'step_delimit',
+            'act_ok_btn',
+            'steps',
+            'step_delimit',
+            'act_clear_btn'
           )
 
         steps$intro <- c(
-          ..('STEP 2: Set polygon(s)<br>Use this screen to add one or more polygons area.<img src=\'assets/img/stratify.gif\' width = "300px"/></div>'),
-          ..('<b>Stratify</b>: Draw. <br><br>Click to draw a polygon representing the polygons of interest in the map frame.'),
+          ..(
+            'STEP 2: Set polygon(s)<br>Use this screen to add one or more polygons area.<img src=\'assets/img/stratify.gif\' width = "300px"/></div>'
+          ),
+          ..(
+            '<b>Stratify</b>: Draw. <br><br>Click to draw a polygon representing the polygons of interest in the map frame.'
+          ),
           ..('<b>Stratify</b>: (dev).'),
           ..('<b>Stratify</b>: (dev).'),
           ..('<b>Stratify</b>: (dev).'),
           ..('<b>Stratify</b>: (dev).'),
           ..('<b>Stratify</b>: (dev).'),
           ..('<b>Extent</b>: Save. <br><br>Click to save the polygon layer.'),
-          ..('<b>Extent</b>: Rollback or Clear. <br><br>Click to rollback or delete the current polygon layer.')
+          ..(
+            '<b>Extent</b>: Rollback or Clear. <br><br>Click to rollback or delete the current polygon layer.'
+          )
         )
 
         steps <- steps |>
@@ -641,44 +722,116 @@ StepDelimit <- R6::R6Class(
       })
 
       shiny::observeEvent(input$link_guide_ui, {
-
         steps <-
           tibble::tribble(
-            ~element, ~group, ~tooltip, ~description,
-            'map_zoom_in_btn', ..('Map'), ..('Zoom In'), ..('Zoom in to the map'),
-            'map_zoom_out_btn', ..('Map'), ..('Zoom Out'), ..('Zoom out from the map'),
-            'map_zoom_extent_btn', ..('Map'), ..('Zoom to layer\'s extent'), NA,
-            'map .leaflet-control-fullscreen', ..('Map'), ..('FullScreen'), ..('Enlarge the map to fullscreen'),
-            'act_ok_btn', ..('Delimit'), ..('Validate modifications'), ..('Validate the modifications done in this page'),
-            'act_rollback_btn', ..('Delimit'), ..('Undo'), ..('Undo the last modification'),
-            'act_clear_btn', ..('Delimit'), ..('Reset page'), ..('Reset the whole page by clearing all outlines created or imported'),
-            'act_upload_btn', ..('Draw'), ..('Add polygon(s) layer from file'), ..('Open a dialog window to browse and upload a file from your computer containing the polygon or the outlines.'),
-            'act_draw_polygon_btn', ..('Draw'), ..('Draw a new polygon'), ..('Draw new outlines straight in this page'),
-            'act_edit_polygon_btn', ..('Draw'), ..('Edit an polygon'), ..('Edit the outlines already drawn or imported'),
-            'act_remove_polygon_btn', ..('Draw'), ..('Remove an polygon'), ..('Remove outlines already drawn or imported'),
-            'act_cut_polygon_btn', ..('Draw'), ..('Split an polygon'), ..('Draw a line passing throughout an already existing polygon')
+            ~element,
+            ~group,
+            ~tooltip,
+            ~description,
+            'map_zoom_in_btn',
+            ..('Map'),
+            ..('Zoom In'),
+            ..('Zoom in to the map'),
+            'map_zoom_out_btn',
+            ..('Map'),
+            ..('Zoom Out'),
+            ..('Zoom out from the map'),
+            'map_zoom_extent_btn',
+            ..('Map'),
+            ..('Zoom to layer\'s extent'),
+            NA,
+            'map .leaflet-control-fullscreen',
+            ..('Map'),
+            ..('FullScreen'),
+            ..('Enlarge the map to fullscreen'),
+            'act_ok_btn',
+            ..('Delimit'),
+            ..('Validate modifications'),
+            ..('Validate the modifications done in this page'),
+            'act_rollback_btn',
+            ..('Delimit'),
+            ..('Undo'),
+            ..('Undo the last modification'),
+            'act_clear_btn',
+            ..('Delimit'),
+            ..('Reset page'),
+            ..(
+              'Reset the whole page by clearing all outlines created or imported'
+            ),
+            'act_upload_btn',
+            ..('Draw'),
+            ..('Add polygon(s) layer from file'),
+            ..(
+              'Open a dialog window to browse and upload a file from your computer containing the polygon or the outlines.'
+            ),
+            'act_draw_polygon_btn',
+            ..('Draw'),
+            ..('Draw a new polygon'),
+            ..('Draw new outlines straight in this page'),
+            'act_edit_polygon_btn',
+            ..('Draw'),
+            ..('Edit an polygon'),
+            ..('Edit the outlines already drawn or imported'),
+            'act_remove_polygon_btn',
+            ..('Draw'),
+            ..('Remove an polygon'),
+            ..('Remove outlines already drawn or imported'),
+            'act_cut_polygon_btn',
+            ..('Draw'),
+            ..('Split an polygon'),
+            ..('Draw a line passing throughout an already existing polygon')
           )
 
         step_instructions <-
           tibble::tribble(
-            ~element,                          ~instructions,
-            'map_zoom_in_btn',                 ..('The zooming can also be done by moving the mouse wheel.'),
-            'map_zoom_out_btn',                ..('The zooming can also be done by moving the mouse wheel.'),
-            'map .leaflet-control-fullscreen', ..('Press `Esc` to exit the fullscreen.'),
-            'act_upload_btn',                  ..('File formats accepted are zipped shape files, kml and kmz. Only files containing polygons are accepted'),
-            'act_draw_polygon_btn',            ..('Move the satellite image so that the page displays the area of interest. After clicking on the %s icon, move the pointer to the image just outside the area of interest and left-click of the mouse to start drawing the polygon. Move the mouse clockwise and left-click to mark each corner of the polygon. Continue moving and left-clicking until you reach to where you started. Left-click again on the first marker to close the polygon. If you need to move the background image, hold the left-click of the mouse and move the pointer. '),
-            'act_edit_polygon_btn',            ..('After clicking on the %s icon, select first one polygon and then move the corners. Re-click on the icon to exit the editing.'),
-            'act_remove_polygon_btn',          ..('After clicking on the %s icon, click on one polygon to remove it. Re-click on the icon to exit the remove. '),
-            'act_cut_polygon_btn',             ..('Click on any existing markers to end the line and execute the split. Re-click on the icon to exit the split.')
+            ~element,
+            ~instructions,
+            'map_zoom_in_btn',
+            ..('The zooming can also be done by moving the mouse wheel.'),
+            'map_zoom_out_btn',
+            ..('The zooming can also be done by moving the mouse wheel.'),
+            'map .leaflet-control-fullscreen',
+            ..('Press `Esc` to exit the fullscreen.'),
+            'act_upload_btn',
+            ..(
+              'File formats accepted are zipped shape files, kml and kmz. Only files containing polygons are accepted'
+            ),
+            'act_draw_polygon_btn',
+            ..(
+              'Move the satellite image so that the page displays the area of interest. After clicking on the %s icon, move the pointer to the image just outside the area of interest and left-click of the mouse to start drawing the polygon. Move the mouse clockwise and left-click to mark each corner of the polygon. Continue moving and left-clicking until you reach to where you started. Left-click again on the first marker to close the polygon. If you need to move the background image, hold the left-click of the mouse and move the pointer. '
+            ),
+            'act_edit_polygon_btn',
+            ..(
+              'After clicking on the %s icon, select first one polygon and then move the corners. Re-click on the icon to exit the editing.'
+            ),
+            'act_remove_polygon_btn',
+            ..(
+              'After clicking on the %s icon, click on one polygon to remove it. Re-click on the icon to exit the remove. '
+            ),
+            'act_cut_polygon_btn',
+            ..(
+              'Click on any existing markers to end the line and execute the split. Re-click on the icon to exit the split.'
+            )
           )
 
         step_warnings <-
           tibble::tribble(
-            ~element,                          ~warning,
-            'act_ok_btn',                      ..('You cannot move to the next pages before having selected at least one outline and validated modifications.'),
-            'act_rollback_btn',                ..('Only the last modification can be undo.'),
-            'act_clear_btn',                   ..('By resetting this page you also clear all items created or imported in the other pages.'),
-            'act_upload_btn',                  ..('Do not confuse polygon and line geometry types. In a GIS software lines may look like polygons. To understand the difference between line and polygon types click [here](https://www.igismap.com/gis-tutorial-basic-spatial-elements-points-lines-and-polygons/). If you have a file containing lines, you first need to convert the lines into polygons before importing the file. You can use [QGIS](https://www.qgis.org/en/site/) and follow [these instructionss](https://gis.stackexchange.com/questions/207463/converting-line-to-polygon-using-qgis) to convert the lines into polygons.')
+            ~element,
+            ~warning,
+            'act_ok_btn',
+            ..(
+              'You cannot move to the next pages before having selected at least one outline and validated modifications.'
+            ),
+            'act_rollback_btn',
+            ..('Only the last modification can be undo.'),
+            'act_clear_btn',
+            ..(
+              'By resetting this page you also clear all items created or imported in the other pages.'
+            ),
+            'act_upload_btn',
+            ..(
+              'Do not confuse polygon and line geometry types. In a GIS software lines may look like polygons. To understand the difference between line and polygon types click [here](https://www.igismap.com/gis-tutorial-basic-spatial-elements-points-lines-and-polygons/). If you have a file containing lines, you first need to convert the lines into polygons before importing the file. You can use [QGIS](https://www.qgis.org/en/site/) and follow [these instructionss](https://gis.stackexchange.com/questions/207463/converting-line-to-polygon-using-qgis) to convert the lines into polygons.'
+            )
           )
 
         steps <- steps |>
@@ -686,18 +839,33 @@ StepDelimit <- R6::R6Class(
           dplyr::left_join(step_warnings, by = 'element') |>
           dplyr::mutate(
             element = sprintf('#%s', ns(element)),
-            intro   = sprintf('<b>%s</b>: %s.', group, tooltip),
-            intro   = ifelse(is.na(description), intro, sprintf('%s<br><br>%s', intro, description)),
-            intro   = ifelse(is.na(instructions), intro, sprintf('%s<br><br>%s', intro, instructions)),
-            intro   = ifelse(is.na(warning), intro, sprintf('%s<br><br>%s: %s', intro, icon('alert-rhombus', size = 's'), warning))
+            intro = sprintf('<b>%s</b>: %s.', group, tooltip),
+            intro = ifelse(
+              is.na(description),
+              intro,
+              sprintf('%s<br><br>%s', intro, description)
+            ),
+            intro = ifelse(
+              is.na(instructions),
+              intro,
+              sprintf('%s<br><br>%s', intro, instructions)
+            ),
+            intro = ifelse(
+              is.na(warning),
+              intro,
+              sprintf(
+                '%s<br><br>%s: %s',
+                intro,
+                icon('alert-rhombus', size = 's'),
+                warning
+              )
+            )
           )
 
         private$guide(steps = steps)
       })
-
     },
     checkState = function(value) {
-
       polygons_count <- data$polygons_count
       polygons_selected_count <- data$polygons_selected_count
       polygons_count_multi <- data$polygons_count_multi
@@ -715,21 +883,20 @@ StepDelimit <- R6::R6Class(
       value$can_ungroup <- value$mode == 'select' & polygons_count_multi > 0L
 
       if (value$mode == 'select') {
-
         if (value$can_commit | value$can_rollback) {
-
           value$info <- sprintf(
-            ..('The polygon layer is modified. Confirm and save (%s) the polygon(s) or rollback (%s) the changes.'),
+            ..(
+              'The polygon layer is modified. Confirm and save (%s) the polygon(s) or rollback (%s) the changes.'
+            ),
             as.character(icon('check')),
             as.character(icon('delete-outline'))
           )
-
         } else {
-
           if (polygons_count == 0L) {
-
             value$info <- sprintf(
-              ..('Sampling can be subdivided into one or more polygons. Add a polygon layer (%s). Use the editing tools (%s) to modify the layer. Finally click on the map to select the polygon(s).'),
+              ..(
+                'Sampling can be subdivided into one or more polygons. Add a polygon layer (%s). Use the editing tools (%s) to modify the layer. Finally click on the map to select the polygon(s).'
+              ),
               as.character(icon('layers-plus')),
               as.character(icon('shape-square-plus'))
             )
@@ -742,44 +909,54 @@ StepDelimit <- R6::R6Class(
             #     as.character(icon('shape-square-plus'))
             #   )
           } else if (polygons_selected_count == 0L) {
-
             value$info <- sprintf(
-              ..('<span class="blink">The polygon layer is defined but none polygon are selected. Click on the layer to select polygon(s).</span>')
+              ..(
+                '<span class="blink">The polygon layer is defined but none polygon are selected. Click on the layer to select polygon(s).</span>'
+              )
             )
-
           } else {
-
             value$info <- sprintf(
-              ..('%s on %s polygon(s) are defined. You can go to the next step or continue to edit the polygon layer.'),
+              ..(
+                '%s on %s polygon(s) are defined. You can go to the next step or continue to edit the polygon layer.'
+              ),
               polygons_selected_count,
               polygons_count
             )
-
           }
         }
       } else if (value$mode == 'draw_polygon') {
         value$info <- sprintf(
-          ..('Click on the map to draw a new polygon. Click (%s) again to cancel.'),
+          ..(
+            'Click on the map to draw a new polygon. Click (%s) again to cancel.'
+          ),
           as.character(icon('shape-square-plus'))
         )
       } else if (value$mode == 'edit_polygon') {
         value$info <- sprintf(
-          ..('Click on the map to select a polygon and edit the nodes. Click (%s) again to finish.'),
+          ..(
+            'Click on the map to select a polygon and edit the nodes. Click (%s) again to finish.'
+          ),
           as.character(icon('shape-square-edit'))
         )
       } else if (value$mode == 'cut_polygon') {
         value$info <- sprintf(
-          ..('Click on the map to cut one or several polygon(s) with a line. Click (%s) again to cancel.'),
+          ..(
+            'Click on the map to cut one or several polygon(s) with a line. Click (%s) again to cancel.'
+          ),
           as.character(icon('shape-square-remove'))
         )
       } else if (value$mode == 'remove_polygon') {
         value$info <- sprintf(
-          ..('Click on the map to remove a polygon. Click (%s) again to cancel.'),
+          ..(
+            'Click on the map to remove a polygon. Click (%s) again to cancel.'
+          ),
           as.character(icon('scissors-cutting'))
         )
       } else if (value$mode == 'group_polygon') {
         value$info <- sprintf(
-          ..('Click on the polygons to union them. Click (%s) again to cancel.'),
+          ..(
+            'Click on the polygons to union them. Click (%s) again to cancel.'
+          ),
           as.character(icon('scissors-cutting'))
         )
       }
@@ -787,13 +964,36 @@ StepDelimit <- R6::R6Class(
       value
     },
     onStateChange = function() {
-
-      shinyjs::toggleClass(selector = 'i.mdi-shape-square-plus', class = 'mdi-selected', condition = state$mode == 'draw_polygon')
-      shinyjs::toggleClass(selector = 'i.mdi-shape-square-edit', class = 'mdi-selected', condition = state$mode == 'edit_polygon')
-      shinyjs::toggleClass(selector = 'i.mdi-shape-square-remove', class = 'mdi-selected', condition = state$mode == 'remove_polygon')
-      shinyjs::toggleClass(selector = 'i.mdi-scissors-cutting', class = 'mdi-selected', condition = state$mode == 'cut_polygon')
-      shinyjs::toggleClass(selector = 'i.mdi-select-all', class = 'mdi-selected', condition = state$mode == 'group_polygon')
-      shinyjs::toggleClass(selector = 'i.mdi-select-group', class = 'mdi-selected', condition = state$mode == 'ungroup_polygon')
+      shinyjs::toggleClass(
+        selector = 'i.mdi-shape-square-plus',
+        class = 'mdi-selected',
+        condition = state$mode == 'draw_polygon'
+      )
+      shinyjs::toggleClass(
+        selector = 'i.mdi-shape-square-edit',
+        class = 'mdi-selected',
+        condition = state$mode == 'edit_polygon'
+      )
+      shinyjs::toggleClass(
+        selector = 'i.mdi-shape-square-remove',
+        class = 'mdi-selected',
+        condition = state$mode == 'remove_polygon'
+      )
+      shinyjs::toggleClass(
+        selector = 'i.mdi-scissors-cutting',
+        class = 'mdi-selected',
+        condition = state$mode == 'cut_polygon'
+      )
+      shinyjs::toggleClass(
+        selector = 'i.mdi-select-all',
+        class = 'mdi-selected',
+        condition = state$mode == 'group_polygon'
+      )
+      shinyjs::toggleClass(
+        selector = 'i.mdi-select-group',
+        class = 'mdi-selected',
+        condition = state$mode == 'ungroup_polygon'
+      )
 
       if (data$polygons_count == 0L) {
         shinyjs::disable(id = 'act_download_kml')
@@ -890,7 +1090,6 @@ StepDelimit <- R6::R6Class(
       }
 
       super$onStateChange()
-
     }
   )
 )
