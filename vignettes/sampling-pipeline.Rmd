@@ -303,7 +303,7 @@ m <- leaflet_communities(
   communities,
   community_id_col = "name",
   secondary_batches = sec,
-  buildings_sf = buildings,
+  buildings_list = buildings_cropped,
   roads_list = roads,
   out_file = "output/maps/sampling_map.html"
 )
@@ -373,7 +373,7 @@ roads <- fetch_community_roads(
 leaflet_communities(
   batched, communities,
   secondary_batches = split_batches(samples, n_batches = 5L, set = "secondary"),
-  buildings_sf = buildings_filtered,
+  buildings_list = buildings_cropped,
   roads_list = roads,
   out_file = "output/maps/sampling_map.html"
 )

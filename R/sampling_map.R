@@ -448,6 +448,32 @@ map_all_communities <- function(
       sec_bufs <- buffer_sf(sec_pts, buffer_radius)
       map_name <- paste0(nm, "_secondary")
 
+      # Compute min distance across ALL points (primary + secondary)
+      all_community_pts <- dplyr::bind_rows(pri_pts, sec_pts)
+      all_min_dist <- min_pairwise_dist(all_community_pts)
+      sec_subtitle <- NULL
+      if (!is.na(all_min_dist)) {
+        n_sec <- nrow(sec_pts)
+        sec_subtitle <- paste0(
+          n_sec,
+          " points | min dist (all): ",
+          all_min_dist,
+          "m"
+        )
+        if ("point_id" %in% names(sec_pts)) {
+          sec_subtitle <- paste0(
+            n_sec,
+            " points (",
+            min(sec_pts$point_id),
+            "-",
+            max(sec_pts$point_id),
+            ") | min dist (all): ",
+            all_min_dist,
+            "m"
+          )
+        }
+      }
+
       cli::cli_inform("Generating map for {.val {nm}} (secondary)...")
       result[[map_name]] <- map_community(
         community_name = nm,
@@ -457,6 +483,7 @@ map_all_communities <- function(
         color_batches = color_batches,
         point_shape = secondary_shape,
         buffer_color = secondary_buffer_color,
+        subtitle = sec_subtitle,
         ...
       )
     }
@@ -753,8 +780,10 @@ map_cropped_buildings <- function(
 #' @param community_id_col Column name for community ID.
 #' @param secondary_batches Optional named list of `sf` POINT objects
 #'   (output of [split_batches()] with `set = "secondary"`).
-#' @param buildings_sf Optional `sf` POLYGON of building footprints.
-#'   Hidden by default; toggle via layer control.
+#' @param buildings_list Optional named list of `sf` objects, one per
+#'   community (output of [crop_buildings()]). Accepts both POINT
+#'   (centroids) and POLYGON (footprints). Hidden by default; toggle
+#'   via layer control.
 #' @param roads_list Optional named list of `sf` LINESTRING objects
 #'   (output of [fetch_community_roads()]). One entry per community.
 #' @param color_batches Logical. If `TRUE` (default) and points have
@@ -784,7 +813,7 @@ map_cropped_buildings <- function(
 #' m <- leaflet_communities(
 #'   pri, communities,
 #'   secondary_batches = sec,
-#'   buildings_sf = buildings,
+#'   buildings_list = buildings_cropped,
 #'   roads_list = roads
 #' )
 #' m
@@ -794,7 +823,7 @@ leaflet_communities <- function(
   communities_sf,
   community_id_col = "name",
   secondary_batches = NULL,
-  buildings_sf = NULL,
+  buildings_list = NULL,
   roads_list = NULL,
   color_batches = TRUE,
   buffer_radius = 50,
@@ -815,9 +844,15 @@ leaflet_communities <- function(
 
   community_names <- names(primary_batches)
 
+  # --- Dissolve multipolygon communities for navigation ---
+  dissolved_sf <- communities_sf |>
+    dplyr::select(dplyr::all_of(community_id_col)) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(community_id_col))) |>
+    dplyr::summarise(.groups = "drop")
+
   # --- Compute community bounding boxes for navigation ---
-  bbox_list <- lapply(seq_len(nrow(communities_sf)), function(i) {
-    bb <- sf::st_bbox(communities_sf[i, ])
+  bbox_list <- lapply(seq_len(nrow(dissolved_sf)), function(i) {
+    bb <- sf::st_bbox(dissolved_sf[i, ])
     c(
       unname(bb[["ymin"]]),
       unname(bb[["xmin"]]),
@@ -825,7 +860,7 @@ leaflet_communities <- function(
       unname(bb[["xmax"]])
     )
   })
-  names(bbox_list) <- communities_sf[[community_id_col]]
+  names(bbox_list) <- dissolved_sf[[community_id_col]]
   bbox_json <- jsonlite::toJSON(bbox_list, auto_unbox = TRUE)
 
   # --- Create map with custom panes via onRender ---
@@ -937,19 +972,41 @@ leaflet_communities <- function(
   }
 
   # --- Buildings layer (pane: buildings, hidden by default) ---
-  if (!is.null(buildings_sf) && nrow(buildings_sf) > 0L) {
-    # Keep only geometry for performance
-    bldg_geom <- sf::st_sf(geometry = sf::st_geometry(buildings_sf))
-    m <- m |>
-      leaflet::addPolygons(
-        data = bldg_geom,
-        color = building_color,
-        weight = 0.5,
-        fillColor = building_color,
-        fillOpacity = 0.4,
-        group = "Buildings",
-        options = leaflet::pathOptions(pane = "buildings")
-      )
+  if (!is.null(buildings_list) && length(buildings_list) > 0L) {
+    all_bldg <- tryCatch(
+      dplyr::bind_rows(buildings_list),
+      error = function(e) NULL
+    )
+    if (!is.null(all_bldg) && nrow(all_bldg) > 0L) {
+      bldg_geom <- sf::st_sf(geometry = sf::st_geometry(all_bldg))
+      geom_type <- unique(as.character(sf::st_geometry_type(bldg_geom)))
+      is_polygon <- any(geom_type %in% c("POLYGON", "MULTIPOLYGON"))
+
+      if (is_polygon) {
+        m <- m |>
+          leaflet::addPolygons(
+            data = bldg_geom,
+            color = building_color,
+            weight = 0.5,
+            fillColor = building_color,
+            fillOpacity = 0.4,
+            group = "Buildings",
+            options = leaflet::pathOptions(pane = "buildings")
+          )
+      } else {
+        m <- m |>
+          leaflet::addCircleMarkers(
+            data = bldg_geom,
+            radius = 2,
+            color = building_color,
+            fillColor = building_color,
+            fillOpacity = 0.6,
+            stroke = FALSE,
+            group = "Buildings",
+            options = leaflet::pathOptions(pane = "buildings")
+          )
+      }
+    }
   }
 
   # --- Batch color palette ---
@@ -963,7 +1020,44 @@ leaflet_communities <- function(
     leaflet::colorFactor("Set1", domain = all_batches)
   }
 
-  # --- Primary and secondary points/buffers ---
+  # --- Pass 1: Add ALL buffers first (renders below points) ---
+  for (nm in community_names) {
+    pri_pts <- primary_batches[[nm]]
+    if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
+
+    pri_bufs <- buffer_sf(pri_pts, buffer_radius)
+    m <- m |>
+      leaflet::addPolygons(
+        data = pri_bufs,
+        color = primary_buffer_color,
+        fillColor = primary_buffer_color,
+        fillOpacity = 0.2,
+        weight = 1,
+        group = "Primary Buffers",
+        options = leaflet::pathOptions(pane = "buffers")
+      )
+
+    if (
+      !is.null(secondary_batches) &&
+        nm %in% names(secondary_batches) &&
+        inherits(secondary_batches[[nm]], "sf") &&
+        nrow(secondary_batches[[nm]]) > 0L
+    ) {
+      sec_bufs <- buffer_sf(secondary_batches[[nm]], buffer_radius)
+      m <- m |>
+        leaflet::addPolygons(
+          data = sec_bufs,
+          color = secondary_buffer_color,
+          fillColor = secondary_buffer_color,
+          fillOpacity = 0.2,
+          weight = 1,
+          group = "Secondary Buffers",
+          options = leaflet::pathOptions(pane = "buffers")
+        )
+    }
+  }
+
+  # --- Pass 2: Add ALL points on top of buffers ---
   for (nm in community_names) {
     pri_pts <- primary_batches[[nm]]
     if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
@@ -994,19 +1088,6 @@ leaflet_communities <- function(
       paste0("<b>ID:</b> ", pri_labels, "<br><b>Community:</b> ", nm)
     }
 
-    # Primary buffers
-    pri_bufs <- buffer_sf(pri_pts, buffer_radius)
-    m <- m |>
-      leaflet::addPolygons(
-        data = pri_bufs,
-        color = primary_buffer_color,
-        fillColor = primary_buffer_color,
-        fillOpacity = 0.2,
-        weight = 1,
-        group = "Primary Buffers",
-        options = leaflet::pathOptions(pane = "buffers")
-      )
-
     # Primary points (circles)
     m <- m |>
       leaflet::addCircleMarkers(
@@ -1023,7 +1104,7 @@ leaflet_communities <- function(
         options = leaflet::pathOptions(pane = "points")
       )
 
-    # Secondary points + buffers
+    # Secondary points
     if (
       !is.null(secondary_batches) &&
         nm %in% names(secondary_batches) &&
@@ -1063,19 +1144,6 @@ leaflet_communities <- function(
         )
       }
 
-      # Secondary buffers
-      sec_bufs <- buffer_sf(sec_pts, buffer_radius)
-      m <- m |>
-        leaflet::addPolygons(
-          data = sec_bufs,
-          color = secondary_buffer_color,
-          fillColor = secondary_buffer_color,
-          fillOpacity = 0.2,
-          weight = 1,
-          group = "Secondary Buffers",
-          options = leaflet::pathOptions(pane = "buffers")
-        )
-
       # Secondary points (triangle markers via SVG data URI icons)
       svg_template <- '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,14 0,14" fill="%s" stroke="white" stroke-width="1.5"/></svg>'
       icon_urls <- vapply(
@@ -1113,7 +1181,7 @@ leaflet_communities <- function(
   # --- Layer control ---
   overlay_groups <- "Communities"
   if (!is.null(roads_list)) overlay_groups <- c(overlay_groups, "Roads")
-  if (!is.null(buildings_sf)) overlay_groups <- c(overlay_groups, "Buildings")
+  if (!is.null(buildings_list)) overlay_groups <- c(overlay_groups, "Buildings")
   overlay_groups <- c(
     overlay_groups,
     "Primary Points",
@@ -1135,7 +1203,7 @@ leaflet_communities <- function(
     )
 
   # Hide buildings by default (heavy layer)
-  if (!is.null(buildings_sf)) {
+  if (!is.null(buildings_list)) {
     m <- m |> leaflet::hideGroup("Buildings")
   }
 

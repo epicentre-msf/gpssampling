@@ -514,7 +514,7 @@ test_that("leaflet_communities with buildings and roads", {
   m <- leaflet_communities(
     pri_batches,
     d$community,
-    buildings_sf = buildings,
+    buildings_list = list(test_community = buildings),
     roads_list = roads_list
   )
 

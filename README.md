@@ -96,7 +96,7 @@ map_all_communities(samples, communities, out_dir = "output/maps")
 # Interactive leaflet map with buildings, roads, and navigation
 leaflet_communities(
   batched, communities,
-  buildings_sf = buildings,
+  buildings_list = buildings_cropped,
   roads_list = fetch_community_roads(communities, road_dir = "output/roads"),
   out_file = "output/maps/map.html"
 )
