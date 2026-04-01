@@ -863,7 +863,9 @@ fetch_roads <- function(
   }
   # --- Check cache first ---
   if (!is.null(cache_file) && file.exists(cache_file)) {
-    cli::cli_inform("    Loading cached roads from {.path {cache_file}}...")
+    cli::cli_inform(
+      "    Loading cached roads from {.path {basename(cache_file)}}..."
+    )
     roads <- tryCatch(
       sf::st_read(cache_file, quiet = TRUE),
       error = function(e) {
@@ -921,7 +923,7 @@ fetch_roads <- function(
       {
         fs::dir_create(fs::path_dir(cache_file), recurse = TRUE)
         sf::st_write(roads, cache_file, quiet = TRUE, delete_dsn = TRUE)
-        cli::cli_inform("    Cached roads to {.path {cache_file}}.")
+        cli::cli_inform("    Cached roads to {.path {basename(cache_file)}}.")
       },
       error = function(e) {
         cli::cli_warn("Failed to cache roads: {e$message}")
