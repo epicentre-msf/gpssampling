@@ -9,7 +9,7 @@ leaflet_communities(
   communities_sf,
   community_id_col = "name",
   secondary_batches = NULL,
-  buildings_sf = NULL,
+  buildings_list = NULL,
   roads_list = NULL,
   color_batches = TRUE,
   buffer_radius = 50,
@@ -34,8 +34,10 @@ leaflet_communities(
 \item{secondary_batches}{Optional named list of \code{sf} POINT objects
 (output of \code{\link[=split_batches]{split_batches()}} with \code{set = "secondary"}).}
 
-\item{buildings_sf}{Optional \code{sf} POLYGON of building footprints.
-Hidden by default; toggle via layer control.}
+\item{buildings_list}{Optional named list of \code{sf} objects, one per
+community (output of \code{\link[=crop_buildings]{crop_buildings()}}). Accepts both POINT
+(centroids) and POLYGON (footprints). Hidden by default; toggle
+via layer control.}
 
 \item{roads_list}{Optional named list of \code{sf} LINESTRING objects
 (output of \code{\link[=fetch_community_roads]{fetch_community_roads()}}). One entry per community.}
@@ -91,7 +93,7 @@ sec <- split_batches(samples, n_batches = 5L, set = "secondary")
 m <- leaflet_communities(
   pri, communities,
   secondary_batches = sec,
-  buildings_sf = buildings,
+  buildings_list = buildings_cropped,
   roads_list = roads
 )
 m

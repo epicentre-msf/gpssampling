@@ -448,30 +448,36 @@ map_all_communities <- function(
       sec_bufs <- buffer_sf(sec_pts, buffer_radius)
       map_name <- paste0(nm, "_secondary")
 
-      # Compute min distance across ALL points (primary + secondary)
+      # Compute min distances: secondary-only and all (primary + secondary)
+      sec_min_dist <- min_pairwise_dist(sec_pts)
       all_community_pts <- dplyr::bind_rows(pri_pts, sec_pts)
       all_min_dist <- min_pairwise_dist(all_community_pts)
       sec_subtitle <- NULL
-      if (!is.na(all_min_dist)) {
-        n_sec <- nrow(sec_pts)
+      n_sec <- nrow(sec_pts)
+      if (!is.na(sec_min_dist) && !is.na(all_min_dist)) {
         sec_subtitle <- paste0(
           n_sec,
-          " points | min dist (all): ",
-          all_min_dist,
-          "m"
+          " points"
         )
         if ("point_id" %in% names(sec_pts)) {
           sec_subtitle <- paste0(
-            n_sec,
-            " points (",
+            sec_subtitle,
+            " (",
             min(sec_pts$point_id),
             "-",
             max(sec_pts$point_id),
-            ") | min dist (all): ",
-            all_min_dist,
-            "m"
+            ")"
           )
         }
+        sec_subtitle <- paste0(
+          sec_subtitle,
+          " | min dist (sec): ",
+          sec_min_dist,
+          "m",
+          " | min dist (all): ",
+          all_min_dist,
+          "m"
+        )
       }
 
       cli::cli_inform("Generating map for {.val {nm}} (secondary)...")

@@ -10,6 +10,7 @@ sample_communities(
   min_distance = 50,
   seed,
   joint = FALSE,
+  print_table = TRUE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
   road_dir = NULL
@@ -40,6 +41,11 @@ drawn together in a single pass, enforcing the minimum distance
 across both sets. This reduces clustering in the secondary points.
 The first \code{n_required} drawn become primary; the rest become
 secondary. Default \code{FALSE} (independent draws).}
+
+\item{print_table}{Logical. If \code{TRUE} (default), prints a
+\code{\link[flextable:flextable]{flextable::flextable()}} summary at the end of sampling with
+per-community statistics: buildings available, points drawn,
+distance metrics, constraint violations, and coverage.}
 
 \item{road_types}{Character vector of OSM \verb{highway=*} values used
 for the post-selection proximity ordering.}

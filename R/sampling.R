@@ -653,11 +653,9 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
 
     if (!any(candidate_mask)) {
       n_still_needed <- n_draw - length(selected_idx)
-      cli::cli_inform(c(
-        "!" = paste0(
-          "No candidates beyond {min_distance}m. ",
-          "Drawing {n_still_needed} remaining point{?s} randomly."
-        )
+      cli::cli_warn(c(
+        "No candidates beyond {min_distance}m.",
+        "i" = "Drawing {n_still_needed} remaining point{?s} randomly (distance constraint relaxed)."
       ))
       drawn <- sample(
         remaining_idx,
@@ -1117,6 +1115,47 @@ order_selected_points <- function(
 }
 
 
+#' Compute pairwise distance statistics for a set of points
+#'
+#' Returns a named list with min, mean, median distances (meters) and
+#' the count of pairs closer than a threshold.
+#'
+#' @param pts_sf An `sf` POINT object.
+#' @param threshold Numeric distance threshold in meters.
+#' @return A named list: `min_dist`, `mean_dist`, `median_dist`,
+#'   `n_violations` (pairs closer than `threshold`), `n_points`.
+#' @noRd
+compute_distance_stats <- function(pts_sf, threshold = 50) {
+  n <- nrow(pts_sf)
+  if (n < 2L) {
+    return(list(
+      min_dist = NA_real_,
+      mean_dist = NA_real_,
+      median_dist = NA_real_,
+      n_violations = 0L,
+      n_points = n
+    ))
+  }
+
+  utm_crs <- auto_utm_crs(pts_sf)
+  pts_utm <- sf::st_transform(pts_sf, utm_crs)
+  dmat <- as.numeric(sf::st_distance(pts_utm))
+  dmat <- matrix(dmat, nrow = n)
+  diag(dmat) <- NA_real_
+
+  # Upper triangle only (avoid double-counting pairs)
+  upper_dists <- dmat[upper.tri(dmat)]
+
+  list(
+    min_dist = round(min(upper_dists, na.rm = TRUE), 1),
+    mean_dist = round(mean(upper_dists, na.rm = TRUE), 1),
+    median_dist = round(stats::median(upper_dists, na.rm = TRUE), 1),
+    n_violations = sum(upper_dists < threshold, na.rm = TRUE),
+    n_points = n
+  )
+}
+
+
 #' Sample buildings across communities
 #'
 #' Top-level function that orchestrates reproducible spatial sampling
@@ -1144,13 +1183,17 @@ order_selected_points <- function(
 #'   across both sets. This reduces clustering in the secondary points.
 #'   The first `n_required` drawn become primary; the rest become
 #'   secondary. Default `FALSE` (independent draws).
+#' @param print_table Logical. If `TRUE` (default), prints a
+#'   [flextable::flextable()] summary at the end of sampling with
+#'   per-community statistics: buildings available, points drawn,
+#'   distance metrics, constraint violations, and coverage.
 #' @param road_types Character vector of OSM `highway=*` values used
 #'   for the post-selection proximity ordering.
 #' @param road_dir Optional directory for cached road files. If
 #'   provided, roads are read from / saved to
 #'   `road_dir/{community_name}.gpkg`. Use [fetch_community_roads()]
 #'   to pre-download roads. Default `NULL` (no caching).
-#' @return A named list of lists. Each community element contains:
+#' @return A named list. Each community element contains:
 #'   `$buildings` (all candidates), `$primary` (selected points with
 #'   `selection_order` and `point_id`), `$secondary` (replacement
 #'   points with `selection_order` and `point_id`, at most `n_required`
@@ -1158,7 +1201,11 @@ order_selected_points <- function(
 #'   secondary are ordered by road proximity (nearest-neighbour chain).
 #'   The `point_id` column is globally unique across all communities
 #'   and sets: primary IDs are numbered 1..N_total_primary, secondary
-#'   IDs continue from N_total_primary + 1.
+#'   IDs continue from N_total_primary + 1. When `print_table = TRUE`,
+#'   the result carries two attributes: `attr(, "summary_table")` (a
+#'   [flextable::flextable()] object ready for rendering in reports)
+#'   and `attr(, "summary_df")` (the underlying data frame). Access
+#'   via `attr(result, "summary_table")`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -1184,6 +1231,7 @@ sample_communities <- function(
   min_distance = 50,
   seed,
   joint = FALSE,
+  print_table = TRUE,
   road_types = c(
     "primary",
     "secondary",
@@ -1198,6 +1246,7 @@ sample_communities <- function(
   checkmate::assert_number(min_distance, lower = 0)
   checkmate::assert_int(seed)
   checkmate::assert_flag(joint)
+  checkmate::assert_flag(print_table)
 
   community_names <- names(buildings_list)
 
@@ -1313,6 +1362,145 @@ sample_communities <- function(
   cli::cli_inform(
     "Assigned {primary_offset} primary + {secondary_offset - primary_offset} secondary point IDs."
   )
+
+  # --- Summary table ---
+  if (print_table) {
+    rows <- list()
+    for (nm in sorted_names) {
+      n_buildings <- nrow(res[[nm]]$buildings)
+      n_pri <- nrow(res[[nm]]$primary)
+      n_sec <- nrow(res[[nm]]$secondary)
+      n_all <- n_pri + n_sec
+
+      pri_stats <- compute_distance_stats(res[[nm]]$primary, min_distance)
+      sec_stats <- compute_distance_stats(res[[nm]]$secondary, min_distance)
+      all_pts <- dplyr::bind_rows(res[[nm]]$primary, res[[nm]]$secondary)
+      all_stats <- compute_distance_stats(all_pts, min_distance)
+
+      rows <- c(
+        rows,
+        list(data.frame(
+          community = nm,
+          buildings = n_buildings,
+          n_primary = n_pri,
+          n_secondary = n_sec,
+          n_total = n_all,
+          coverage_pct = round(n_all / n_buildings * 100, 1),
+          min_dist_requested = min_distance,
+          min_dist_primary = pri_stats$min_dist,
+          min_dist_secondary = sec_stats$min_dist,
+          min_dist_all = all_stats$min_dist,
+          mean_dist_all = all_stats$mean_dist,
+          median_dist_all = all_stats$median_dist,
+          violations = all_stats$n_violations,
+          mode = if (joint) "joint" else "independent",
+          seed = res[[nm]]$seed,
+          stringsAsFactors = FALSE
+        ))
+      )
+    }
+
+    summary_df <- do.call(rbind, rows)
+
+    # Add totals row
+    totals <- data.frame(
+      community = "TOTAL",
+      buildings = sum(summary_df$buildings),
+      n_primary = sum(summary_df$n_primary),
+      n_secondary = sum(summary_df$n_secondary),
+      n_total = sum(summary_df$n_total),
+      coverage_pct = round(
+        sum(summary_df$n_total) / sum(summary_df$buildings) * 100,
+        1
+      ),
+      min_dist_requested = min_distance,
+      min_dist_primary = round(
+        min(summary_df$min_dist_primary, na.rm = TRUE),
+        1
+      ),
+      min_dist_secondary = round(
+        min(summary_df$min_dist_secondary, na.rm = TRUE),
+        1
+      ),
+      min_dist_all = round(
+        min(summary_df$min_dist_all, na.rm = TRUE),
+        1
+      ),
+      mean_dist_all = round(
+        mean(summary_df$mean_dist_all, na.rm = TRUE),
+        1
+      ),
+      median_dist_all = round(
+        stats::median(summary_df$median_dist_all, na.rm = TRUE),
+        1
+      ),
+      violations = sum(summary_df$violations),
+      mode = if (joint) "joint" else "independent",
+      seed = NA_integer_,
+      stringsAsFactors = FALSE
+    )
+    summary_df <- rbind(summary_df, totals)
+
+    ft <- flextable::flextable(summary_df) |>
+      flextable::set_header_labels(
+        community = "Community",
+        buildings = "Buildings",
+        n_primary = "Primary",
+        n_secondary = "Secondary",
+        n_total = "Total Pts",
+        coverage_pct = "Coverage %",
+        min_dist_requested = "Min Dist\nRequested (m)",
+        min_dist_primary = "Min Dist\nPrimary (m)",
+        min_dist_secondary = "Min Dist\nSecondary (m)",
+        min_dist_all = "Min Dist\nAll (m)",
+        mean_dist_all = "Mean Dist\nAll (m)",
+        median_dist_all = "Median Dist\nAll (m)",
+        violations = "Pairs <\nThreshold",
+        mode = "Mode",
+        seed = "Seed"
+      ) |>
+      flextable::bold(i = nrow(summary_df)) |>
+      flextable::hline(i = nrow(summary_df) - 1L) |>
+      flextable::colformat_num(j = "seed", big.mark = "") |>
+      flextable::autofit() |>
+      flextable::set_caption("Sampling Summary")
+
+    # Highlight violations
+    violation_rows <- which(summary_df$violations > 0L)
+    if (length(violation_rows) > 0L) {
+      ft <- ft |>
+        flextable::color(
+          i = violation_rows,
+          j = "violations",
+          color = "red"
+        ) |>
+        flextable::bold(
+          i = violation_rows,
+          j = "violations"
+        )
+    }
+
+    # Highlight min_dist_all below threshold
+    below_threshold <- which(
+      !is.na(summary_df$min_dist_all) &
+        summary_df$min_dist_all < min_distance
+    )
+    if (length(below_threshold) > 0L) {
+      ft <- ft |>
+        flextable::color(
+          i = below_threshold,
+          j = "min_dist_all",
+          color = "red"
+        ) |>
+        flextable::bold(
+          i = below_threshold,
+          j = "min_dist_all"
+        )
+    }
+
+    attr(res, "summary_table") <- ft
+    attr(res, "summary_df") <- summary_df
+  }
 
   res
 }
