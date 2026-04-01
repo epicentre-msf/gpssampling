@@ -1463,7 +1463,13 @@ sample_communities <- function(
       flextable::hline(i = nrow(summary_df) - 1L) |>
       flextable::colformat_num(j = "seed", big.mark = "") |>
       flextable::autofit() |>
-      flextable::set_caption("Sampling Summary")
+      flextable::set_caption("Sampling Summary") |>
+      flextable::add_footer_lines(
+        paste(
+          "Coverage % = total sampled points (primary + secondary)",
+          "as a percentage of buildings in each community."
+        )
+      )
 
     # Highlight violations
     violation_rows <- which(summary_df$violations > 0L)

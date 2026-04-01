@@ -56,7 +56,7 @@ provided, roads are read from / saved to
 to pre-download roads. Default \code{NULL} (no caching).}
 }
 \value{
-A named list of lists. Each community element contains:
+A named list. Each community element contains:
 \verb{$buildings} (all candidates), \verb{$primary} (selected points with
 \code{selection_order} and \code{point_id}), \verb{$secondary} (replacement
 points with \code{selection_order} and \code{point_id}, at most \code{n_required}
@@ -64,7 +64,11 @@ per community), \verb{$min_distance}, and \verb{$seed}. Both primary and
 secondary are ordered by road proximity (nearest-neighbour chain).
 The \code{point_id} column is globally unique across all communities
 and sets: primary IDs are numbered 1..N_total_primary, secondary
-IDs continue from N_total_primary + 1.
+IDs continue from N_total_primary + 1. When \code{print_table = TRUE},
+the result carries two attributes: \code{attr(, "summary_table")} (a
+\code{\link[flextable:flextable]{flextable::flextable()}} object ready for rendering in reports)
+and \code{attr(, "summary_df")} (the underlying data frame). Access
+via \code{attr(result, "summary_table")}.
 }
 \description{
 Top-level function that orchestrates reproducible spatial sampling
