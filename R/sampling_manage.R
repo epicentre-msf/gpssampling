@@ -169,12 +169,16 @@ create_buffer_tiles <- function(
   checkmate::assert_int(max_zoom, lower = min_zoom, upper = 20L)
 
   buffers_4326 <- sf::st_transform(buffers_sf, 4326L)
+  buffers_3857 <- sf::st_transform(buffers_sf, 3857L)
   bbox <- sf::st_bbox(buffers_4326)
 
-  n_zooms <- max_zoom - min_zoom + 1L
   cli::cli_inform(
     "Rendering buffer tiles ({nrow(buffers_sf)} buffer{?s}, zoom {min_zoom}-{max_zoom})..."
   )
+
+  if (file.exists(out_file)) {
+    file.remove(out_file)
+  }
 
   con <- DBI::dbConnect(RSQLite::SQLite(), out_file)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
@@ -182,20 +186,38 @@ create_buffer_tiles <- function(
   DBI::dbExecute(
     con,
     paste0(
-      "CREATE TABLE IF NOT EXISTS tiles ",
+      "CREATE TABLE tiles ",
       "(x INT, y INT, z INT, s INT, image BLOB, ",
       "PRIMARY KEY(x, y, z, s))"
     )
   )
   DBI::dbExecute(
     con,
-    "CREATE TABLE IF NOT EXISTS info (minzoom INT, maxzoom INT)"
+    paste0(
+      "CREATE TABLE info (",
+      "tilenumbering TEXT, ",
+      "minzoom INTEGER, ",
+      "maxzoom INTEGER, ",
+      "url TEXT DEFAULT '', ",
+      "ellipsoid INTEGER DEFAULT 0, ",
+      "inverted_y INTEGER DEFAULT 0, ",
+      "timecolumn TEXT DEFAULT 'no', ",
+      "expireminutes INTEGER DEFAULT -1",
+      ")"
+    )
   )
   DBI::dbExecute(
     con,
-    "INSERT INTO info VALUES (?, ?)",
+    paste0(
+      "INSERT INTO info ",
+      "(tilenumbering, minzoom, maxzoom, url, ellipsoid, inverted_y, ",
+      "timecolumn, expireminutes) ",
+      "VALUES ('simple', ?, ?, '', 0, 0, 'no', -1)"
+    ),
     params = list(min_zoom, max_zoom)
   )
+
+  merc_origin <- 20037508.342789244
 
   for (z in seq(min_zoom, max_zoom)) {
     tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox, zoom = z))
@@ -203,6 +225,9 @@ create_buffer_tiles <- function(
     cli::cli_inform(
       "  Zoom {z}: {nrow(tiles)} tile{?s}..."
     )
+
+    n_tiles <- 2L^z
+    tile_size <- 2 * merc_origin / n_tiles
 
     for (j in seq_len(nrow(tiles))) {
       tx <- tiles$x[j]
@@ -223,10 +248,17 @@ create_buffer_tiles <- function(
         next
       }
 
-      tile_buffers <- buffers_4326[hits, ]
+      merc_bb <- c(
+        xmin = -merc_origin + tx * tile_size,
+        xmax = -merc_origin + (tx + 1L) * tile_size,
+        ymax = merc_origin - ty * tile_size,
+        ymin = merc_origin - (ty + 1L) * tile_size
+      )
+
+      tile_buffers <- buffers_3857[hits, ]
       img_raw <- render_tile(
         tile_buffers,
-        tile_bb,
+        merc_bb,
         fill_color,
         boundary_color
       )
@@ -244,8 +276,12 @@ create_buffer_tiles <- function(
 
 
 #' Render a single map tile as PNG bytes
+#'
+#' @param buffers_sf An `sf` object in EPSG:3857 (Web Mercator).
+#' @param merc_bb Named numeric vector with xmin, xmax, ymin, ymax in Mercator
+#'   metres.
 #' @noRd
-render_tile <- function(buffers_sf, tile_bb, fill_color, boundary_color) {
+render_tile <- function(buffers_sf, merc_bb, fill_color, boundary_color) {
   tmp <- tempfile(fileext = ".png")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -256,11 +292,11 @@ render_tile <- function(buffers_sf, tile_bb, fill_color, boundary_color) {
     bg = "transparent",
     type = "cairo"
   )
-  graphics::par(mar = c(0, 0, 0, 0))
+  graphics::par(mar = c(0, 0, 0, 0), xaxs = "i", yaxs = "i")
   graphics::plot.new()
   graphics::plot.window(
-    xlim = c(tile_bb[["xmin"]], tile_bb[["xmax"]]),
-    ylim = c(tile_bb[["ymin"]], tile_bb[["ymax"]])
+    xlim = c(merc_bb[["xmin"]], merc_bb[["xmax"]]),
+    ylim = c(merc_bb[["ymin"]], merc_bb[["ymax"]])
   )
   graphics::plot(
     sf::st_geometry(buffers_sf),
