@@ -45,6 +45,7 @@
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/console.out.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/create_buffer_tiles.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/create_buffers.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/create_earth_project.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/crop_buildings.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/degrees.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/deleteDirCache.html</loc></url>
@@ -57,6 +58,7 @@
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/explore.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/exploreDirCache.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/export_points.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/filter_buildings.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/findFreePort.html</loc></url>
@@ -100,10 +102,12 @@
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/isShinyApp.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/isShinyServerApp.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/launcher.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/lin_launcher.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/mac_launcher.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/map_community.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/map_overview.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/matchValue.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/modalDialog.html</loc></url>

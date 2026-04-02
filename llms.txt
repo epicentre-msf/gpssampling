@@ -78,17 +78,29 @@ buildings_list <- fetch_osm_buildings(st_read("boundary.gpkg")) |>
   crop_buildings(st_read("communities.gpkg"), community_id_col = "name")
 
 # Sample with minimum-distance constraints
+# joint = TRUE draws primary + secondary together (less clustered)
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_1 = 30, community_2 = 80),
   min_distance = 50,
-  seed = 250292L
+  seed = 250292L,
+  joint = TRUE
 )
 
 # Batch, export (GPX + GeoPackage + OsmAnd tiles), and map
+# Use a single integer for uniform batches, or a named vector per community:
 batched <- split_batches(samples, n_batches = 5L, set = "primary")
+# batched <- split_batches(samples, n_batches = c(community_1 = 5, community_2 = 3), set = "primary")
 export_points(batched, out_dir = "output", set = "primary")
 map_all_communities(samples, communities, out_dir = "output/maps")
+
+# Interactive leaflet map with buildings, roads, and navigation
+leaflet_communities(
+  batched, communities,
+  buildings_list = buildings_cropped,
+  roads_list = fetch_community_roads(communities, road_dir = "output/roads"),
+  out_file = "output/maps/map.html"
+)
 ```
 
 See
@@ -258,6 +270,9 @@ git checkout dev
 - [`create_buffers()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffers.md)
   : Create circular buffers around points
 
+- [`create_earth_project()`](https://epicentre-msf.github.io/gpssampling/reference/create_earth_project.md)
+  : Create a Google Earth (KML) project
+
 - [`crop_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/crop_buildings.md)
   : Crop buildings to community polygons
 
@@ -266,6 +281,9 @@ git checkout dev
 
 - [`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)
   : Export sample points, buffers, and tile overlays
+
+- [`fetch_community_roads()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.md)
+  : Fetch OSM roads for all communities
 
 - [`fetch_osm_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.md)
   : Fetch OSM building footprints
@@ -295,6 +313,9 @@ git checkout dev
   : Create a launcher on the desktop for Windows (.bat), Mac (.command),
   or Linux (.sh)
 
+- [`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)
+  : Interactive leaflet map of all communities
+
 - [`lin_launcher()`](https://epicentre-msf.github.io/gpssampling/reference/lin_launcher.md)
   : Create a launcher and updater for Linux (.sh)
 
@@ -306,6 +327,9 @@ git checkout dev
 
 - [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)
   : Create a static map for one community
+
+- [`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md)
+  : Map cropped buildings per community
 
 - [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)
   : Create an overview map of all communities

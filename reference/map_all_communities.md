@@ -1,18 +1,25 @@
 # Generate all maps and optionally save to files
 
-Creates per-community maps (primary + secondary, batch-colored) and an
-overview map. Always returns the ggplot objects. Optionally saves as PNG
-files.
+Creates separate primary and secondary maps per community
+(batch-colored), plus an overview map. Each map shows one point set with
+its buffers, point IDs, and min pairwise distance. Always returns the
+ggplot objects. Optionally saves as PNG files.
 
 ## Usage
 
 ``` r
 map_all_communities(
-  samples_list,
+  primary_batches,
   communities_sf,
   community_id_col = "name",
+  secondary_batches = NULL,
+  color_batches = TRUE,
   out_dir = NULL,
   buffer_radius = 50,
+  primary_shape = 16,
+  secondary_shape = 17,
+  primary_buffer_color = "#90EE9066",
+  secondary_buffer_color = "#ADD8E666",
   width = 10,
   height = 12,
   dpi = 300,
@@ -22,12 +29,11 @@ map_all_communities(
 
 ## Arguments
 
-- samples_list:
+- primary_batches:
 
-  Output of
-  [`sample_communities()`](https://epicentre-msf.github.io/gpssampling/reference/sample_communities.md)
-  or
-  [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md).
+  Named list of `sf` POINT objects (output of
+  [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md)
+  with `set = "primary"`).
 
 - communities_sf:
 
@@ -37,6 +43,17 @@ map_all_communities(
 
   Column name for community ID.
 
+- secondary_batches:
+
+  Optional named list of `sf` POINT objects (output of
+  [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md)
+  with `set = "secondary"`). If `NULL`, only primary maps are created.
+
+- color_batches:
+
+  Logical. If `TRUE` (default) and points have `assigned_batch`, color
+  by batch.
+
 - out_dir:
 
   Optional output directory. If provided, maps are saved as PNG. If
@@ -45,6 +62,22 @@ map_all_communities(
 - buffer_radius:
 
   Buffer radius in meters. Default `50`.
+
+- primary_shape:
+
+  Marker shape for primary maps. Default `16` (filled circle).
+
+- secondary_shape:
+
+  Marker shape for secondary maps. Default `17` (filled triangle).
+
+- primary_buffer_color:
+
+  Buffer fill for primary maps. Default `"#90EE9066"`.
+
+- secondary_buffer_color:
+
+  Buffer fill for secondary maps. Default `"#ADD8E666"`.
 
 - width:
 
@@ -62,20 +95,22 @@ map_all_communities(
 
   Additional arguments passed to
   [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)
-  (colors, basemap, etc.).
+  (basemap, label_size, etc.).
 
 ## Value
 
-A named list of `ggplot` objects: `overview`, `{name}_primary`,
+A named list of `ggplot` objects: `overview`, `{name}_primary`, and
 `{name}_secondary` for each community.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
+pri <- split_batches(samples, n_batches = 5L, set = "primary")
+sec <- split_batches(samples, n_batches = 5L, set = "secondary")
 maps <- map_all_communities(
-  samples, communities,
-  community_id_col = "name",
+  pri, communities,
+  secondary_batches = sec,
   out_dir = "output/maps"
 )
 } # }

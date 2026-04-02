@@ -8,10 +8,9 @@ clarity.
 
 ``` r
 map_overview(
-  samples_list,
+  points_list,
   communities_sf,
   community_id_col = "name",
-  set = "primary",
   buffer_radius = 50,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
@@ -25,12 +24,11 @@ map_overview(
 
 ## Arguments
 
-- samples_list:
+- points_list:
 
-  Output of
-  [`sample_communities()`](https://epicentre-msf.github.io/gpssampling/reference/sample_communities.md)
-  or
-  [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md).
+  Named list of `sf` POINT objects (output of
+  [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md),
+  or raw `sf` per community).
 
 - communities_sf:
 
@@ -39,10 +37,6 @@ map_overview(
 - community_id_col:
 
   Column name for community ID.
-
-- set:
-
-  Which point set: `"primary"` or `"secondary"`.
 
 - buffer_radius:
 
@@ -84,6 +78,6 @@ A `ggplot` object.
 
 ``` r
 if (FALSE) { # \dontrun{
-p <- map_overview(samples, communities, community_id_col = "name")
+p <- map_overview(primary_batches, communities, community_id_col = "name")
 } # }
 ```

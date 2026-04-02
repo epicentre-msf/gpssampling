@@ -59,6 +59,9 @@
 - [`create_buffers()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffers.md)
   : Create circular buffers around points
 
+- [`create_earth_project()`](https://epicentre-msf.github.io/gpssampling/reference/create_earth_project.md)
+  : Create a Google Earth (KML) project
+
 - [`crop_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/crop_buildings.md)
   : Crop buildings to community polygons
 
@@ -67,6 +70,9 @@
 
 - [`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)
   : Export sample points, buffers, and tile overlays
+
+- [`fetch_community_roads()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.md)
+  : Fetch OSM roads for all communities
 
 - [`fetch_osm_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.md)
   : Fetch OSM building footprints
@@ -96,6 +102,9 @@
   : Create a launcher on the desktop for Windows (.bat), Mac (.command),
   or Linux (.sh)
 
+- [`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)
+  : Interactive leaflet map of all communities
+
 - [`lin_launcher()`](https://epicentre-msf.github.io/gpssampling/reference/lin_launcher.md)
   : Create a launcher and updater for Linux (.sh)
 
@@ -107,6 +116,9 @@
 
 - [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)
   : Create a static map for one community
+
+- [`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md)
+  : Map cropped buildings per community
 
 - [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)
   : Create an overview map of all communities

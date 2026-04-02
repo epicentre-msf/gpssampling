@@ -142,18 +142,20 @@ community):</p>
 <div class="section level3">
 <h3 id="visualize-cropped-buildings">Visualize cropped buildings<a class="anchor" aria-label="anchor" href="#visualize-cropped-buildings"></a>
 </h3>
-<p><code>map_cropped_buildings()</code> produces a horizontal strip of
-maps (one per community) showing the community boundary and its building
-centroids:</p>
+<p><code><a href="../reference/map_cropped_buildings.html">map_cropped_buildings()</a></code> produces one large map per
+community showing the community boundary and actual building footprint
+shapes over an OSM basemap. Pass the original building polygons – the
+function clips them to each community internally:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">map_cropped_buildings</span><span class="op">(</span></span>
-<span>  <span class="va">buildings_list</span>,</span>
+<code class="sourceCode R"><span><span class="va">crop_maps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_cropped_buildings.html">map_cropped_buildings</a></span><span class="op">(</span></span>
+<span>  <span class="va">buildings</span>,</span>
 <span>  <span class="va">communities</span>,</span>
-<span>  community_id_col <span class="op">=</span> <span class="st">"name"</span></span>
+<span>  community_id_col <span class="op">=</span> <span class="st">"name"</span>,</span>
+<span>  out_dir <span class="op">=</span> <span class="st">"output/maps"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"cropped_buildings.png"</span>, <span class="va">p</span>, width <span class="op">=</span> <span class="fl">18</span>, height <span class="op">=</span> <span class="fl">6</span>, dpi <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Or save individually:</span></span>
+<span><span class="co"># ggplot2::ggsave("community_one.png", crop_maps[["community_one"]],</span></span>
+<span><span class="co">#   width = 12, height = 12, dpi = 300)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="sample-with-minimum-distance-constraints">Sample with minimum-distance constraints<a class="anchor" aria-label="anchor" href="#sample-with-minimum-distance-constraints"></a>
@@ -189,11 +191,32 @@ sequence field workers follow on the ground.</li>
 <code>selection_order</code>), <code>$secondary</code> (remaining
 points), <code>$buildings</code> (all candidates), and metadata
 (<code>$min_distance</code>, <code>$seed</code>).</p>
+<div class="section level4">
+<h4 id="joint-sampling-less-clustered-secondary-points">Joint sampling (less clustered secondary points)<a class="anchor" aria-label="anchor" href="#joint-sampling-less-clustered-secondary-points"></a>
+</h4>
+<p>By default, primary and secondary points are drawn independently. The
+secondary draw restarts on the reduced pool, which can cluster when the
+pool is sparse. Pass <code>joint = TRUE</code> to draw both sets in a
+single pass:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_communities.html">sample_communities</a></span><span class="op">(</span></span>
+<span>  <span class="va">buildings_list</span>,</span>
+<span>  n_required <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">80</span>, community_two <span class="op">=</span> <span class="fl">60</span><span class="op">)</span>,</span>
+<span>  min_distance <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">250292L</span>,</span>
+<span>  joint <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>With <code>joint = TRUE</code>, the algorithm draws
+<code>2 * n_required</code> points in one call, enforcing the distance
+constraint across all of them. The first <code>n_required</code> drawn
+become primary; the rest become secondary. If the pool is too small for
+the full secondary set, all remaining points fill in.</p>
 <p><strong>Reproducibility:</strong> Same <code>seed</code> + same
 inputs = same output on any platform. The algorithm uses
 <code><a href="https://withr.r-lib.org/reference/with_seed.html" class="external-link">withr::with_seed()</a></code> (not <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>),
 deterministic point sorting, and alphabetical community processing
 order.</p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -204,16 +227,24 @@ order.</p>
 </h3>
 <p>Distribute points across field teams using round-robin
 assignment:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">batched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_batches.html">split_batches</a></span><span class="op">(</span><span class="va">samples</span>, n_batches <span class="op">=</span> <span class="fl">5L</span>, set <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span></code></pre></div>
 <p>Each community’s points get an <code>assigned_batch</code> column (1
 to 5).</p>
+<p>If different communities need different team counts, pass a named
+vector:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">batched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_batches.html">split_batches</a></span><span class="op">(</span></span>
+<span>  <span class="va">samples</span>,</span>
+<span>  n_batches <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">5</span>, community_two <span class="op">=</span> <span class="fl">3</span>, community_three <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
+<span>  set <span class="op">=</span> <span class="st">"primary"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="create-buffers">Create buffers<a class="anchor" aria-label="anchor" href="#create-buffers"></a>
 </h3>
 <p>Generate circular buffer polygons around sampled points:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">buffers</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_buffers.html">create_buffers</a></span><span class="op">(</span><span class="va">samples</span>, radius <span class="op">=</span> <span class="fl">50</span>, set <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -221,7 +252,7 @@ to 5).</p>
 </h3>
 <p><code><a href="../reference/export_points.html">export_points()</a></code> writes points, buffer polygons, and
 OsmAnd-compatible SQLite tile overlays to a structured directory:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/export_points.html">export_points</a></span><span class="op">(</span></span>
 <span>  <span class="va">batched</span>,</span>
 <span>  out_dir <span class="op">=</span> <span class="st">"output"</span>,</span>
@@ -253,7 +284,7 @@ and enable via Configure map &gt; Overlay/Underlay.</p>
 <div class="section level3">
 <h3 id="zip-and-email">Zip and email<a class="anchor" aria-label="anchor" href="#zip-and-email"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Zip GPX + SQLite files for field distribution</span></span>
 <span><span class="va">zips</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/zip_points.html">zip_points</a></span><span class="op">(</span><span class="st">"output"</span>, prefix <span class="op">=</span> <span class="st">"project-"</span>, sets <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span>
 <span></span>
@@ -270,7 +301,7 @@ and enable via Configure map &gt; Overlay/Underlay.</p>
 </h2>
 <p>Generate publication-quality static maps using <code>ggplot2</code> +
 basemap tiles:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate all maps (overview + per-community for primary and secondary)</span></span>
 <span><span class="va">maps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_all_communities.html">map_all_communities</a></span><span class="op">(</span></span>
 <span>  <span class="va">samples</span>,</span>
@@ -292,7 +323,7 @@ community</li>
 per community</li>
 </ul>
 <p>You can also generate individual maps:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Single community map</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_community.html">map_community</a></span><span class="op">(</span></span>
 <span>  <span class="st">"community_one"</span>,</span>
@@ -305,11 +336,56 @@ per community</li>
 <span><span class="co"># Customize before saving</span></span>
 <span><span class="va">p</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"community_one.png"</span>, <span class="va">p</span>, width <span class="op">=</span> <span class="fl">10</span>, height <span class="op">=</span> <span class="fl">12</span>, dpi <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="interactive-leaflet-map">Interactive leaflet map<a class="anchor" aria-label="anchor" href="#interactive-leaflet-map"></a>
+</h3>
+<p><code><a href="../reference/leaflet_communities.html">leaflet_communities()</a></code> creates an interactive map with
+layer toggles, community navigation, fullscreen, and multiple base
+maps:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pri</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_batches.html">split_batches</a></span><span class="op">(</span><span class="va">samples</span>, n_batches <span class="op">=</span> <span class="fl">5L</span>, set <span class="op">=</span> <span class="st">"primary"</span><span class="op">)</span></span>
+<span><span class="va">sec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_batches.html">split_batches</a></span><span class="op">(</span><span class="va">samples</span>, n_batches <span class="op">=</span> <span class="fl">5L</span>, set <span class="op">=</span> <span class="st">"secondary"</span><span class="op">)</span></span>
+<span><span class="va">roads</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fetch_community_roads.html">fetch_community_roads</a></span><span class="op">(</span></span>
+<span>  <span class="va">communities</span>, community_id_col <span class="op">=</span> <span class="st">"name"</span>,</span>
+<span>  road_dir <span class="op">=</span> <span class="st">"output/roads"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/leaflet_communities.html">leaflet_communities</a></span><span class="op">(</span></span>
+<span>  <span class="va">pri</span>,</span>
+<span>  <span class="va">communities</span>,</span>
+<span>  community_id_col <span class="op">=</span> <span class="st">"name"</span>,</span>
+<span>  secondary_batches <span class="op">=</span> <span class="va">sec</span>,</span>
+<span>  buildings_list <span class="op">=</span> <span class="va">buildings_cropped</span>,</span>
+<span>  roads_list <span class="op">=</span> <span class="va">roads</span>,</span>
+<span>  out_file <span class="op">=</span> <span class="st">"output/maps/sampling_map.html"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Features:</p>
+<ul>
+<li>
+<strong>Z-ordered layers</strong>: communities (bottom) &gt; roads
+&gt; buildings &gt; buffers &gt; points (top)</li>
+<li>
+<strong>Grouped toggles</strong>: “Primary Points”, “Secondary
+Points”, “Buildings”, “Roads”</li>
+<li>
+<strong>Distinct shapes</strong>: circles for primary, triangles for
+secondary</li>
+<li>
+<strong>Community navigation</strong>: panel with quick-zoom buttons
+per community</li>
+<li>
+<strong>Fullscreen</strong>: via <code>leaflet.extras</code> (if
+installed)</li>
+<li>
+<strong>Buildings</strong>: hidden by default (toggle via layer
+control)</li>
+</ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="complete-workflow">Complete Workflow<a class="anchor" aria-label="anchor" href="#complete-workflow"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epicentre-msf.github.io/gpssampling/">gpssampling</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -318,9 +394,11 @@ per community</li>
 <span><span class="va">state_boundary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"boundary.gpkg"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. Fetch, filter, crop buildings</span></span>
-<span><span class="va">buildings_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="va">state_boundary</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/filter_buildings.html">filter_buildings</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/crop_buildings.html">crop_buildings</a></span><span class="op">(</span><span class="va">communities</span>, community_id_col <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span>
+<span><span class="va">buildings</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="va">state_boundary</span><span class="op">)</span></span>
+<span><span class="va">buildings_filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filter_buildings.html">filter_buildings</a></span><span class="op">(</span><span class="va">buildings</span><span class="op">)</span></span>
+<span><span class="va">buildings_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crop_buildings.html">crop_buildings</a></span><span class="op">(</span></span>
+<span>  <span class="va">buildings_filtered</span>, <span class="va">communities</span>, community_id_col <span class="op">=</span> <span class="st">"name"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Sample (seed is required — choose any integer for reproducibility)</span></span>
 <span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_communities.html">sample_communities</a></span><span class="op">(</span></span>
@@ -330,7 +408,8 @@ per community</li>
 <span>    community_three <span class="op">=</span> <span class="fl">85</span>, community_four <span class="op">=</span> <span class="fl">60</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  min_distance <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">250292L</span></span>
+<span>  seed <span class="op">=</span> <span class="fl">250292L</span>,</span>
+<span>  joint <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 4. Batch and export</span></span>
@@ -344,11 +423,24 @@ per community</li>
 <span><span class="co"># 5. Zip for field teams</span></span>
 <span><span class="va">zips</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/zip_points.html">zip_points</a></span><span class="op">(</span><span class="st">"output"</span>, prefix <span class="op">=</span> <span class="st">"project-"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Generate maps</span></span>
+<span><span class="co"># 6. Generate static maps</span></span>
 <span><span class="fu"><a href="../reference/map_all_communities.html">map_all_communities</a></span><span class="op">(</span></span>
 <span>  <span class="va">samples</span>, <span class="va">communities</span>,</span>
 <span>  community_id_col <span class="op">=</span> <span class="st">"name"</span>,</span>
 <span>  out_dir <span class="op">=</span> <span class="st">"output/maps"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 7. Generate interactive map</span></span>
+<span><span class="va">roads</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fetch_community_roads.html">fetch_community_roads</a></span><span class="op">(</span></span>
+<span>  <span class="va">communities</span>, community_id_col <span class="op">=</span> <span class="st">"name"</span>,</span>
+<span>  road_dir <span class="op">=</span> <span class="st">"output/roads"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/leaflet_communities.html">leaflet_communities</a></span><span class="op">(</span></span>
+<span>  <span class="va">batched</span>, <span class="va">communities</span>,</span>
+<span>  secondary_batches <span class="op">=</span> <span class="fu"><a href="../reference/split_batches.html">split_batches</a></span><span class="op">(</span><span class="va">samples</span>, n_batches <span class="op">=</span> <span class="fl">5L</span>, set <span class="op">=</span> <span class="st">"secondary"</span><span class="op">)</span>,</span>
+<span>  buildings_list <span class="op">=</span> <span class="va">buildings_cropped</span>,</span>
+<span>  roads_list <span class="op">=</span> <span class="va">roads</span>,</span>
+<span>  out_file <span class="op">=</span> <span class="st">"output/maps/sampling_map.html"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -385,7 +477,12 @@ per community</li>
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/sample_communities.html">sample_communities()</a></code></td>
-<td>Random sampling with proximity-based ordering</td>
+<td>Random sampling with proximity-based ordering (<code>joint</code>
+option)</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/fetch_community_roads.html">fetch_community_roads()</a></code></td>
+<td>Pre-download OSM roads per community (with caching)</td>
 </tr>
 </tbody>
 </table>
@@ -405,7 +502,7 @@ per community</li>
 <tbody>
 <tr class="odd">
 <td><code><a href="../reference/split_batches.html">split_batches()</a></code></td>
-<td>Assign round-robin batch numbers to points</td>
+<td>Assign round-robin batch numbers (uniform or per-community)</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/create_buffers.html">create_buffers()</a></code></td>
@@ -431,7 +528,7 @@ per community</li>
 </table>
 </div>
 <div class="section level3">
-<h3 id="static-mapping">Static Mapping<a class="anchor" aria-label="anchor" href="#static-mapping"></a>
+<h3 id="mapping">Mapping<a class="anchor" aria-label="anchor" href="#mapping"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -444,20 +541,24 @@ per community</li>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>map_cropped_buildings()</code></td>
-<td>Side-by-side panels of cropped buildings per community</td>
+<td><code><a href="../reference/map_cropped_buildings.html">map_cropped_buildings()</a></code></td>
+<td>Building footprint maps per community</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/map_community.html">map_community()</a></code></td>
-<td>Per-community map with batch coloring</td>
+<td>Per-community static map with batch coloring</td>
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/map_overview.html">map_overview()</a></code></td>
-<td>Zoomed-out overview of all communities</td>
+<td>Zoomed-out static overview of all communities</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/map_all_communities.html">map_all_communities()</a></code></td>
-<td>Generate and optionally save all maps</td>
+<td>Generate and optionally save all static maps</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/leaflet_communities.html">leaflet_communities()</a></code></td>
+<td>Interactive leaflet map with layer controls</td>
 </tr>
 </tbody>
 </table>

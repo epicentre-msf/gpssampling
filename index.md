@@ -78,17 +78,29 @@ buildings_list <- fetch_osm_buildings(st_read("boundary.gpkg")) |>
   crop_buildings(st_read("communities.gpkg"), community_id_col = "name")
 
 # Sample with minimum-distance constraints
+# joint = TRUE draws primary + secondary together (less clustered)
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_1 = 30, community_2 = 80),
   min_distance = 50,
-  seed = 250292L
+  seed = 250292L,
+  joint = TRUE
 )
 
 # Batch, export (GPX + GeoPackage + OsmAnd tiles), and map
+# Use a single integer for uniform batches, or a named vector per community:
 batched <- split_batches(samples, n_batches = 5L, set = "primary")
+# batched <- split_batches(samples, n_batches = c(community_1 = 5, community_2 = 3), set = "primary")
 export_points(batched, out_dir = "output", set = "primary")
 map_all_communities(samples, communities, out_dir = "output/maps")
+
+# Interactive leaflet map with buildings, roads, and navigation
+leaflet_communities(
+  batched, communities,
+  buildings_list = buildings_cropped,
+  roads_list = fetch_community_roads(communities, road_dir = "output/roads"),
+  out_file = "output/maps/map.html"
+)
 ```
 
 See

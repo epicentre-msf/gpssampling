@@ -1,8 +1,8 @@
 # Create a static map for one community
 
 Renders a publication-quality map showing a community polygon, sampled
-points (optionally colored by batch), and buffer zones. Returns a
-`ggplot` object that can be further customized before saving.
+points (colored by batch), and buffer zones for a single point set
+(primary or secondary). Returns a `ggplot` object.
 
 ## Usage
 
@@ -12,7 +12,10 @@ map_community(
   community_sf,
   points_sf,
   buffers_sf = NULL,
-  batch_colors = TRUE,
+  color_batches = TRUE,
+  show_labels = TRUE,
+  label_size = 1.8,
+  point_shape = 16,
   basemap = "OpenStreetMap.HOT",
   point_color = "#e97a52",
   buffer_color = "#90EE9066",
@@ -36,16 +39,29 @@ map_community(
 - points_sf:
 
   An `sf` POINT of sampled points. If it has an `assigned_batch` column,
-  batch coloring is available.
+  batch coloring is applied.
 
 - buffers_sf:
 
-  Optional `sf` POLYGON of buffers. If `NULL`, no buffers are drawn.
+  Optional `sf` POLYGON of buffers.
 
-- batch_colors:
+- color_batches:
 
-  Logical. If `TRUE` and `points_sf` has `assigned_batch`, color by
-  batch. Default `TRUE`.
+  Logical. If `TRUE` and `points_sf` has an `assigned_batch` column,
+  color points by batch. Default `TRUE`.
+
+- show_labels:
+
+  Logical. If `TRUE` and `points_sf` has a `point_id` column, display
+  point IDs as text labels. Default `TRUE`.
+
+- label_size:
+
+  Numeric, text size for point ID labels. Default `1.8`.
+
+- point_shape:
+
+  Marker shape. Default `16` (filled circle).
 
 - basemap:
 
@@ -55,7 +71,7 @@ map_community(
 
 - point_color:
 
-  Uniform color when `batch_colors = FALSE`. Default `"#e97a52"`.
+  Uniform color when no `assigned_batch`. Default `"#e97a52"`.
 
 - buffer_color:
 
@@ -75,7 +91,8 @@ map_community(
 
 - subtitle:
 
-  Optional subtitle.
+  Optional subtitle. If `NULL`, auto-generated from point count, ID
+  range, and min pairwise distance.
 
 ## Value
 
@@ -89,7 +106,7 @@ Requires `ggplot2`, `ggspatial`, and `tidyterra` (all in Suggests).
 
 ``` r
 if (FALSE) { # \dontrun{
-p <- map_community("community_one", community_poly, sampled_pts, bufs)
+p <- map_community("community_one", comm_poly, pri_pts, bufs)
 ggplot2::ggsave("community_one.png", p, width = 10, height = 12)
 } # }
 ```

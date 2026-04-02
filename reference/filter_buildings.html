@@ -50,7 +50,8 @@ with OSM labeling, and user footprints without OSM.</p>
 <span>  osm_buildings_sf <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  remove_tags <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hospital"</span>, <span class="st">"school"</span>, <span class="st">"church"</span>, <span class="st">"mosque"</span>, <span class="st">"industrial"</span>, <span class="st">"commercial"</span>,</span>
 <span>    <span class="st">"warehouse"</span>, <span class="st">"government"</span>, <span class="st">"public"</span><span class="op">)</span>,</span>
-<span>  keep_untagged <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  keep_untagged <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  building_col <span class="op">=</span> <span class="st">"type"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -71,7 +72,7 @@ user-provided and lacks a <code>building</code> column.</p></dd>
 
 
 <dt id="arg-remove-tags">remove_tags<a class="anchor" aria-label="anchor" href="#arg-remove-tags"></a></dt>
-<dd><p>Character vector of OSM <code>building=*</code> tag values to
+<dd><p>Character vector of building type values to
 exclude. Defaults to common non-residential types.</p></dd>
 
 
@@ -79,6 +80,12 @@ exclude. Defaults to common non-residential types.</p></dd>
 <dd><p>Logical. When intersecting user footprints with
 OSM, keep buildings that have no OSM match? Default <code>TRUE</code> (assumes
 unlabeled buildings are residential).</p></dd>
+
+
+<dt id="arg-building-col">building_col<a class="anchor" aria-label="anchor" href="#arg-building-col"></a></dt>
+<dd><p>Character. Name of the column containing
+building type tags. Default <code>"type"</code>. For OSM data from
+<code><a href="fetch_osm_buildings.html">fetch_osm_buildings()</a></code>, use <code>"building"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -90,7 +97,8 @@ unlabeled buildings are residential).</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># OSM-only</span></span></span>
-<span class="r-in"><span><span class="va">buildings</span> <span class="op">&lt;-</span> <span class="fu"><a href="fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">filter_buildings</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">buildings</span> <span class="op">&lt;-</span> <span class="fu"><a href="fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">filter_buildings</span><span class="op">(</span>building_col <span class="op">=</span> <span class="st">"building"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># User footprints + OSM labeling</span></span></span>
 <span class="r-in"><span><span class="va">osm</span> <span class="op">&lt;-</span> <span class="fu"><a href="fetch_osm_buildings.html">fetch_osm_buildings</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span></span></span>

@@ -75,18 +75,22 @@ vapply(buildings_list, nrow, integer(1L))
 
 ### Visualize cropped buildings
 
-`map_cropped_buildings()` produces a horizontal strip of maps (one per
-community) showing the community boundary and its building centroids:
+[`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md)
+produces one large map per community showing the community boundary and
+actual building footprint shapes over an OSM basemap. Pass the original
+building polygons – the function clips them to each community
+internally:
 
 ``` r
-library(patchwork)
-
-p <- map_cropped_buildings(
-  buildings_list,
+crop_maps <- map_cropped_buildings(
+  buildings,
   communities,
-  community_id_col = "name"
+  community_id_col = "name",
+  out_dir = "output/maps"
 )
-ggplot2::ggsave("cropped_buildings.png", p, width = 18, height = 6, dpi = 300)
+# Or save individually:
+# ggplot2::ggsave("community_one.png", crop_maps[["community_one"]],
+#   width = 12, height = 12, dpi = 300)
 ```
 
 ### Sample with minimum-distance constraints
@@ -121,6 +125,28 @@ The result is a named list of lists. Each community contains `$primary`
 points), `$buildings` (all candidates), and metadata (`$min_distance`,
 `$seed`).
 
+#### Joint sampling (less clustered secondary points)
+
+By default, primary and secondary points are drawn independently. The
+secondary draw restarts on the reduced pool, which can cluster when the
+pool is sparse. Pass `joint = TRUE` to draw both sets in a single pass:
+
+``` r
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 80, community_two = 60),
+  min_distance = 50,
+  seed = 250292L,
+  joint = TRUE
+)
+```
+
+With `joint = TRUE`, the algorithm draws `2 * n_required` points in one
+call, enforcing the distance constraint across all of them. The first
+`n_required` drawn become primary; the rest become secondary. If the
+pool is too small for the full secondary set, all remaining points fill
+in.
+
 **Reproducibility:** Same `seed` + same inputs = same output on any
 platform. The algorithm uses
 [`withr::with_seed()`](https://withr.r-lib.org/reference/with_seed.html)
@@ -138,6 +164,17 @@ batched <- split_batches(samples, n_batches = 5L, set = "primary")
 ```
 
 Each community’s points get an `assigned_batch` column (1 to 5).
+
+If different communities need different team counts, pass a named
+vector:
+
+``` r
+batched <- split_batches(
+  samples,
+  n_batches = c(community_one = 5, community_two = 3, community_three = 4),
+  set = "primary"
+)
+```
 
 ### Create buffers
 
@@ -240,6 +277,42 @@ p + ggplot2::theme(legend.position = "bottom")
 ggplot2::ggsave("community_one.png", p, width = 10, height = 12, dpi = 300)
 ```
 
+### Interactive leaflet map
+
+[`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)
+creates an interactive map with layer toggles, community navigation,
+fullscreen, and multiple base maps:
+
+``` r
+pri <- split_batches(samples, n_batches = 5L, set = "primary")
+sec <- split_batches(samples, n_batches = 5L, set = "secondary")
+roads <- fetch_community_roads(
+  communities, community_id_col = "name",
+  road_dir = "output/roads"
+)
+
+m <- leaflet_communities(
+  pri,
+  communities,
+  community_id_col = "name",
+  secondary_batches = sec,
+  buildings_list = buildings_cropped,
+  roads_list = roads,
+  out_file = "output/maps/sampling_map.html"
+)
+```
+
+Features:
+
+- **Z-ordered layers**: communities (bottom) \> roads \> buildings \>
+  buffers \> points (top)
+- **Grouped toggles**: “Primary Points”, “Secondary Points”,
+  “Buildings”, “Roads”
+- **Distinct shapes**: circles for primary, triangles for secondary
+- **Community navigation**: panel with quick-zoom buttons per community
+- **Fullscreen**: via `leaflet.extras` (if installed)
+- **Buildings**: hidden by default (toggle via layer control)
+
 ## Complete Workflow
 
 ``` r
@@ -251,9 +324,11 @@ communities <- st_read("communities.gpkg")
 state_boundary <- st_read("boundary.gpkg")
 
 # 2. Fetch, filter, crop buildings
-buildings_list <- fetch_osm_buildings(state_boundary) |>
-  filter_buildings() |>
-  crop_buildings(communities, community_id_col = "name")
+buildings <- fetch_osm_buildings(state_boundary)
+buildings_filtered <- filter_buildings(buildings)
+buildings_list <- crop_buildings(
+  buildings_filtered, communities, community_id_col = "name"
+)
 
 # 3. Sample (seed is required — choose any integer for reproducibility)
 samples <- sample_communities(
@@ -263,7 +338,8 @@ samples <- sample_communities(
     community_three = 85, community_four = 60
   ),
   min_distance = 50,
-  seed = 250292L
+  seed = 250292L,
+  joint = TRUE
 )
 
 # 4. Batch and export
@@ -277,11 +353,24 @@ export_points(
 # 5. Zip for field teams
 zips <- zip_points("output", prefix = "project-")
 
-# 6. Generate maps
+# 6. Generate static maps
 map_all_communities(
   samples, communities,
   community_id_col = "name",
   out_dir = "output/maps"
+)
+
+# 7. Generate interactive map
+roads <- fetch_community_roads(
+  communities, community_id_col = "name",
+  road_dir = "output/roads"
+)
+leaflet_communities(
+  batched, communities,
+  secondary_batches = split_batches(samples, n_batches = 5L, set = "secondary"),
+  buildings_list = buildings_cropped,
+  roads_list = roads,
+  out_file = "output/maps/sampling_map.html"
 )
 ```
 
@@ -289,30 +378,32 @@ map_all_communities(
 
 ### Sampling
 
-| Function                                                                                                | Purpose                                                    |
-|---------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| [`fetch_osm_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.md) | Download OSM building footprints for an area               |
-| [`filter_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/filter_buildings.md)       | Remove non-residential buildings by OSM tags               |
-| [`crop_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/crop_buildings.md)           | Clip buildings to community polygons, convert to centroids |
-| [`find_start_points()`](https://epicentre-msf.github.io/gpssampling/reference/find_start_points.md)     | Find closest-to-road building per community (utility)      |
-| [`sample_communities()`](https://epicentre-msf.github.io/gpssampling/reference/sample_communities.md)   | Random sampling with proximity-based ordering              |
+| Function                                                                                                    | Purpose                                                        |
+|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| [`fetch_osm_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.md)     | Download OSM building footprints for an area                   |
+| [`filter_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/filter_buildings.md)           | Remove non-residential buildings by OSM tags                   |
+| [`crop_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/crop_buildings.md)               | Clip buildings to community polygons, convert to centroids     |
+| [`find_start_points()`](https://epicentre-msf.github.io/gpssampling/reference/find_start_points.md)         | Find closest-to-road building per community (utility)          |
+| [`sample_communities()`](https://epicentre-msf.github.io/gpssampling/reference/sample_communities.md)       | Random sampling with proximity-based ordering (`joint` option) |
+| [`fetch_community_roads()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.md) | Pre-download OSM roads per community (with caching)            |
 
 ### GPS Management
 
-| Function                                                                                                | Purpose                                       |
-|---------------------------------------------------------------------------------------------------------|-----------------------------------------------|
-| [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md)             | Assign round-robin batch numbers to points    |
-| [`create_buffers()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffers.md)           | Generate circular buffer polygons             |
-| [`create_buffer_tiles()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffer_tiles.md) | Create OsmAnd-compatible SQLite tile overlays |
-| [`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)             | Export points, buffers, and tiles to disk     |
-| [`zip_points()`](https://epicentre-msf.github.io/gpssampling/reference/zip_points.md)                   | Bundle GPX + SQLite files into zip archives   |
-| [`email_points()`](https://epicentre-msf.github.io/gpssampling/reference/email_points.md)               | Send zip files via SMTP email                 |
+| Function                                                                                                | Purpose                                                     |
+|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| [`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md)             | Assign round-robin batch numbers (uniform or per-community) |
+| [`create_buffers()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffers.md)           | Generate circular buffer polygons                           |
+| [`create_buffer_tiles()`](https://epicentre-msf.github.io/gpssampling/reference/create_buffer_tiles.md) | Create OsmAnd-compatible SQLite tile overlays               |
+| [`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)             | Export points, buffers, and tiles to disk                   |
+| [`zip_points()`](https://epicentre-msf.github.io/gpssampling/reference/zip_points.md)                   | Bundle GPX + SQLite files into zip archives                 |
+| [`email_points()`](https://epicentre-msf.github.io/gpssampling/reference/email_points.md)               | Send zip files via SMTP email                               |
 
-### Static Mapping
+### Mapping
 
-| Function                                                                                                | Purpose                                                |
-|---------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `map_cropped_buildings()`                                                                               | Side-by-side panels of cropped buildings per community |
-| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)             | Per-community map with batch coloring                  |
-| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)               | Zoomed-out overview of all communities                 |
-| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md) | Generate and optionally save all maps                  |
+| Function                                                                                                    | Purpose                                       |
+|-------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
+| [`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md) | Building footprint maps per community         |
+| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)                 | Per-community static map with batch coloring  |
+| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)                   | Zoomed-out static overview of all communities |
+| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md)     | Generate and optionally save all static maps  |
+| [`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)     | Interactive leaflet map with layer controls   |

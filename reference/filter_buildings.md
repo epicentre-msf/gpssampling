@@ -12,7 +12,8 @@ filter_buildings(
   osm_buildings_sf = NULL,
   remove_tags = c("hospital", "school", "church", "mosque", "industrial", "commercial",
     "warehouse", "government", "public"),
-  keep_untagged = TRUE
+  keep_untagged = TRUE,
+  building_col = "type"
 )
 ```
 
@@ -33,14 +34,21 @@ filter_buildings(
 
 - remove_tags:
 
-  Character vector of OSM `building=*` tag values to exclude. Defaults
-  to common non-residential types.
+  Character vector of building type values to exclude. Defaults to
+  common non-residential types.
 
 - keep_untagged:
 
   Logical. When intersecting user footprints with OSM, keep buildings
   that have no OSM match? Default `TRUE` (assumes unlabeled buildings
   are residential).
+
+- building_col:
+
+  Character. Name of the column containing building type tags. Default
+  `"type"`. For OSM data from
+  [`fetch_osm_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.md),
+  use `"building"`.
 
 ## Value
 
@@ -51,7 +59,8 @@ An `sf` POLYGON of filtered buildings.
 ``` r
 if (FALSE) { # \dontrun{
 # OSM-only
-buildings <- fetch_osm_buildings(area) |> filter_buildings()
+buildings <- fetch_osm_buildings(area) |>
+  filter_buildings(building_col = "building")
 
 # User footprints + OSM labeling
 osm <- fetch_osm_buildings(area)
