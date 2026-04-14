@@ -1,4 +1,4 @@
-# gpssampling
+# gpssampling <img src="man/figures/logo.png" align="right" height="139" alt="gpssampling logo" />
 
 A Shiny application for geospatial sampling of building structures within
 defined polygon areas. Supports quadrat, T-square, and random sampling methods

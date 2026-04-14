@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>GPS Sampling Pipeline: A Complete Guide</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">GPS Sampling Pipeline: A Complete
+Guide</h1>
+<h3 class="subtitle"><p>Reproducible spatial sampling of buildings, GPS
+point management, and mapping – from raw data to field-ready
+outputs.</p></h3>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction</a>
+<ul>
+<li><a href="#what-the-pipeline-does" id="toc-what-the-pipeline-does"><span class="toc-section-number">1.1</span> What the pipeline does</a></li>
+<li><a href="#what-you-need-before-starting" id="toc-what-you-need-before-starting"><span class="toc-section-number">1.2</span> What you need before
+starting</a></li>
+</ul></li>
+<li><a href="#step-1-load-your-data" id="toc-step-1-load-your-data"><span class="toc-section-number">2</span>
+Step 1: Load Your Data</a></li>
+<li><a href="#step-2-fetch-building-footprints" id="toc-step-2-fetch-building-footprints"><span class="toc-section-number">3</span> Step 2: Fetch Building
+Footprints</a></li>
+<li><a href="#step-3-filter-non-residential-buildings" id="toc-step-3-filter-non-residential-buildings"><span class="toc-section-number">4</span> Step 3: Filter Non-Residential
+Buildings</a>
+<ul>
+<li><a href="#path-a-osm-only-data-most-common" id="toc-path-a-osm-only-data-most-common"><span class="toc-section-number">4.1</span> Path A: OSM-only data (most
+common)</a></li>
+<li><a href="#path-b-your-own-footprints-osm-labeling" id="toc-path-b-your-own-footprints-osm-labeling"><span class="toc-section-number">4.2</span> Path B: Your own footprints + OSM
+labeling</a></li>
+<li><a href="#path-c-your-own-footprints-no-osm" id="toc-path-c-your-own-footprints-no-osm"><span class="toc-section-number">4.3</span> Path C: Your own footprints, no
+OSM</a></li>
+</ul></li>
+<li><a href="#step-4-crop-buildings-to-communities" id="toc-step-4-crop-buildings-to-communities"><span class="toc-section-number">5</span> Step 4: Crop Buildings to
+Communities</a></li>
+<li><a href="#step-5-visualize-building-footprints-optional-but-recommended" id="toc-step-5-visualize-building-footprints-optional-but-recommended"><span class="toc-section-number">6</span> Step 5: Visualize Building
+Footprints (Optional but Recommended)</a></li>
+<li><a href="#step-6-sample-buildings" id="toc-step-6-sample-buildings"><span class="toc-section-number">7</span> Step 6: Sample Buildings</a>
+<ul>
+<li><a href="#how-the-algorithm-works" id="toc-how-the-algorithm-works"><span class="toc-section-number">7.1</span> How the algorithm works</a></li>
+<li><a href="#basic-usage" id="toc-basic-usage"><span class="toc-section-number">7.2</span> Basic usage</a></li>
+<li><a href="#understanding-the-output" id="toc-understanding-the-output"><span class="toc-section-number">7.3</span> Understanding the output</a></li>
+<li><a href="#the-summary-table" id="toc-the-summary-table"><span class="toc-section-number">7.4</span> The summary table</a></li>
+<li><a href="#joint-sampling-less-clustered-secondary-points" id="toc-joint-sampling-less-clustered-secondary-points"><span class="toc-section-number">7.5</span> Joint sampling (less clustered
+secondary points)</a></li>
+<li><a href="#reproducibility" id="toc-reproducibility"><span class="toc-section-number">7.6</span> Reproducibility</a></li>
+<li><a href="#key-parameters" id="toc-key-parameters"><span class="toc-section-number">7.7</span> Key parameters</a></li>
+</ul></li>
+<li><a href="#step-7-pre-download-roads-optional" id="toc-step-7-pre-download-roads-optional"><span class="toc-section-number">8</span> Step 7: Pre-Download Roads
+(Optional)</a></li>
+<li><a href="#step-8-split-into-batches" id="toc-step-8-split-into-batches"><span class="toc-section-number">9</span> Step 8: Split into Batches</a></li>
+<li><a href="#step-9-create-buffers" id="toc-step-9-create-buffers"><span class="toc-section-number">10</span> Step 9: Create Buffers</a></li>
+<li><a href="#step-10-export-points-to-disk" id="toc-step-10-export-points-to-disk"><span class="toc-section-number">11</span> Step 10: Export Points to Disk</a>
+<ul>
+<li><a href="#output-directory-structure" id="toc-output-directory-structure"><span class="toc-section-number">11.1</span> Output directory
+structure</a></li>
+<li><a href="#the-manifest" id="toc-the-manifest"><span class="toc-section-number">11.2</span> The manifest</a></li>
+<li><a href="#osmand-integration" id="toc-osmand-integration"><span class="toc-section-number">11.3</span> OsmAnd integration</a></li>
+<li><a href="#supported-export-formats" id="toc-supported-export-formats"><span class="toc-section-number">11.4</span> Supported export formats</a></li>
+</ul></li>
+<li><a href="#step-11-create-a-google-earth-project-optional" id="toc-step-11-create-a-google-earth-project-optional"><span class="toc-section-number">12</span> Step 11: Create a Google Earth
+Project (Optional)</a></li>
+<li><a href="#step-12-zip-for-field-distribution" id="toc-step-12-zip-for-field-distribution"><span class="toc-section-number">13</span> Step 12: Zip for Field
+Distribution</a></li>
+<li><a href="#step-13-email-to-field-teams-optional" id="toc-step-13-email-to-field-teams-optional"><span class="toc-section-number">14</span> Step 13: Email to Field Teams
+(Optional)</a></li>
+<li><a href="#step-14-static-maps" id="toc-step-14-static-maps"><span class="toc-section-number">15</span> Step 14: Static Maps</a>
+<ul>
+<li><a href="#generate-all-maps-at-once" id="toc-generate-all-maps-at-once"><span class="toc-section-number">15.1</span> Generate all maps at
+once</a></li>
+<li><a href="#generate-a-single-community-map" id="toc-generate-a-single-community-map"><span class="toc-section-number">15.2</span> Generate a single community
+map</a></li>
+<li><a href="#generate-an-overview-map" id="toc-generate-an-overview-map"><span class="toc-section-number">15.3</span> Generate an overview map</a></li>
+</ul></li>
+<li><a href="#step-15-interactive-leaflet-map" id="toc-step-15-interactive-leaflet-map"><span class="toc-section-number">16</span> Step 15: Interactive Leaflet
+Map</a>
+<ul>
+<li><a href="#features" id="toc-features"><span class="toc-section-number">16.1</span> Features</a></li>
+</ul></li>
+<li><a href="#step-16-utility-find-closest-to-road-buildings" id="toc-step-16-utility-find-closest-to-road-buildings"><span class="toc-section-number">17</span> Step 16: Utility – Find
+Closest-to-Road Buildings</a></li>
+<li><a href="#complete-workflow-script" id="toc-complete-workflow-script"><span class="toc-section-number">18</span> Complete Workflow Script</a></li>
+<li><a href="#function-reference" id="toc-function-reference"><span class="toc-section-number">19</span> Function Reference</a>
+<ul>
+<li><a href="#sampling" id="toc-sampling"><span class="toc-section-number">19.1</span> Sampling</a></li>
+<li><a href="#gps-management" id="toc-gps-management"><span class="toc-section-number">19.2</span> GPS Management</a></li>
+<li><a href="#mapping" id="toc-mapping"><span class="toc-section-number">19.3</span> Mapping</a></li>
+</ul></li>
+<li><a href="#troubleshooting" id="toc-troubleshooting"><span class="toc-section-number">20</span> Troubleshooting</a>
+<ul>
+<li><a href="#osm-download-fails-or-times-out" id="toc-osm-download-fails-or-times-out"><span class="toc-section-number">20.1</span> OSM download fails or times
+out</a></li>
+<li><a href="#requested-n-points-but-only-m-available" id="toc-requested-n-points-but-only-m-available"><span class="toc-section-number">20.2</span> “Requested N points but only M
+available”</a></li>
+<li><a href="#no-candidates-beyond-xm" id="toc-no-candidates-beyond-xm"><span class="toc-section-number">20.3</span> “No candidates beyond
+Xm”</a></li>
+<li><a href="#basemap-tiles-fail-to-download" id="toc-basemap-tiles-fail-to-download"><span class="toc-section-number">20.4</span> Basemap tiles fail to
+download</a></li>
+<li><a href="#osmand-does-not-show-the-overlay" id="toc-osmand-does-not-show-the-overlay"><span class="toc-section-number">20.5</span> OsmAnd does not show the
+overlay</a></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="introduction" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>The <code>gpssampling</code> package provides a <strong>programmatic
+sampling pipeline</strong> for selecting buildings within community
+polygons for field epidemiology surveys. Everything runs from R scripts
+– no Shiny app required.</p>
+<p>This vignette is a <strong>complete, step-by-step guide</strong>
+designed for someone who has never used the package before. It covers
+every function in the pipeline, explains what each one does, shows its
+key parameters, and walks through a realistic workflow from start to
+finish.</p>
+<div id="what-the-pipeline-does" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> What the pipeline
+does</h2>
+<p>At a high level, the pipeline takes:</p>
+<ul>
+<li>A <strong>study area boundary</strong> (polygon shapefile,
+GeoPackage, etc.)</li>
+<li><strong>Community polygons</strong> (one per survey community)</li>
+</ul>
+<p>And produces:</p>
+<ul>
+<li><strong>Sampled GPS points</strong> with minimum-distance
+constraints</li>
+<li><strong>Batch assignments</strong> for dividing work across field
+teams</li>
+<li><strong>Export files</strong> (GPX, GeoPackage, KML) ready for GPS
+devices and OsmAnd</li>
+<li><strong>Static maps</strong> (PNG) for reports and briefings</li>
+<li><strong>Interactive maps</strong> (HTML) for digital review</li>
+</ul>
+</div>
+<div id="what-you-need-before-starting" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> What you need before
+starting</h2>
+<p><strong>R packages:</strong></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install gpssampling (from GitHub)</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;epicentre-msf/gpssampling&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># Suggested packages for mapping (installed automatically if missing)</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;ggplot2&quot;</span>, <span class="st">&quot;ggspatial&quot;</span>, <span class="st">&quot;tidyterra&quot;</span>))</span></code></pre></div>
+<p><strong>Data files:</strong></p>
+<p>You need two spatial files:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Study area boundary</strong> – a polygon covering your
+entire area of interest. This is used to download building footprints
+from OpenStreetMap.</li>
+<li><strong>Community polygons</strong> – one polygon per community you
+want to sample. Each polygon must have a column with a unique community
+name.</li>
+</ol>
+<p>Both can be GeoPackage (<code>.gpkg</code>), Shapefile
+(<code>.shp</code>), GeoJSON, or any format readable by
+<code>sf::st_read()</code>. Any coordinate reference system (CRS) works
+– the package reprojects internally as needed.</p>
+<p><strong>Internet connection:</strong></p>
+<p>Required for downloading building footprints and road networks from
+OpenStreetMap. Once downloaded, everything else works offline.</p>
+</div>
+</div>
+<div id="step-1-load-your-data" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Step 1: Load Your
+Data</h1>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(gpssampling)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Load your study area boundary</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>state_boundary <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">&quot;boundary.gpkg&quot;</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Load community polygons</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># The file must have a column that uniquely identifies each community.</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># In this example, the column is called &quot;name&quot;.</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>communities <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">&quot;communities.gpkg&quot;</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co"># Check what the community data looks like</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">print</span>(communities)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Simple feature collection with 4 features and 1 field</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Geometry type: POLYGON</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; CRS:          EPSG:4326</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt;            name                       geometry</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; 1 community_one POLYGON ((...)...)</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; 2 community_two POLYGON ((...)...)</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; 3 community_three POLYGON ((...)...)</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; 4 community_four POLYGON ((...)...)</span></span></code></pre></div>
+<p><strong>Important:</strong> the <code>community_id_col</code>
+parameter (used in many functions below) must match the name of the
+column that identifies your communities. Throughout this vignette we use
+<code>community_id_col = &quot;name&quot;</code>. If your column is called
+something else (e.g., <code>&quot;site&quot;</code>, <code>&quot;village&quot;</code>,
+<code>&quot;locality&quot;</code>), adjust accordingly.</p>
+</div>
+<div id="step-2-fetch-building-footprints" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Step 2: Fetch Building
+Footprints</h1>
+<p><code>fetch_osm_buildings()</code> downloads building footprints from
+<a href="https://www.openstreetmap.org/">OpenStreetMap</a> for a given
+area. It uses tile-based Overpass API queries so that even large areas
+can be processed without hitting API limits.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>osm_buildings <span class="ot">&lt;-</span> <span class="fu">fetch_osm_buildings</span>(state_boundary)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; Fetching OSM buildings across 12 tiles at zoom 13...</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;   Tile 1/12...</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;   Tile 2/12...</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   ...</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Merging 4,832 raw buildings from 12 tiles...</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; Clipping buildings to area boundary...</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; Done: 3,618 unique buildings fetched.</span></span></code></pre></div>
+<p><strong>What it returns:</strong></p>
+<p>An <code>sf</code> POLYGON data frame with columns:</p>
+<ul>
+<li><code>osm_id</code> – the OpenStreetMap feature identifier</li>
+<li><code>building</code> – the OSM building type tag (e.g.,
+<code>&quot;yes&quot;</code>, <code>&quot;residential&quot;</code>, <code>&quot;hospital&quot;</code>,
+<code>&quot;school&quot;</code>)</li>
+<li><code>geometry</code> – the building footprint polygon</li>
+</ul>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>area_sf</code></td>
+<td><em>(required)</em></td>
+<td>Polygon defining the area of interest</td>
+</tr>
+<tr class="even">
+<td><code>zoom</code></td>
+<td><code>13L</code></td>
+<td>Tile zoom level. Higher = smaller tiles, more queries. Lower = fewer
+queries but larger data per query. Default works well for most
+areas</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tips:</strong></p>
+<ul>
+<li>For very large study areas (spanning many tiles), expect the
+download to take several minutes. The function prints progress per
+tile.</li>
+<li>If a tile download fails (e.g., network issue), it logs a warning
+and continues with the remaining tiles. You will not lose progress.</li>
+<li>Buildings are automatically deduplicated (tiles can overlap at
+edges).</li>
+</ul>
+</div>
+<div id="step-3-filter-non-residential-buildings" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Step 3: Filter
+Non-Residential Buildings</h1>
+<p>Not all buildings in OSM are residential.
+<code>filter_buildings()</code> removes non-residential structures like
+hospitals, schools, and warehouses so you only sample from buildings
+where people live.</p>
+<p>The function supports <strong>three workflows</strong> depending on
+your data:</p>
+<div id="path-a-osm-only-data-most-common" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Path A: OSM-only data
+(most common)</h2>
+<p>When your buildings come from <code>fetch_osm_buildings()</code>,
+they have a <code>building</code> column with OSM tags. Filter directly
+on that column:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>buildings <span class="ot">&lt;-</span> <span class="fu">filter_buildings</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  osm_buildings,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">building_col =</span> <span class="st">&quot;building&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; Filtering 3,618 buildings by building column...</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Removed 47 non-residential buildings, 3,571 remaining.</span></span></code></pre></div>
+<p><strong>Important:</strong> when filtering OSM data, you must set
+<code>building_col = &quot;building&quot;</code> because the default is
+<code>&quot;type&quot;</code> (designed for user-provided datasets).</p>
+</div>
+<div id="path-b-your-own-footprints-osm-labeling" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Path B: Your own
+footprints + OSM labeling</h2>
+<p>If you have building footprints from another source (e.g., Microsoft
+Building Footprints, Google Open Buildings) that do not have type tags,
+you can use OSM to label them. The function spatially matches your
+buildings against OSM buildings and copies the tags over:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>user_buildings <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">&quot;my_building_footprints.gpkg&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>osm <span class="ot">&lt;-</span> <span class="fu">fetch_osm_buildings</span>(state_boundary)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>buildings <span class="ot">&lt;-</span> <span class="fu">filter_buildings</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  user_buildings,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">osm_buildings_sf =</span> osm</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; Matching 5,200 buildings against 3,618 OSM footprints...</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Computing spatial intersections...</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Matched 4,100 buildings, 1,100 unmatched.</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Removed 82 non-residential buildings, 5,118 remaining.</span></span></code></pre></div>
+<p>By default, unmatched buildings (those with no OSM counterpart) are
+<strong>kept</strong>, assuming they are residential. Set
+<code>keep_untagged = FALSE</code> to drop them.</p>
+</div>
+<div id="path-c-your-own-footprints-no-osm" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> Path C: Your own
+footprints, no OSM</h2>
+<p>If you have your own data with a type column, filter directly:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>buildings <span class="ot">&lt;-</span> <span class="fu">filter_buildings</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  user_buildings,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">building_col =</span> <span class="st">&quot;type&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span></code></pre></div>
+<p>If your data has no type information and you do not provide OSM data,
+the function returns all buildings as-is with a warning.</p>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>buildings_sf</code></td>
+<td><em>(required)</em></td>
+<td>Building footprints (<code>sf</code> POLYGON)</td>
+</tr>
+<tr class="even">
+<td><code>osm_buildings_sf</code></td>
+<td><code>NULL</code></td>
+<td>Optional OSM buildings for labeling</td>
+</tr>
+<tr class="odd">
+<td><code>remove_tags</code></td>
+<td><code>c(&quot;hospital&quot;, &quot;school&quot;, &quot;church&quot;, &quot;mosque&quot;, &quot;industrial&quot;, &quot;commercial&quot;, &quot;warehouse&quot;, &quot;government&quot;, &quot;public&quot;)</code></td>
+<td>Building types to exclude</td>
+</tr>
+<tr class="even">
+<td><code>keep_untagged</code></td>
+<td><code>TRUE</code></td>
+<td>Keep buildings with no OSM match?</td>
+</tr>
+<tr class="odd">
+<td><code>building_col</code></td>
+<td><code>&quot;type&quot;</code></td>
+<td>Name of the column with building type tags. Use
+<code>&quot;building&quot;</code> for OSM data</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Customizing the filter:</strong></p>
+<p>Add or remove tags to suit your study. For example, to also exclude
+religious buildings and markets:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>buildings <span class="ot">&lt;-</span> <span class="fu">filter_buildings</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  osm_buildings,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">building_col =</span> <span class="st">&quot;building&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">remove_tags =</span> <span class="fu">c</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="st">&quot;hospital&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="st">&quot;school&quot;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="st">&quot;church&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="st">&quot;mosque&quot;</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="st">&quot;industrial&quot;</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="st">&quot;commercial&quot;</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>    <span class="st">&quot;warehouse&quot;</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>    <span class="st">&quot;government&quot;</span>,</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>    <span class="st">&quot;public&quot;</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>    <span class="st">&quot;temple&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    <span class="st">&quot;synagogue&quot;</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>    <span class="st">&quot;market&quot;</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    <span class="st">&quot;retail&quot;</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  )</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="step-4-crop-buildings-to-communities" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Step 4: Crop Buildings
+to Communities</h1>
+<p><code>crop_buildings()</code> intersects your building footprints
+with community polygons, converts each building to its centroid point,
+and returns a <strong>named list</strong> – one entry per community.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>buildings_list <span class="ot">&lt;-</span> <span class="fu">crop_buildings</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  buildings,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  communities,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Cropping 3,571 buildings to 4 communities...</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; Finding buildings per community (spatial index)...</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   community_four: computing centroids for 612 buildings...</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;   community_one: computing centroids for 847 buildings...</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;   community_three: computing centroids for 956 buildings...</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;   community_two: computing centroids for 1,203 buildings...</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Done: community_four: 598, community_one: 834, community_three: 940, community_two: 1,185.</span></span></code></pre></div>
+<p><strong>What it returns:</strong></p>
+<p>A named list of <code>sf</code> POINT data frames. Each element
+has:</p>
+<ul>
+<li><code>id</code> – sequential integer (1, 2, 3, …) within that
+community</li>
+<li><code>community</code> – the community name</li>
+<li><code>osm_id</code> – preserved from the input (if present)</li>
+<li><code>geometry</code> – the centroid point</li>
+</ul>
+<p>You can check how many buildings are in each community:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">vapply</span>(buildings_list, nrow, <span class="fu">integer</span>(<span class="dv">1</span><span class="dt">L</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; community_four  community_one community_three  community_two</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;            598            834             940           1185</span></span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>buildings_sf</code></td>
+<td><em>(required)</em></td>
+<td>Building footprints (<code>sf</code> POLYGON)</td>
+</tr>
+<tr class="even">
+<td><code>communities_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygons (<code>sf</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>community_id_col</code></td>
+<td><code>&quot;name&quot;</code></td>
+<td>Column name for community ID</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What happens internally:</strong></p>
+<ol style="list-style-type: decimal">
+<li>Communities with the same name are dissolved (e.g., a multipolygon
+stored as separate features with the same name is merged into one).</li>
+<li>A spatial index (<code>st_intersects</code>) finds buildings that
+overlap each community.</li>
+<li>Building polygons are converted to centroids.</li>
+<li>Only centroids that fall <strong>within</strong> the community
+boundary are kept.</li>
+<li>Points are sorted deterministically by longitude then latitude,
+ensuring reproducible <code>id</code> numbering.</li>
+</ol>
+</div>
+<div id="step-5-visualize-building-footprints-optional-but-recommended" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Step 5: Visualize
+Building Footprints (Optional but Recommended)</h1>
+<p>Before sampling, it is helpful to visually verify that your building
+data looks correct. <code>map_cropped_buildings()</code> renders a map
+per community showing the actual building footprint shapes over an OSM
+basemap.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>crop_maps <span class="ot">&lt;-</span> <span class="fu">map_cropped_buildings</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  buildings,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  communities,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output/maps/buildings&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; Mapping 3,571 building footprints across 4 communities (filtering mode)...</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt;   community_four: finding overlapping buildings...</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;   community_four: rendering map (612 buildings)...</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;   ...</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; Generated 4 building maps.</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; Saving maps to output/maps/buildings...</span></span></code></pre></div>
+<p>This saves one PNG per community (e.g.,
+<code>community_one_buildings.png</code>).</p>
+<p>You can also display a single map interactively in RStudio:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>crop_maps[[<span class="st">&quot;community_one&quot;</span>]]</span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>buildings_sf</code></td>
+<td><em>(required)</em></td>
+<td>Building footprints (the polygons, not centroids)</td>
+</tr>
+<tr class="even">
+<td><code>communities_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygons</td>
+</tr>
+<tr class="odd">
+<td><code>community_id_col</code></td>
+<td><code>&quot;name&quot;</code></td>
+<td>Column name for community ID</td>
+</tr>
+<tr class="even">
+<td><code>clip</code></td>
+<td><code>FALSE</code></td>
+<td><code>TRUE</code> = geometrically clip buildings to boundary (slow
+but precise). <code>FALSE</code> = show full footprints of overlapping
+buildings (fast)</td>
+</tr>
+<tr class="odd">
+<td><code>basemap</code></td>
+<td><code>&quot;OpenStreetMap&quot;</code></td>
+<td>Tile provider (e.g., <code>&quot;OpenStreetMap.HOT&quot;</code>,
+<code>&quot;CartoDB.Positron&quot;</code>)</td>
+</tr>
+<tr class="even">
+<td><code>building_fill</code></td>
+<td><code>&quot;#8B6914&quot;</code></td>
+<td>Building fill color</td>
+</tr>
+<tr class="odd">
+<td><code>out_dir</code></td>
+<td><code>NULL</code></td>
+<td>Directory for saving PNGs. <code>NULL</code> = return plots
+only</td>
+</tr>
+<tr class="even">
+<td><code>width</code>, <code>height</code></td>
+<td><code>12</code></td>
+<td>Plot dimensions in inches</td>
+</tr>
+<tr class="odd">
+<td><code>dpi</code></td>
+<td><code>300</code></td>
+<td>Plot resolution</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-6-sample-buildings" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Step 6: Sample
+Buildings</h1>
+<p><code>sample_communities()</code> is the core function. It selects a
+specified number of buildings per community, enforcing a minimum
+distance between any two selected points so that field teams cover
+different areas rather than clustering.</p>
+<div id="how-the-algorithm-works" class="section level2" number="7.1">
+<h2><span class="header-section-number">7.1</span> How the algorithm
+works</h2>
+<p>Sampling uses a <strong>two-phase approach</strong>:</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Random selection</strong> – all points (including the
+first) are chosen at random. At each step, the algorithm picks a random
+candidate from buildings that are at least <code>min_distance</code>
+meters away from every already-selected point. If no candidates meet the
+distance constraint, the remaining points are drawn randomly with a
+warning.</p></li>
+<li><p><strong>Proximity ordering</strong> – after selection, points are
+reordered for efficient field work using a <strong>nearest-neighbour
+chain</strong>: the selected point closest to an OSM road becomes #1,
+then the nearest unvisited point becomes #2, and so on. This
+<code>selection_order</code> determines the order field workers
+follow.</p></li>
+</ol>
+<p>After primary selection, <strong>secondary (replacement)
+points</strong> are drawn from the remaining pool using the same
+algorithm.</p>
+</div>
+<div id="basic-usage" class="section level2" number="7.2">
+<h2><span class="header-section-number">7.2</span> Basic usage</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">sample_communities</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  buildings_list,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">n_required =</span> <span class="fu">c</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>    <span class="at">community_one =</span> <span class="dv">30</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="at">community_two =</span> <span class="dv">80</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    <span class="at">community_three =</span> <span class="dv">85</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="at">community_four =</span> <span class="dv">60</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  ),</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="at">min_distance =</span> <span class="dv">50</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">250292</span><span class="dt">L</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>)</span></code></pre></div>
+<p>If all communities need the same number of points, pass a single
+integer:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">sample_communities</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  buildings_list,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">n_required =</span> <span class="dv">50</span><span class="dt">L</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">min_distance =</span> <span class="dv">50</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">250292</span><span class="dt">L</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="understanding-the-output" class="section level2" number="7.3">
+<h2><span class="header-section-number">7.3</span> Understanding the
+output</h2>
+<p>The result is a <strong>named list of lists</strong>. Each community
+contains:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">str</span>(samples<span class="sc">$</span>community_one, <span class="at">max.level =</span> <span class="dv">1</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt;  $ buildings   : sf [834 x 4]   -- all candidate buildings</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt;  $ primary     : sf [30 x 6]    -- selected primary points</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;  $ secondary   : sf [30 x 6]    -- replacement points</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;  $ min_distance: num 50         -- distance constraint used</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;  $ seed        : int 827364     -- per-community seed</span></span></code></pre></div>
+<p>The <code>$primary</code> and <code>$secondary</code> data frames
+have these columns:</p>
+<table>
+<colgroup>
+<col width="38%" />
+<col width="61%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>id</code></td>
+<td>Original building ID from <code>crop_buildings()</code></td>
+</tr>
+<tr class="even">
+<td><code>community</code></td>
+<td>Community name</td>
+</tr>
+<tr class="odd">
+<td><code>osm_id</code></td>
+<td>OSM feature ID (if present)</td>
+</tr>
+<tr class="even">
+<td><code>selection_order</code></td>
+<td>Walking order (1 = start near road, then nearest-neighbour
+chain)</td>
+</tr>
+<tr class="odd">
+<td><code>point_id</code></td>
+<td>Globally unique ID across all communities and sets</td>
+</tr>
+<tr class="even">
+<td><code>geometry</code></td>
+<td>Point coordinates</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Global point IDs:</strong> Primary points are numbered 1
+through N across all communities (alphabetically). Secondary point IDs
+continue from N+1. This ensures every point across the entire project
+has a unique identifier, which is critical for field tracking.</p>
+</div>
+<div id="the-summary-table" class="section level2" number="7.4">
+<h2><span class="header-section-number">7.4</span> The summary
+table</h2>
+<p>By default (<code>print_table = TRUE</code>),
+<code>sample_communities()</code> prints a <code>flextable</code>
+summary and attaches it to the result:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Access the summary table (a flextable object)</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">attr</span>(samples, <span class="st">&quot;summary_table&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co"># Access the underlying data frame</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="fu">attr</span>(samples, <span class="st">&quot;summary_df&quot;</span>)</span></code></pre></div>
+<p>The summary shows per-community statistics:</p>
+<table>
+<colgroup>
+<col width="47%" />
+<col width="52%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Buildings</td>
+<td>Total candidate buildings</td>
+</tr>
+<tr class="even">
+<td>Primary</td>
+<td>Number of primary points drawn</td>
+</tr>
+<tr class="odd">
+<td>Secondary</td>
+<td>Number of secondary (replacement) points drawn</td>
+</tr>
+<tr class="even">
+<td>Total Pts</td>
+<td>Primary + Secondary</td>
+</tr>
+<tr class="odd">
+<td>Coverage %</td>
+<td>Total points as % of available buildings</td>
+</tr>
+<tr class="even">
+<td>Min Dist Requested (m)</td>
+<td>The <code>min_distance</code> you specified</td>
+</tr>
+<tr class="odd">
+<td>Min Dist Primary (m)</td>
+<td>Actual minimum pairwise distance among primary points</td>
+</tr>
+<tr class="even">
+<td>Min Dist Secondary (m)</td>
+<td>Actual minimum pairwise distance among secondary points</td>
+</tr>
+<tr class="odd">
+<td>Min Dist All (m)</td>
+<td>Actual minimum pairwise distance among all points (primary +
+secondary)</td>
+</tr>
+<tr class="even">
+<td>Pairs &lt; Threshold</td>
+<td>Number of point pairs closer than <code>min_distance</code> (ideally
+0)</td>
+</tr>
+<tr class="odd">
+<td>Mode</td>
+<td><code>&quot;independent&quot;</code> or <code>&quot;joint&quot;</code></td>
+</tr>
+<tr class="even">
+<td>Seed</td>
+<td>Per-community seed used</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>TOTAL</strong> row summarizes across all communities.
+Violations (pairs below threshold) are highlighted in red.</p>
+</div>
+<div id="joint-sampling-less-clustered-secondary-points" class="section level2" number="7.5">
+<h2><span class="header-section-number">7.5</span> Joint sampling (less
+clustered secondary points)</h2>
+<p>By default, primary and secondary points are drawn
+<strong>independently</strong>: first the primary set is drawn, then the
+secondary set is drawn from the remaining pool. This can lead to
+clustering in the secondary set when the remaining pool is sparse.</p>
+<p>Set <code>joint = TRUE</code> to draw both sets in a <strong>single
+pass</strong>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">sample_communities</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  buildings_list,</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">n_required =</span> <span class="fu">c</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>    <span class="at">community_one =</span> <span class="dv">30</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>    <span class="at">community_two =</span> <span class="dv">80</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    <span class="at">community_three =</span> <span class="dv">85</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>    <span class="at">community_four =</span> <span class="dv">60</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  ),</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  <span class="at">min_distance =</span> <span class="dv">50</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">250292</span><span class="dt">L</span>,</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  <span class="at">joint =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>)</span></code></pre></div>
+<p>With <code>joint = TRUE</code>, the algorithm draws up to
+<code>2 * n_required</code> points in one call, enforcing the minimum
+distance across <strong>all</strong> of them. The first
+<code>n_required</code> drawn become primary; the rest become secondary.
+This produces better spatial spread across both sets.</p>
+</div>
+<div id="reproducibility" class="section level2" number="7.6">
+<h2><span class="header-section-number">7.6</span> Reproducibility</h2>
+<p>Results are <strong>fully reproducible</strong> given the same:</p>
+<ul>
+<li><code>seed</code> value</li>
+<li>Input data (same buildings, same communities)</li>
+<li>R version &gt;= 3.6.0</li>
+</ul>
+<p>The algorithm uses <code>withr::with_seed()</code> (not
+<code>set.seed()</code>), so it does not affect your global RNG state.
+Each community gets a deterministic sub-seed derived from the master
+<code>seed</code> and the community name, so <strong>adding or removing
+a community does not change the selection in other
+communities</strong>.</p>
+</div>
+<div id="key-parameters" class="section level2" number="7.7">
+<h2><span class="header-section-number">7.7</span> Key parameters</h2>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>buildings_list</code></td>
+<td><em>(required)</em></td>
+<td>Named list of <code>sf</code> POINT from
+<code>crop_buildings()</code></td>
+</tr>
+<tr class="even">
+<td><code>n_required</code></td>
+<td><em>(required)</em></td>
+<td>Named integer vector (or single integer for all)</td>
+</tr>
+<tr class="odd">
+<td><code>min_distance</code></td>
+<td><code>50</code></td>
+<td>Minimum distance in meters between any two selected points</td>
+</tr>
+<tr class="even">
+<td><code>seed</code></td>
+<td><em>(required)</em></td>
+<td>Integer seed for reproducibility</td>
+</tr>
+<tr class="odd">
+<td><code>joint</code></td>
+<td><code>FALSE</code></td>
+<td>Draw primary + secondary in one pass?</td>
+</tr>
+<tr class="even">
+<td><code>print_table</code></td>
+<td><code>TRUE</code></td>
+<td>Print a flextable summary?</td>
+</tr>
+<tr class="odd">
+<td><code>road_types</code></td>
+<td>6 common types</td>
+<td>OSM road types for proximity ordering</td>
+</tr>
+<tr class="even">
+<td><code>road_dir</code></td>
+<td><code>NULL</code></td>
+<td>Directory for caching road files (see below)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="step-7-pre-download-roads-optional" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Step 7: Pre-Download
+Roads (Optional)</h1>
+<p><code>sample_communities()</code> downloads roads from OSM for each
+community to do the proximity ordering. If you want to pre-download
+roads (e.g., while you have internet) and cache them for later use, use
+<code>fetch_community_roads()</code>:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>roads <span class="ot">&lt;-</span> <span class="fu">fetch_community_roads</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  communities,</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">road_dir =</span> <span class="st">&quot;output/roads&quot;</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; Fetching roads for 4 communities into output/roads...</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt;   community_one (1/4)...</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt;     Downloading roads from OSM (timeout: 120s)...</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;     Cached roads to community_one.gpkg.</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt;   ...</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; Done: 4/4 communities with roads.</span></span></code></pre></div>
+<p>Roads are saved as <code>.gpkg</code> files, one per community. On
+subsequent calls, cached files are reused without re-downloading.</p>
+<p>Pass the same <code>road_dir</code> to
+<code>sample_communities()</code> to use the cache:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">sample_communities</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  buildings_list,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="at">n_required =</span> <span class="fu">c</span>(<span class="at">community_one =</span> <span class="dv">30</span>, <span class="at">community_two =</span> <span class="dv">80</span>),</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  <span class="at">min_distance =</span> <span class="dv">50</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">250292</span><span class="dt">L</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  <span class="at">road_dir =</span> <span class="st">&quot;output/roads&quot;</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>communities_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygons</td>
+</tr>
+<tr class="even">
+<td><code>community_id_col</code></td>
+<td><code>&quot;name&quot;</code></td>
+<td>Column name for community ID</td>
+</tr>
+<tr class="odd">
+<td><code>road_dir</code></td>
+<td><em>(required)</em></td>
+<td>Directory for cached <code>.gpkg</code> files</td>
+</tr>
+<tr class="even">
+<td><code>road_types</code></td>
+<td>6 common types</td>
+<td>OSM highway values to query</td>
+</tr>
+<tr class="odd">
+<td><code>timeout</code></td>
+<td><code>120</code></td>
+<td>Overpass API timeout in seconds</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-8-split-into-batches" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> Step 8: Split into
+Batches</h1>
+<p><code>split_batches()</code> distributes points across field teams
+using <strong>round-robin assignment</strong>. Points are assigned in
+order of their <code>selection_order</code>, so consecutive points
+(which are geographically close thanks to the nearest- neighbour chain)
+go to different batches.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>primary_batches <span class="ot">&lt;-</span> <span class="fu">split_batches</span>(samples, <span class="at">n_batches =</span> <span class="dv">5</span><span class="dt">L</span>, <span class="at">set =</span> <span class="st">&quot;primary&quot;</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>secondary_batches <span class="ot">&lt;-</span> <span class="fu">split_batches</span>(samples, <span class="at">n_batches =</span> <span class="dv">5</span><span class="dt">L</span>, <span class="at">set =</span> <span class="st">&quot;secondary&quot;</span>)</span></code></pre></div>
+<p>Each community’s points get an <code>assigned_batch</code> column (1,
+2, 3, 4, or 5).</p>
+<p>If different communities need different team counts:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>primary_batches <span class="ot">&lt;-</span> <span class="fu">split_batches</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  samples,</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  <span class="at">n_batches =</span> <span class="fu">c</span>(</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>    <span class="at">community_one =</span> <span class="dv">3</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>    <span class="at">community_two =</span> <span class="dv">5</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>    <span class="at">community_three =</span> <span class="dv">5</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>    <span class="at">community_four =</span> <span class="dv">4</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>  ),</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>  <span class="at">set =</span> <span class="st">&quot;primary&quot;</span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>samples_list</code></td>
+<td><em>(required)</em></td>
+<td>Output of <code>sample_communities()</code></td>
+</tr>
+<tr class="even">
+<td><code>n_batches</code></td>
+<td><em>(required)</em></td>
+<td>Integer (all communities) or named integer vector</td>
+</tr>
+<tr class="odd">
+<td><code>set</code></td>
+<td><code>&quot;primary&quot;</code></td>
+<td>Which point set: <code>&quot;primary&quot;</code> or
+<code>&quot;secondary&quot;</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-9-create-buffers" class="section level1" number="10">
+<h1><span class="header-section-number">10</span> Step 9: Create
+Buffers</h1>
+<p><code>create_buffers()</code> generates circular buffer polygons
+around sampled points. Buffers are computed in a local UTM projection
+(auto-detected) for accurate metric distances, then reprojected back to
+WGS84.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># From the full samples list</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>buffers <span class="ot">&lt;-</span> <span class="fu">create_buffers</span>(samples, <span class="at">radius =</span> <span class="dv">50</span>, <span class="at">set =</span> <span class="st">&quot;primary&quot;</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co"># Or from a single sf POINT</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>buffers_one <span class="ot">&lt;-</span> <span class="fu">create_buffers</span>(samples<span class="sc">$</span>community_one<span class="sc">$</span>primary, <span class="at">radius =</span> <span class="dv">50</span>)</span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>x</code></td>
+<td><em>(required)</em></td>
+<td>An <code>sf</code> POINT, or a named list from
+<code>sample_communities()</code> / <code>split_batches()</code></td>
+</tr>
+<tr class="even">
+<td><code>radius</code></td>
+<td><code>50</code></td>
+<td>Buffer radius in meters</td>
+</tr>
+<tr class="odd">
+<td><code>set</code></td>
+<td><code>&quot;primary&quot;</code></td>
+<td>Which point set (when <code>x</code> is a list)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-10-export-points-to-disk" class="section level1" number="11">
+<h1><span class="header-section-number">11</span> Step 10: Export Points
+to Disk</h1>
+<p><code>export_points()</code> writes points, buffer polygons, and
+OsmAnd-compatible SQLite tile overlays to a structured directory.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co"># Export primary points</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>manifest_pri <span class="ot">&lt;-</span> <span class="fu">export_points</span>(</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output&quot;</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>  <span class="at">formats =</span> <span class="fu">c</span>(<span class="st">&quot;gpkg&quot;</span>, <span class="st">&quot;gpx&quot;</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>  <span class="at">include_buffers =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a>  <span class="at">set =</span> <span class="st">&quot;primary&quot;</span></span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>)</span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a><span class="co"># Export secondary points</span></span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>manifest_sec <span class="ot">&lt;-</span> <span class="fu">export_points</span>(</span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>  secondary_batches,</span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output&quot;</span>,</span>
+<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>  <span class="at">formats =</span> <span class="fu">c</span>(<span class="st">&quot;gpkg&quot;</span>, <span class="st">&quot;gpx&quot;</span>),</span>
+<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a>  <span class="at">include_buffers =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>  <span class="at">set =</span> <span class="st">&quot;secondary&quot;</span></span>
+<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>)</span></code></pre></div>
+<div id="output-directory-structure" class="section level2" number="11.1">
+<h2><span class="header-section-number">11.1</span> Output directory
+structure</h2>
+<pre><code>output/
+  primary/
+    community_one/
+      community_one_primary_all.gpkg           &lt;- all points (GeoPackage)
+      community_one_primary_all.gpx            &lt;- all points (GPX waypoints)
+      community_one_primary_batch_1.gpkg       &lt;- batch 1 points
+      community_one_primary_batch_1.gpx
+      community_one_primary_batch_2.gpkg
+      community_one_primary_batch_2.gpx
+      ...
+      community_one_buffers_all.gpkg           &lt;- all buffer polygons
+      community_one_buffers_all.gpx            &lt;- buffer boundaries (GPX tracks)
+      community_one_buffers_all.sqlitedb       &lt;- OsmAnd tile overlay (all)
+      community_one_buffers_batch_1.gpkg
+      community_one_buffers_batch_1.gpx
+      community_one_buffers_batch_1.sqlitedb   &lt;- OsmAnd tile overlay (batch 1)
+      ...
+    community_two/
+      ...
+  secondary/
+    community_one/
+      ...</code></pre>
+</div>
+<div id="the-manifest" class="section level2" number="11.2">
+<h2><span class="header-section-number">11.2</span> The manifest</h2>
+<p><code>export_points()</code> returns a tibble listing every file it
+created:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">print</span>(manifest_pri)</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 84 x 6</span></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="co">#&gt;    community     set     batch type    format  path</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;         &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="co">#&gt;  1 community_one primary all   points  gpkg    output/primary/community_one/...</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a><span class="co">#&gt;  2 community_one primary all   points  gpx     output/primary/community_one/...</span></span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a><span class="co">#&gt;  3 community_one primary 1     points  gpkg    output/primary/community_one/...</span></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a><span class="co">#&gt;  ...</span></span></code></pre></div>
+</div>
+<div id="osmand-integration" class="section level2" number="11.3">
+<h2><span class="header-section-number">11.3</span> OsmAnd
+integration</h2>
+<p>The <code>.sqlitedb</code> files are tile overlays that show buffer
+zones on OsmAnd (Android GPS navigation app used by field teams). To use
+them:</p>
+<ol style="list-style-type: decimal">
+<li>Copy the <code>.sqlitedb</code> file to your Android device at:
+<code>Android/data/net.osmand/files/tiles/</code></li>
+<li>In OsmAnd, go to <strong>Configure map</strong> &gt;
+<strong>Overlay</strong> (or <strong>Underlay</strong>)</li>
+<li>Select the <code>.sqlitedb</code> file</li>
+</ol>
+<p>The overlay shows semi-transparent green circles around each sampled
+point, helping field workers identify which buildings to visit.</p>
+</div>
+<div id="supported-export-formats" class="section level2" number="11.4">
+<h2><span class="header-section-number">11.4</span> Supported export
+formats</h2>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="34%" />
+<col width="40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Format</th>
+<th>Extension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>gpkg</code></td>
+<td><code>.gpkg</code></td>
+<td>GeoPackage – the modern standard, preserves all attributes</td>
+</tr>
+<tr class="even">
+<td><code>gpx</code></td>
+<td><code>.gpx</code></td>
+<td>GPS Exchange – widely supported by GPS devices and apps</td>
+</tr>
+<tr class="odd">
+<td><code>shp</code></td>
+<td><code>.shp</code></td>
+<td>ESRI Shapefile – legacy format, 10-character column name limit</td>
+</tr>
+<tr class="even">
+<td><code>kml</code></td>
+<td><code>.kml</code></td>
+<td>Google Earth format</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>samples_list</code></td>
+<td><em>(required)</em></td>
+<td>Output of <code>split_batches()</code> or
+<code>sample_communities()</code></td>
+</tr>
+<tr class="even">
+<td><code>out_dir</code></td>
+<td><em>(required)</em></td>
+<td>Root output directory</td>
+</tr>
+<tr class="odd">
+<td><code>formats</code></td>
+<td><code>c(&quot;gpkg&quot;, &quot;gpx&quot;)</code></td>
+<td>Export formats</td>
+</tr>
+<tr class="even">
+<td><code>include_buffers</code></td>
+<td><code>TRUE</code></td>
+<td>Generate buffer polygons and SQLite tiles?</td>
+</tr>
+<tr class="odd">
+<td><code>buffer_radius</code></td>
+<td><code>50</code></td>
+<td>Buffer radius in meters</td>
+</tr>
+<tr class="even">
+<td><code>set</code></td>
+<td><code>&quot;primary&quot;</code></td>
+<td>Which point set</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="step-11-create-a-google-earth-project-optional" class="section level1" number="12">
+<h1><span class="header-section-number">12</span> Step 11: Create a
+Google Earth Project (Optional)</h1>
+<p><code>create_earth_project()</code> generates a KML file organized
+into folders for viewing in Google Earth. This is useful for reviewing
+the sampling plan on a desktop before going to the field.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">create_earth_project</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  samples,</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="at">out_file =</span> <span class="st">&quot;output/sampling_project.kml&quot;</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Survey Sampling Plan&quot;</span></span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>)</span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a><span class="co">#&gt; Building KML for 4 communities...</span></span>
+<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a><span class="co">#&gt; Created Google Earth project: output/sampling_project.kml</span></span></code></pre></div>
+<p>The KML file contains four top-level folders:</p>
+<ul>
+<li><strong>Primary Points</strong> – with subfolders per community,
+each point labeled by <code>point_id</code></li>
+<li><strong>Secondary Points</strong> – same structure</li>
+<li><strong>Primary Buffers</strong> – buffer circles around primary
+points</li>
+<li><strong>Secondary Buffers</strong> – buffer circles around secondary
+points</li>
+</ul>
+<p>Each folder can be toggled on/off in Google Earth. Points and buffers
+use distinct colors (configurable).</p>
+<p><strong>Key parameters:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>samples_list</code></td>
+<td><em>(required)</em></td>
+<td>Output of <code>sample_communities()</code></td>
+</tr>
+<tr class="even">
+<td><code>out_file</code></td>
+<td><em>(required)</em></td>
+<td>Path for the <code>.kml</code> file</td>
+</tr>
+<tr class="odd">
+<td><code>buffer_radius</code></td>
+<td><code>50</code></td>
+<td>Buffer radius in meters</td>
+</tr>
+<tr class="even">
+<td><code>primary_color</code></td>
+<td><code>&quot;#FF4500&quot;</code></td>
+<td>Point color for primary (orange-red)</td>
+</tr>
+<tr class="odd">
+<td><code>secondary_color</code></td>
+<td><code>&quot;#1E90FF&quot;</code></td>
+<td>Point color for secondary (blue)</td>
+</tr>
+<tr class="even">
+<td><code>primary_buffer_color</code></td>
+<td><code>&quot;#FF450044&quot;</code></td>
+<td>Buffer fill for primary</td>
+</tr>
+<tr class="odd">
+<td><code>secondary_buffer_color</code></td>
+<td><code>&quot;#1E90FF44&quot;</code></td>
+<td>Buffer fill for secondary</td>
+</tr>
+<tr class="even">
+<td><code>title</code></td>
+<td><code>&quot;Sampling Project&quot;</code></td>
+<td>Document title in Google Earth</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-12-zip-for-field-distribution" class="section level1" number="13">
+<h1><span class="header-section-number">13</span> Step 12: Zip for Field
+Distribution</h1>
+<p><code>zip_points()</code> bundles GPX files and SQLite tile overlays
+into zip archives, ready for copying to field devices:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>zips <span class="ot">&lt;-</span> <span class="fu">zip_points</span>(</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>  <span class="at">export_dir =</span> <span class="st">&quot;output&quot;</span>,</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>  <span class="at">prefix =</span> <span class="st">&quot;survey-&quot;</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>  <span class="at">sets =</span> <span class="fu">c</span>(<span class="st">&quot;primary&quot;</span>, <span class="st">&quot;secondary&quot;</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>)</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a><span class="co">#&gt; Created output/survey-primary-points.zip</span></span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a><span class="co">#&gt; Created output/survey-secondary-points.zip</span></span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>export_dir</code></td>
+<td><em>(required)</em></td>
+<td>Root export directory (same as <code>out_dir</code> in
+<code>export_points()</code>)</td>
+</tr>
+<tr class="even">
+<td><code>out_dir</code></td>
+<td><code>export_dir</code></td>
+<td>Where to write the zip files</td>
+</tr>
+<tr class="odd">
+<td><code>sets</code></td>
+<td><code>c(&quot;primary&quot;, &quot;secondary&quot;)</code></td>
+<td>Which sets to zip</td>
+</tr>
+<tr class="even">
+<td><code>prefix</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Optional prefix for zip filenames</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="step-13-email-to-field-teams-optional" class="section level1" number="14">
+<h1><span class="header-section-number">14</span> Step 13: Email to
+Field Teams (Optional)</h1>
+<p><code>email_points()</code> sends zip archives as email attachments.
+It uses the <code>emayili</code> package (must be installed separately)
+and requires SMTP credentials.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="fu">email_points</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  <span class="at">zip_files =</span> zips,</span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  <span class="at">to =</span> <span class="st">&quot;fieldteam@example.org&quot;</span>,</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>  <span class="at">subject =</span> <span class="st">&quot;Survey - GPS Sampling Points&quot;</span></span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>)</span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a><span class="co">#&gt; Email sent to fieldteam@example.org</span></span></code></pre></div>
+<p><strong>SMTP configuration:</strong></p>
+<p>Set these environment variables (e.g., in your <code>.Renviron</code>
+file):</p>
+<pre><code>EMAIL_FROM=your.email@example.org
+EMAIL_USER=your.email@example.org
+EMAIL_PASSWORD=your-app-password</code></pre>
+<p>Or pass them directly:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="fu">email_points</span>(</span>
+<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a>  <span class="at">zip_files =</span> zips,</span>
+<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>  <span class="at">to =</span> <span class="fu">c</span>(<span class="st">&quot;team1@example.org&quot;</span>, <span class="st">&quot;team2@example.org&quot;</span>),</span>
+<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>  <span class="at">from =</span> <span class="st">&quot;coordinator@example.org&quot;</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a>  <span class="at">subject =</span> <span class="st">&quot;Survey GPS Points - Week 12&quot;</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>  <span class="at">host =</span> <span class="st">&quot;smtp.office365.com&quot;</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" tabindex="-1"></a>  <span class="at">port =</span> <span class="dv">587</span><span class="dt">L</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" tabindex="-1"></a>  <span class="at">username =</span> <span class="st">&quot;coordinator@example.org&quot;</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" tabindex="-1"></a>  <span class="at">password =</span> <span class="st">&quot;app-password-here&quot;</span></span>
+<span id="cb29-10"><a href="#cb29-10" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="step-14-static-maps" class="section level1" number="15">
+<h1><span class="header-section-number">15</span> Step 14: Static
+Maps</h1>
+<p>The package produces publication-quality static maps using
+<code>ggplot2</code>, <code>ggspatial</code> (scale bars and north
+arrows), and <code>tidyterra</code> (basemap tile rendering). All three
+are in <code>Suggests</code> and installed automatically when first
+needed.</p>
+<div id="generate-all-maps-at-once" class="section level2" number="15.1">
+<h2><span class="header-section-number">15.1</span> Generate all maps at
+once</h2>
+<p><code>map_all_communities()</code> is the main function for batch map
+generation. It creates:</p>
+<ul>
+<li>An <strong>overview map</strong> showing all communities with
+uniform point color</li>
+<li><strong>Per-community primary maps</strong> with batch coloring</li>
+<li><strong>Per-community secondary maps</strong> with batch coloring
+(if secondary points are provided)</li>
+</ul>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>maps <span class="ot">&lt;-</span> <span class="fu">map_all_communities</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>  communities,</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>  <span class="at">secondary_batches =</span> secondary_batches,</span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output/maps&quot;</span>,</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span></span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a>)</span>
+<span id="cb30-9"><a href="#cb30-9" tabindex="-1"></a><span class="co">#&gt; Generating overview map...</span></span>
+<span id="cb30-10"><a href="#cb30-10" tabindex="-1"></a><span class="co">#&gt; Generating map for community_one (primary)...</span></span>
+<span id="cb30-11"><a href="#cb30-11" tabindex="-1"></a><span class="co">#&gt; Generating map for community_one (secondary)...</span></span>
+<span id="cb30-12"><a href="#cb30-12" tabindex="-1"></a><span class="co">#&gt; ...</span></span>
+<span id="cb30-13"><a href="#cb30-13" tabindex="-1"></a><span class="co">#&gt; Saved output/maps/overview.png</span></span>
+<span id="cb30-14"><a href="#cb30-14" tabindex="-1"></a><span class="co">#&gt; Saved output/maps/community_one_primary.png</span></span>
+<span id="cb30-15"><a href="#cb30-15" tabindex="-1"></a><span class="co">#&gt; Saved output/maps/community_one_secondary.png</span></span>
+<span id="cb30-16"><a href="#cb30-16" tabindex="-1"></a><span class="co">#&gt; ...</span></span></code></pre></div>
+<p><strong>Key parameters:</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="33%" />
+<col width="27%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>primary_batches</code></td>
+<td><em>(required)</em></td>
+<td>Named list of <code>sf</code> from <code>split_batches()</code></td>
+</tr>
+<tr class="even">
+<td><code>communities_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygons</td>
+</tr>
+<tr class="odd">
+<td><code>community_id_col</code></td>
+<td><code>&quot;name&quot;</code></td>
+<td>Column name for community ID</td>
+</tr>
+<tr class="even">
+<td><code>secondary_batches</code></td>
+<td><code>NULL</code></td>
+<td>Named list of <code>sf</code> from <code>split_batches()</code> for
+secondary maps</td>
+</tr>
+<tr class="odd">
+<td><code>color_batches</code></td>
+<td><code>TRUE</code></td>
+<td>Color points by <code>assigned_batch</code>?</td>
+</tr>
+<tr class="even">
+<td><code>out_dir</code></td>
+<td><code>NULL</code></td>
+<td>Directory for saving PNGs. <code>NULL</code> = return plots
+only</td>
+</tr>
+<tr class="odd">
+<td><code>buffer_radius</code></td>
+<td><code>50</code></td>
+<td>Buffer radius in meters</td>
+</tr>
+<tr class="even">
+<td><code>primary_shape</code></td>
+<td><code>16</code></td>
+<td>Marker shape for primary maps (filled circle)</td>
+</tr>
+<tr class="odd">
+<td><code>secondary_shape</code></td>
+<td><code>17</code></td>
+<td>Marker shape for secondary maps (filled triangle)</td>
+</tr>
+<tr class="even">
+<td><code>width</code></td>
+<td><code>10</code></td>
+<td>Plot width in inches</td>
+</tr>
+<tr class="odd">
+<td><code>height</code></td>
+<td><code>12</code></td>
+<td>Plot height in inches</td>
+</tr>
+<tr class="even">
+<td><code>dpi</code></td>
+<td><code>300</code></td>
+<td>Plot resolution</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="generate-a-single-community-map" class="section level2" number="15.2">
+<h2><span class="header-section-number">15.2</span> Generate a single
+community map</h2>
+<p><code>map_community()</code> gives full control over a single
+map:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">map_community</span>(</span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>  <span class="at">community_name =</span> <span class="st">&quot;community_one&quot;</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>  <span class="at">community_sf =</span> communities[communities<span class="sc">$</span>name <span class="sc">==</span> <span class="st">&quot;community_one&quot;</span>, ],</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>  <span class="at">points_sf =</span> primary_batches[[<span class="st">&quot;community_one&quot;</span>]],</span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>  <span class="at">buffers_sf =</span> <span class="fu">create_buffers</span>(</span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a>    primary_batches[[<span class="st">&quot;community_one&quot;</span>]],</span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a>    <span class="at">radius =</span> <span class="dv">50</span></span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>  ),</span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a>  <span class="at">color_batches =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a>  <span class="at">show_labels =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb31-11"><a href="#cb31-11" tabindex="-1"></a>  <span class="at">label_size =</span> <span class="fl">1.8</span>,</span>
+<span id="cb31-12"><a href="#cb31-12" tabindex="-1"></a>  <span class="at">basemap =</span> <span class="st">&quot;OpenStreetMap.HOT&quot;</span></span>
+<span id="cb31-13"><a href="#cb31-13" tabindex="-1"></a>)</span>
+<span id="cb31-14"><a href="#cb31-14" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" tabindex="-1"></a><span class="co"># Display in RStudio</span></span>
+<span id="cb31-16"><a href="#cb31-16" tabindex="-1"></a>p</span>
+<span id="cb31-17"><a href="#cb31-17" tabindex="-1"></a></span>
+<span id="cb31-18"><a href="#cb31-18" tabindex="-1"></a><span class="co"># Customize before saving</span></span>
+<span id="cb31-19"><a href="#cb31-19" tabindex="-1"></a>p <span class="ot">&lt;-</span> p <span class="sc">+</span> ggplot2<span class="sc">::</span><span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span>
+<span id="cb31-20"><a href="#cb31-20" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(</span>
+<span id="cb31-21"><a href="#cb31-21" tabindex="-1"></a>  <span class="st">&quot;community_one_primary.png&quot;</span>,</span>
+<span id="cb31-22"><a href="#cb31-22" tabindex="-1"></a>  p,</span>
+<span id="cb31-23"><a href="#cb31-23" tabindex="-1"></a>  <span class="at">width =</span> <span class="dv">10</span>,</span>
+<span id="cb31-24"><a href="#cb31-24" tabindex="-1"></a>  <span class="at">height =</span> <span class="dv">12</span>,</span>
+<span id="cb31-25"><a href="#cb31-25" tabindex="-1"></a>  <span class="at">dpi =</span> <span class="dv">300</span></span>
+<span id="cb31-26"><a href="#cb31-26" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>What the map shows:</strong></p>
+<ul>
+<li>OSM basemap tiles (downloaded automatically)</li>
+<li>Community boundary polygon (semi-transparent)</li>
+<li>Buffer circles around each point (light green by default)</li>
+<li>Sampled points (colored by batch if
+<code>color_batches = TRUE</code>)</li>
+<li>Point ID labels (if <code>show_labels = TRUE</code> and
+<code>point_id</code> column exists)</li>
+<li>Scale bar (bottom-left)</li>
+<li>North arrow (top-right)</li>
+<li>Auto-generated subtitle with point count, ID range, and minimum
+pairwise distance</li>
+</ul>
+<p><strong>Key parameters:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>community_name</code></td>
+<td><em>(required)</em></td>
+<td>Name (used in title)</td>
+</tr>
+<tr class="even">
+<td><code>community_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygon (<code>sf</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>points_sf</code></td>
+<td><em>(required)</em></td>
+<td>Sampled points (<code>sf</code> POINT)</td>
+</tr>
+<tr class="even">
+<td><code>buffers_sf</code></td>
+<td><code>NULL</code></td>
+<td>Buffer polygons (<code>sf</code> POLYGON)</td>
+</tr>
+<tr class="odd">
+<td><code>color_batches</code></td>
+<td><code>TRUE</code></td>
+<td>Color by <code>assigned_batch</code>?</td>
+</tr>
+<tr class="even">
+<td><code>show_labels</code></td>
+<td><code>TRUE</code></td>
+<td>Show <code>point_id</code> labels?</td>
+</tr>
+<tr class="odd">
+<td><code>label_size</code></td>
+<td><code>1.8</code></td>
+<td>Text size for labels</td>
+</tr>
+<tr class="even">
+<td><code>point_shape</code></td>
+<td><code>16</code></td>
+<td>Marker shape (see <code>?points</code> for options)</td>
+</tr>
+<tr class="odd">
+<td><code>basemap</code></td>
+<td><code>&quot;OpenStreetMap.HOT&quot;</code></td>
+<td>Tile provider name</td>
+</tr>
+<tr class="even">
+<td><code>point_color</code></td>
+<td><code>&quot;#e97a52&quot;</code></td>
+<td>Uniform color (when no batch coloring)</td>
+</tr>
+<tr class="odd">
+<td><code>buffer_color</code></td>
+<td><code>&quot;#90EE9066&quot;</code></td>
+<td>Buffer fill color (with alpha)</td>
+</tr>
+<tr class="even">
+<td><code>title</code></td>
+<td><code>community_name</code></td>
+<td>Map title</td>
+</tr>
+<tr class="odd">
+<td><code>subtitle</code></td>
+<td>auto</td>
+<td>Auto-generated or custom subtitle</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="generate-an-overview-map" class="section level2" number="15.3">
+<h2><span class="header-section-number">15.3</span> Generate an overview
+map</h2>
+<p><code>map_overview()</code> creates a zoomed-out map of all
+communities:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>p_overview <span class="ot">&lt;-</span> <span class="fu">map_overview</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a>  communities,</span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Sampling Overview&quot;</span></span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a>)</span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a></span>
+<span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">ggsave</span>(</span>
+<span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a>  <span class="st">&quot;overview.png&quot;</span>,</span>
+<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a>  p_overview,</span>
+<span id="cb32-12"><a href="#cb32-12" tabindex="-1"></a>  <span class="at">width =</span> <span class="dv">10</span>,</span>
+<span id="cb32-13"><a href="#cb32-13" tabindex="-1"></a>  <span class="at">height =</span> <span class="dv">12</span>,</span>
+<span id="cb32-14"><a href="#cb32-14" tabindex="-1"></a>  <span class="at">dpi =</span> <span class="dv">300</span></span>
+<span id="cb32-15"><a href="#cb32-15" tabindex="-1"></a>)</span></code></pre></div>
+<p>The overview shows all communities with labels at centroids, uniform
+point color (no batch coloring), and buffer zones. It is designed to
+give a bird’s-eye view of the sampling plan.</p>
+</div>
+</div>
+<div id="step-15-interactive-leaflet-map" class="section level1" number="16">
+<h1><span class="header-section-number">16</span> Step 15: Interactive
+Leaflet Map</h1>
+<p><code>leaflet_communities()</code> creates a fully interactive map
+with layer toggles, a community navigation panel, and multiple base map
+options. This is ideal for digital review, presentations, and sharing
+with stakeholders.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">leaflet_communities</span>(</span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>  communities,</span>
+<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a>  <span class="at">secondary_batches =</span> secondary_batches,</span>
+<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>  <span class="at">buildings_list =</span> buildings_list,</span>
+<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>  <span class="at">roads_list =</span> roads,</span>
+<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a>  <span class="at">out_file =</span> <span class="st">&quot;output/maps/sampling_map.html&quot;</span></span>
+<span id="cb33-10"><a href="#cb33-10" tabindex="-1"></a>)</span>
+<span id="cb33-11"><a href="#cb33-11" tabindex="-1"></a></span>
+<span id="cb33-12"><a href="#cb33-12" tabindex="-1"></a><span class="co"># Display in RStudio viewer</span></span>
+<span id="cb33-13"><a href="#cb33-13" tabindex="-1"></a>m</span></code></pre></div>
+<div id="features" class="section level2" number="16.1">
+<h2><span class="header-section-number">16.1</span> Features</h2>
+<ul>
+<li><strong>Z-ordered layers:</strong> communities (bottom) &gt; roads
+&gt; buildings &gt; buffers &gt; points (top). Layers never obscure each
+other.</li>
+<li><strong>Layer toggles:</strong> checkbox controls for Communities,
+Roads, Buildings, Primary Points, Primary Buffers, Secondary Points,
+Secondary Buffers.</li>
+<li><strong>Distinct markers:</strong> circles for primary points,
+triangles for secondary.</li>
+<li><strong>Batch coloring:</strong> points colored by
+<code>assigned_batch</code> (using the Set1 color palette).</li>
+<li><strong>Community navigation:</strong> a panel with quick-zoom
+buttons for each community.</li>
+<li><strong>Multiple base maps:</strong> OpenStreetMap, Light (CartoDB),
+Satellite (ESRI), OSM Humanitarian.</li>
+<li><strong>Fullscreen:</strong> button to expand the map (requires
+<code>leaflet.extras</code>).</li>
+<li><strong>Point popups:</strong> click any point to see its ID, batch,
+and community.</li>
+<li><strong>Buildings toggle:</strong> building footprints are included
+but hidden by default (they can be heavy). Toggle via the layer
+control.</li>
+<li><strong>Self-contained HTML:</strong> pass <code>out_file</code> to
+save as a standalone HTML file that can be opened in any browser.</li>
+</ul>
+<p><strong>Key parameters:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>primary_batches</code></td>
+<td><em>(required)</em></td>
+<td>Named list from <code>split_batches()</code></td>
+</tr>
+<tr class="even">
+<td><code>communities_sf</code></td>
+<td><em>(required)</em></td>
+<td>Community polygons</td>
+</tr>
+<tr class="odd">
+<td><code>community_id_col</code></td>
+<td><code>&quot;name&quot;</code></td>
+<td>Column name for community ID</td>
+</tr>
+<tr class="even">
+<td><code>secondary_batches</code></td>
+<td><code>NULL</code></td>
+<td>Named list from <code>split_batches()</code></td>
+</tr>
+<tr class="odd">
+<td><code>buildings_list</code></td>
+<td><code>NULL</code></td>
+<td>Named list from <code>crop_buildings()</code></td>
+</tr>
+<tr class="even">
+<td><code>roads_list</code></td>
+<td><code>NULL</code></td>
+<td>Named list from <code>fetch_community_roads()</code></td>
+</tr>
+<tr class="odd">
+<td><code>color_batches</code></td>
+<td><code>TRUE</code></td>
+<td>Color by batch?</td>
+</tr>
+<tr class="even">
+<td><code>buffer_radius</code></td>
+<td><code>50</code></td>
+<td>Buffer radius in meters</td>
+</tr>
+<tr class="odd">
+<td><code>out_file</code></td>
+<td><code>NULL</code></td>
+<td>Path for self-contained HTML output</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="step-16-utility-find-closest-to-road-buildings" class="section level1" number="17">
+<h1><span class="header-section-number">17</span> Step 16: Utility –
+Find Closest-to-Road Buildings</h1>
+<p><code>find_start_points()</code> is a standalone utility that
+identifies the building closest to an OSM road in each community. The
+main sampling pipeline uses this logic internally (via
+<code>order_selected_points()</code>), but you can call it independently
+for other purposes:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a>starts <span class="ot">&lt;-</span> <span class="fu">find_start_points</span>(buildings_list)</span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a><span class="co">#&gt; Finding road-nearest start points for 4 communities...</span></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a><span class="co">#&gt;   community_one: querying roads for 834 points...</span></span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a><span class="co">#&gt;   community_one: computing distances to 156 road segments...</span></span>
+<span id="cb34-5"><a href="#cb34-5" tabindex="-1"></a><span class="co">#&gt;   community_one: start point id 42.</span></span>
+<span id="cb34-6"><a href="#cb34-6" tabindex="-1"></a><span class="co">#&gt;   ...</span></span>
+<span id="cb34-7"><a href="#cb34-7" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" tabindex="-1"></a><span class="fu">print</span>(starts)</span>
+<span id="cb34-9"><a href="#cb34-9" tabindex="-1"></a><span class="co">#&gt; community_four  community_one community_three  community_two</span></span>
+<span id="cb34-10"><a href="#cb34-10" tabindex="-1"></a><span class="co">#&gt;            315             42             178            503</span></span></code></pre></div>
+<p>Returns a named integer vector of building <code>id</code>
+values.</p>
+</div>
+<div id="complete-workflow-script" class="section level1" number="18">
+<h1><span class="header-section-number">18</span> Complete Workflow
+Script</h1>
+<p>Here is the full pipeline in a single script, ready to copy and
+adapt:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="fu">library</span>(gpssampling)</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a><span class="co"># ── 1. Load data ──────────────────────────────────────────────</span></span>
+<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a>communities <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">&quot;communities.gpkg&quot;</span>)</span>
+<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a>state_boundary <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">&quot;boundary.gpkg&quot;</span>)</span>
+<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a><span class="co"># ── 2. Fetch and filter buildings ─────────────────────────────</span></span>
+<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a>osm_buildings <span class="ot">&lt;-</span> <span class="fu">fetch_osm_buildings</span>(state_boundary)</span>
+<span id="cb35-10"><a href="#cb35-10" tabindex="-1"></a></span>
+<span id="cb35-11"><a href="#cb35-11" tabindex="-1"></a>buildings <span class="ot">&lt;-</span> <span class="fu">filter_buildings</span>(</span>
+<span id="cb35-12"><a href="#cb35-12" tabindex="-1"></a>  osm_buildings,</span>
+<span id="cb35-13"><a href="#cb35-13" tabindex="-1"></a>  <span class="at">building_col =</span> <span class="st">&quot;building&quot;</span></span>
+<span id="cb35-14"><a href="#cb35-14" tabindex="-1"></a>)</span>
+<span id="cb35-15"><a href="#cb35-15" tabindex="-1"></a></span>
+<span id="cb35-16"><a href="#cb35-16" tabindex="-1"></a><span class="co"># ── 3. Crop to communities ───────────────────────────────────</span></span>
+<span id="cb35-17"><a href="#cb35-17" tabindex="-1"></a>buildings_list <span class="ot">&lt;-</span> <span class="fu">crop_buildings</span>(</span>
+<span id="cb35-18"><a href="#cb35-18" tabindex="-1"></a>  buildings,</span>
+<span id="cb35-19"><a href="#cb35-19" tabindex="-1"></a>  communities,</span>
+<span id="cb35-20"><a href="#cb35-20" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span></span>
+<span id="cb35-21"><a href="#cb35-21" tabindex="-1"></a>)</span>
+<span id="cb35-22"><a href="#cb35-22" tabindex="-1"></a></span>
+<span id="cb35-23"><a href="#cb35-23" tabindex="-1"></a><span class="co"># Check counts</span></span>
+<span id="cb35-24"><a href="#cb35-24" tabindex="-1"></a><span class="fu">vapply</span>(buildings_list, nrow, <span class="fu">integer</span>(<span class="dv">1</span><span class="dt">L</span>))</span>
+<span id="cb35-25"><a href="#cb35-25" tabindex="-1"></a></span>
+<span id="cb35-26"><a href="#cb35-26" tabindex="-1"></a><span class="co"># ── 4. (Optional) Visualize building footprints ──────────────</span></span>
+<span id="cb35-27"><a href="#cb35-27" tabindex="-1"></a><span class="fu">map_cropped_buildings</span>(</span>
+<span id="cb35-28"><a href="#cb35-28" tabindex="-1"></a>  osm_buildings,</span>
+<span id="cb35-29"><a href="#cb35-29" tabindex="-1"></a>  communities,</span>
+<span id="cb35-30"><a href="#cb35-30" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb35-31"><a href="#cb35-31" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output/maps/buildings&quot;</span></span>
+<span id="cb35-32"><a href="#cb35-32" tabindex="-1"></a>)</span>
+<span id="cb35-33"><a href="#cb35-33" tabindex="-1"></a></span>
+<span id="cb35-34"><a href="#cb35-34" tabindex="-1"></a><span class="co"># ── 5. Pre-download roads (optional, for offline use) ────────</span></span>
+<span id="cb35-35"><a href="#cb35-35" tabindex="-1"></a>roads <span class="ot">&lt;-</span> <span class="fu">fetch_community_roads</span>(</span>
+<span id="cb35-36"><a href="#cb35-36" tabindex="-1"></a>  communities,</span>
+<span id="cb35-37"><a href="#cb35-37" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb35-38"><a href="#cb35-38" tabindex="-1"></a>  <span class="at">road_dir =</span> <span class="st">&quot;output/roads&quot;</span></span>
+<span id="cb35-39"><a href="#cb35-39" tabindex="-1"></a>)</span>
+<span id="cb35-40"><a href="#cb35-40" tabindex="-1"></a></span>
+<span id="cb35-41"><a href="#cb35-41" tabindex="-1"></a><span class="co"># ── 6. Sample ────────────────────────────────────────────────</span></span>
+<span id="cb35-42"><a href="#cb35-42" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">sample_communities</span>(</span>
+<span id="cb35-43"><a href="#cb35-43" tabindex="-1"></a>  buildings_list,</span>
+<span id="cb35-44"><a href="#cb35-44" tabindex="-1"></a>  <span class="at">n_required =</span> <span class="fu">c</span>(</span>
+<span id="cb35-45"><a href="#cb35-45" tabindex="-1"></a>    <span class="at">community_one =</span> <span class="dv">30</span>,</span>
+<span id="cb35-46"><a href="#cb35-46" tabindex="-1"></a>    <span class="at">community_two =</span> <span class="dv">80</span>,</span>
+<span id="cb35-47"><a href="#cb35-47" tabindex="-1"></a>    <span class="at">community_three =</span> <span class="dv">85</span>,</span>
+<span id="cb35-48"><a href="#cb35-48" tabindex="-1"></a>    <span class="at">community_four =</span> <span class="dv">60</span></span>
+<span id="cb35-49"><a href="#cb35-49" tabindex="-1"></a>  ),</span>
+<span id="cb35-50"><a href="#cb35-50" tabindex="-1"></a>  <span class="at">min_distance =</span> <span class="dv">50</span>,</span>
+<span id="cb35-51"><a href="#cb35-51" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">250292</span><span class="dt">L</span>,</span>
+<span id="cb35-52"><a href="#cb35-52" tabindex="-1"></a>  <span class="at">joint =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-53"><a href="#cb35-53" tabindex="-1"></a>  <span class="at">road_dir =</span> <span class="st">&quot;output/roads&quot;</span></span>
+<span id="cb35-54"><a href="#cb35-54" tabindex="-1"></a>)</span>
+<span id="cb35-55"><a href="#cb35-55" tabindex="-1"></a></span>
+<span id="cb35-56"><a href="#cb35-56" tabindex="-1"></a><span class="co"># ── 7. Split into batches ────────────────────────────────────</span></span>
+<span id="cb35-57"><a href="#cb35-57" tabindex="-1"></a>primary_batches <span class="ot">&lt;-</span> <span class="fu">split_batches</span>(samples, <span class="at">n_batches =</span> <span class="dv">5</span><span class="dt">L</span>, <span class="at">set =</span> <span class="st">&quot;primary&quot;</span>)</span>
+<span id="cb35-58"><a href="#cb35-58" tabindex="-1"></a>secondary_batches <span class="ot">&lt;-</span> <span class="fu">split_batches</span>(samples, <span class="at">n_batches =</span> <span class="dv">5</span><span class="dt">L</span>, <span class="at">set =</span> <span class="st">&quot;secondary&quot;</span>)</span>
+<span id="cb35-59"><a href="#cb35-59" tabindex="-1"></a></span>
+<span id="cb35-60"><a href="#cb35-60" tabindex="-1"></a><span class="co"># ── 8. Export to disk ────────────────────────────────────────</span></span>
+<span id="cb35-61"><a href="#cb35-61" tabindex="-1"></a><span class="fu">export_points</span>(</span>
+<span id="cb35-62"><a href="#cb35-62" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb35-63"><a href="#cb35-63" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output&quot;</span>,</span>
+<span id="cb35-64"><a href="#cb35-64" tabindex="-1"></a>  <span class="at">formats =</span> <span class="fu">c</span>(<span class="st">&quot;gpkg&quot;</span>, <span class="st">&quot;gpx&quot;</span>),</span>
+<span id="cb35-65"><a href="#cb35-65" tabindex="-1"></a>  <span class="at">include_buffers =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-66"><a href="#cb35-66" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb35-67"><a href="#cb35-67" tabindex="-1"></a>  <span class="at">set =</span> <span class="st">&quot;primary&quot;</span></span>
+<span id="cb35-68"><a href="#cb35-68" tabindex="-1"></a>)</span>
+<span id="cb35-69"><a href="#cb35-69" tabindex="-1"></a></span>
+<span id="cb35-70"><a href="#cb35-70" tabindex="-1"></a><span class="fu">export_points</span>(</span>
+<span id="cb35-71"><a href="#cb35-71" tabindex="-1"></a>  secondary_batches,</span>
+<span id="cb35-72"><a href="#cb35-72" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output&quot;</span>,</span>
+<span id="cb35-73"><a href="#cb35-73" tabindex="-1"></a>  <span class="at">formats =</span> <span class="fu">c</span>(<span class="st">&quot;gpkg&quot;</span>, <span class="st">&quot;gpx&quot;</span>),</span>
+<span id="cb35-74"><a href="#cb35-74" tabindex="-1"></a>  <span class="at">include_buffers =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-75"><a href="#cb35-75" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb35-76"><a href="#cb35-76" tabindex="-1"></a>  <span class="at">set =</span> <span class="st">&quot;secondary&quot;</span></span>
+<span id="cb35-77"><a href="#cb35-77" tabindex="-1"></a>)</span>
+<span id="cb35-78"><a href="#cb35-78" tabindex="-1"></a></span>
+<span id="cb35-79"><a href="#cb35-79" tabindex="-1"></a><span class="co"># ── 9. Google Earth project ──────────────────────────────────</span></span>
+<span id="cb35-80"><a href="#cb35-80" tabindex="-1"></a><span class="fu">create_earth_project</span>(</span>
+<span id="cb35-81"><a href="#cb35-81" tabindex="-1"></a>  samples,</span>
+<span id="cb35-82"><a href="#cb35-82" tabindex="-1"></a>  <span class="at">out_file =</span> <span class="st">&quot;output/sampling_project.kml&quot;</span>,</span>
+<span id="cb35-83"><a href="#cb35-83" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span></span>
+<span id="cb35-84"><a href="#cb35-84" tabindex="-1"></a>)</span>
+<span id="cb35-85"><a href="#cb35-85" tabindex="-1"></a></span>
+<span id="cb35-86"><a href="#cb35-86" tabindex="-1"></a><span class="co"># ── 10. Zip for field teams ──────────────────────────────────</span></span>
+<span id="cb35-87"><a href="#cb35-87" tabindex="-1"></a>zips <span class="ot">&lt;-</span> <span class="fu">zip_points</span>(<span class="st">&quot;output&quot;</span>, <span class="at">prefix =</span> <span class="st">&quot;survey-&quot;</span>)</span>
+<span id="cb35-88"><a href="#cb35-88" tabindex="-1"></a></span>
+<span id="cb35-89"><a href="#cb35-89" tabindex="-1"></a><span class="co"># ── 11. Static maps ─────────────────────────────────────────</span></span>
+<span id="cb35-90"><a href="#cb35-90" tabindex="-1"></a><span class="fu">map_all_communities</span>(</span>
+<span id="cb35-91"><a href="#cb35-91" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb35-92"><a href="#cb35-92" tabindex="-1"></a>  communities,</span>
+<span id="cb35-93"><a href="#cb35-93" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb35-94"><a href="#cb35-94" tabindex="-1"></a>  <span class="at">secondary_batches =</span> secondary_batches,</span>
+<span id="cb35-95"><a href="#cb35-95" tabindex="-1"></a>  <span class="at">out_dir =</span> <span class="st">&quot;output/maps&quot;</span>,</span>
+<span id="cb35-96"><a href="#cb35-96" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span></span>
+<span id="cb35-97"><a href="#cb35-97" tabindex="-1"></a>)</span>
+<span id="cb35-98"><a href="#cb35-98" tabindex="-1"></a></span>
+<span id="cb35-99"><a href="#cb35-99" tabindex="-1"></a><span class="co"># ── 12. Interactive map ──────────────────────────────────────</span></span>
+<span id="cb35-100"><a href="#cb35-100" tabindex="-1"></a><span class="fu">leaflet_communities</span>(</span>
+<span id="cb35-101"><a href="#cb35-101" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb35-102"><a href="#cb35-102" tabindex="-1"></a>  communities,</span>
+<span id="cb35-103"><a href="#cb35-103" tabindex="-1"></a>  <span class="at">community_id_col =</span> <span class="st">&quot;name&quot;</span>,</span>
+<span id="cb35-104"><a href="#cb35-104" tabindex="-1"></a>  <span class="at">secondary_batches =</span> secondary_batches,</span>
+<span id="cb35-105"><a href="#cb35-105" tabindex="-1"></a>  <span class="at">buildings_list =</span> buildings_list,</span>
+<span id="cb35-106"><a href="#cb35-106" tabindex="-1"></a>  <span class="at">roads_list =</span> roads,</span>
+<span id="cb35-107"><a href="#cb35-107" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">50</span>,</span>
+<span id="cb35-108"><a href="#cb35-108" tabindex="-1"></a>  <span class="at">out_file =</span> <span class="st">&quot;output/maps/sampling_map.html&quot;</span></span>
+<span id="cb35-109"><a href="#cb35-109" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="function-reference" class="section level1" number="19">
+<h1><span class="header-section-number">19</span> Function
+Reference</h1>
+<div id="sampling" class="section level2" number="19.1">
+<h2><span class="header-section-number">19.1</span> Sampling</h2>
+<table>
+<colgroup>
+<col width="52%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>fetch_osm_buildings()</code></td>
+<td>Download OSM building footprints for an area</td>
+</tr>
+<tr class="even">
+<td><code>filter_buildings()</code></td>
+<td>Remove non-residential buildings by OSM tags</td>
+</tr>
+<tr class="odd">
+<td><code>crop_buildings()</code></td>
+<td>Intersect buildings with community polygons, return centroids</td>
+</tr>
+<tr class="even">
+<td><code>sample_communities()</code></td>
+<td>Random sampling with min-distance constraint and proximity
+ordering</td>
+</tr>
+<tr class="odd">
+<td><code>fetch_community_roads()</code></td>
+<td>Pre-download and cache OSM roads per community</td>
+</tr>
+<tr class="even">
+<td><code>find_start_points()</code></td>
+<td>Find closest-to-road building per community (utility)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="gps-management" class="section level2" number="19.2">
+<h2><span class="header-section-number">19.2</span> GPS Management</h2>
+<table>
+<colgroup>
+<col width="52%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>split_batches()</code></td>
+<td>Assign round-robin batch numbers</td>
+</tr>
+<tr class="even">
+<td><code>create_buffers()</code></td>
+<td>Generate circular buffer polygons</td>
+</tr>
+<tr class="odd">
+<td><code>create_buffer_tiles()</code></td>
+<td>Create OsmAnd-compatible SQLite tile overlays</td>
+</tr>
+<tr class="even">
+<td><code>export_points()</code></td>
+<td>Export points, buffers, and tiles to disk</td>
+</tr>
+<tr class="odd">
+<td><code>create_earth_project()</code></td>
+<td>Generate a Google Earth KML with organized folders</td>
+</tr>
+<tr class="even">
+<td><code>zip_points()</code></td>
+<td>Bundle GPX + SQLite files into zip archives</td>
+</tr>
+<tr class="odd">
+<td><code>email_points()</code></td>
+<td>Send zip files via SMTP email</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="mapping" class="section level2" number="19.3">
+<h2><span class="header-section-number">19.3</span> Mapping</h2>
+<table>
+<colgroup>
+<col width="52%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>map_cropped_buildings()</code></td>
+<td>Building footprint maps per community</td>
+</tr>
+<tr class="even">
+<td><code>map_community()</code></td>
+<td>Per-community static map with batch coloring and labels</td>
+</tr>
+<tr class="odd">
+<td><code>map_overview()</code></td>
+<td>Zoomed-out static overview of all communities</td>
+</tr>
+<tr class="even">
+<td><code>map_all_communities()</code></td>
+<td>Generate and optionally save all static maps</td>
+</tr>
+<tr class="odd">
+<td><code>leaflet_communities()</code></td>
+<td>Interactive leaflet map with layer controls and navigation</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="troubleshooting" class="section level1" number="20">
+<h1><span class="header-section-number">20</span> Troubleshooting</h1>
+<div id="osm-download-fails-or-times-out" class="section level2" number="20.1">
+<h2><span class="header-section-number">20.1</span> OSM download fails
+or times out</h2>
+<p>The Overpass API has rate limits. If downloads fail:</p>
+<ul>
+<li>Wait a few minutes and try again.</li>
+<li>Reduce the area size or increase the <code>zoom</code> level in
+<code>fetch_osm_buildings()</code> (more tiles but smaller
+queries).</li>
+<li>For roads, increase the <code>timeout</code> parameter in
+<code>fetch_community_roads()</code>.</li>
+</ul>
+</div>
+<div id="requested-n-points-but-only-m-available" class="section level2" number="20.2">
+<h2><span class="header-section-number">20.2</span> “Requested N points
+but only M available”</h2>
+<p>The number of buildings in a community is less than
+<code>n_required</code>. Solutions:</p>
+<ul>
+<li>Reduce <code>n_required</code> for that community.</li>
+<li>Check your community polygon – it may be too small or
+misaligned.</li>
+<li>Check that <code>filter_buildings()</code> did not remove too many
+buildings.</li>
+</ul>
+</div>
+<div id="no-candidates-beyond-xm" class="section level2" number="20.3">
+<h2><span class="header-section-number">20.3</span> “No candidates
+beyond Xm”</h2>
+<p>The minimum distance constraint is too strict for the number of
+points requested. The algorithm relaxes the constraint and draws the
+remaining points randomly with a warning. You can:</p>
+<ul>
+<li>Reduce <code>min_distance</code>.</li>
+<li>Reduce <code>n_required</code>.</li>
+<li>This is expected when <code>n_required</code> is a large fraction of
+the available buildings.</li>
+</ul>
+</div>
+<div id="basemap-tiles-fail-to-download" class="section level2" number="20.4">
+<h2><span class="header-section-number">20.4</span> Basemap tiles fail
+to download</h2>
+<p>If <code>maptiles::get_tiles()</code> fails (network issue or
+provider down), maps are rendered without a basemap. The data layers
+(points, buffers, boundaries) still appear correctly. Try a different
+<code>basemap</code> provider:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="fu">map_all_communities</span>(</span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>  primary_batches,</span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a>  communities,</span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a>  <span class="at">basemap =</span> <span class="st">&quot;CartoDB.Positron&quot;</span></span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="osmand-does-not-show-the-overlay" class="section level2" number="20.5">
+<h2><span class="header-section-number">20.5</span> OsmAnd does not show
+the overlay</h2>
+<ul>
+<li>Verify the <code>.sqlitedb</code> file is in
+<code>Android/data/net.osmand/files/tiles/</code>.</li>
+<li>In OsmAnd, go to Configure map &gt; Overlay (or Underlay) and select
+the file.</li>
+<li>Make sure the zoom level you are viewing is within the tile range
+(default zoom 8-14).</li>
+</ul>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
