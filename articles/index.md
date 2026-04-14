@@ -20,6 +20,6 @@
 
 ### Other
 
-- [Programmatic Sampling
-  Pipeline](https://epicentre-msf.github.io/gpssampling/articles/sampling-pipeline.md):
+- [GPS Sampling Pipeline: A Complete
+  Guide](https://epicentre-msf.github.io/gpssampling/articles/sampling-pipeline.md):
 - [Credits](https://epicentre-msf.github.io/gpssampling/articles/credits.md):
