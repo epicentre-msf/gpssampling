@@ -625,16 +625,30 @@ find_start_points <- function(
 #'
 #' Internal workhorse for [select_sample_points()]. Picks `n_draw`
 #' points from `pool_idx` positions in `pts_utm`, enforcing that no
-#' two selected points are closer than `min_distance` meters.
+#' two selected points are closer than `min_distance` meters (or
+#' `2 * min_distance` when `buffer_overlap = FALSE`).
 #'
 #' @param pts_utm An `sf` POINT already projected to a UTM CRS.
 #' @param pool_idx Integer vector of row indices to draw from.
 #' @param n_draw Integer, number of points to draw.
 #' @param min_distance Numeric, minimum distance in meters.
+#' @param buffer_overlap Logical. If `TRUE` (default), the standard
+#'   `min_distance` constraint is applied. If `FALSE`, the effective
+#'   exclusion radius is doubled to `2 * min_distance`, ensuring that
+#'   circular buffers of radius `min_distance` around any two selected
+#'   points never overlap.
 #' @return A list with `$selected` (integer indices) and `$remaining`
 #'   (integer indices not selected).
 #' @noRd
-draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
+draw_with_distance <- function(
+  pts_utm,
+  pool_idx,
+  n_draw,
+  min_distance,
+  buffer_overlap = TRUE
+) {
+  effective_dist <- if (buffer_overlap) min_distance else 2 * min_distance
+
   first <- sample(pool_idx, 1L)
   selected_idx <- first
   remaining_idx <- setdiff(pool_idx, first)
@@ -646,7 +660,7 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
     within_dist <- sf::st_is_within_distance(
       rem_geom,
       sel_geom,
-      dist = min_distance
+      dist = effective_dist
     )
     too_close <- vapply(within_dist, function(x) length(x) > 0L, logical(1L))
     candidate_mask <- !too_close
@@ -654,7 +668,7 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
     if (!any(candidate_mask)) {
       n_still_needed <- n_draw - length(selected_idx)
       cli::cli_warn(c(
-        "No candidates beyond {min_distance}m.",
+        "No candidates beyond {effective_dist}m.",
         "i" = "Drawing {n_still_needed} remaining point{?s} randomly (distance constraint relaxed)."
       ))
       drawn <- sample(
@@ -703,6 +717,10 @@ draw_with_distance <- function(pts_utm, pool_idx, n_draw, min_distance) {
 #'   two selected points. Default `50`.
 #' @param joint Logical. If `TRUE`, draw primary and secondary in a
 #'   single pass to reduce clustering. Default `FALSE`.
+#' @param buffer_overlap Logical. If `TRUE` (default), the standard
+#'   `min_distance` constraint applies (buffers may overlap). If
+#'   `FALSE`, the exclusion radius is doubled to `2 * min_distance`,
+#'   preventing buffer overlap between any two selected points.
 #' @return A list with `$primary` (`sf` POINT of selected points) and
 #'   `$secondary` (`sf` POINT of replacement points, at most
 #'   `n_required` rows). The primary set has no `selection_order`
@@ -712,12 +730,14 @@ select_sample_points <- function(
   points_sf,
   n_required,
   min_distance = 50,
-  joint = FALSE
+  joint = FALSE,
+  buffer_overlap = TRUE
 ) {
   checkmate::assert_class(points_sf, "sf")
   checkmate::assert_int(n_required, lower = 1L)
   checkmate::assert_number(min_distance, lower = 0)
   checkmate::assert_flag(joint)
+  checkmate::assert_flag(buffer_overlap)
 
   if (n_required > nrow(points_sf)) {
     cli::cli_abort(
@@ -741,7 +761,8 @@ select_sample_points <- function(
       pts_utm,
       all_idx,
       n_draw,
-      min_distance
+      min_distance,
+      buffer_overlap = buffer_overlap
     )
 
     selected <- joint_draw$selected
@@ -783,7 +804,8 @@ select_sample_points <- function(
     pts_utm,
     all_idx,
     n_required,
-    min_distance
+    min_distance,
+    buffer_overlap = buffer_overlap
   )
 
   cli::cli_inform(
@@ -810,7 +832,8 @@ select_sample_points <- function(
       pts_utm,
       leftover_idx,
       n_required,
-      min_distance
+      min_distance,
+      buffer_overlap = buffer_overlap
     )
     secondary <- sf::st_transform(
       pts_utm[secondary_draw$selected, ],
@@ -1207,6 +1230,18 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #'   provided, roads are read from / saved to
 #'   `road_dir/{community_name}.gpkg`. Use [fetch_community_roads()]
 #'   to pre-download roads. Default `NULL` (no caching).
+#' @param starting_point Integer. Starting number for `point_id` assignment.
+#'   Useful when combining results from multiple survey rounds where IDs must
+#'   not restart at 1. Default `1L`.
+#' @param buffer_overlap Logical. Controls whether the circular buffers of
+#'   radius `min_distance` around any two selected points are allowed to
+#'   overlap. If `TRUE` (default), the standard `min_distance` exclusion
+#'   radius is used.
+#'   If `FALSE`, the exclusion radius is doubled to `2 * min_distance`,
+#'   preventing any two buffers from touching or overlapping. Set to `FALSE`
+#'   when field workers are instructed to sample any valid building inside the
+#'   buffer if the original point is invalid, and you need to guarantee that
+#'   no replacement building could fall within another point's buffer.
 #' @return A named list. Each community element contains:
 #'   `$buildings` (all candidates), `$primary` (selected points with
 #'   `selection_order` and `point_id`), `$secondary` (replacement
@@ -1263,6 +1298,26 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #'   seed = 12345L,
 #'   joint = TRUE
 #' )
+#'
+#' # Shift point IDs to start at 300 (e.g., continuing from a prior round)
+#' samples <- sample_communities(
+#'   buildings_list,
+#'   n_required = c(community_one = 30, community_two = 80),
+#'   min_distance = 50,
+#'   seed = 12345L,
+#'   starting_point = 300L
+#' )
+#' samples$community_one$primary$point_id # starts at 300
+#'
+#' # No buffer overlap: any two buffers of radius 50m never touch
+#' # (effective exclusion radius becomes 100m = 2 * 50)
+#' samples <- sample_communities(
+#'   buildings_list,
+#'   n_required = c(community_one = 30, community_two = 80),
+#'   min_distance = 50,
+#'   seed = 12345L,
+#'   buffer_overlap = FALSE
+#' )
 #' }
 sample_communities <- function(
   buildings_list,
@@ -1281,13 +1336,17 @@ sample_communities <- function(
     "trunk",
     "unclassified"
   ),
-  road_dir = NULL
+  road_dir = NULL,
+  starting_point = 1L,
+  buffer_overlap = TRUE
 ) {
   checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
   checkmate::assert_numeric(min_distance, lower = 0, min.len = 1L)
   checkmate::assert_number(default_distance, lower = 0)
   checkmate::assert_int(seed)
+  checkmate::assert_int(starting_point, lower = 1L)
   checkmate::assert_flag(joint)
+  checkmate::assert_flag(buffer_overlap)
   if (!is.null(point_id_digits)) {
     checkmate::assert_int(point_id_digits, lower = 1L, upper = 10L)
   }
@@ -1368,7 +1427,8 @@ sample_communities <- function(
         buildings_list[[nm]],
         n_required[[nm]],
         nm_dist,
-        joint = joint
+        joint = joint,
+        buffer_overlap = buffer_overlap
       )
     })
     # Fetch roads once per community (cached if road_dir provided)
@@ -1404,7 +1464,7 @@ sample_communities <- function(
   # --- Assign globally unique point_id across all communities ---
   # Primary: 1..N_total_primary (sequentially across communities)
   # Secondary: (N_total_primary + 1).. (sequentially across communities)
-  primary_offset <- 0L
+  primary_offset <- starting_point - 1L
   for (nm in sorted_names) {
     n_pri <- nrow(res[[nm]]$primary)
     res[[nm]]$primary$point_id <- seq(
@@ -1478,7 +1538,10 @@ sample_communities <- function(
           mean_dist_all = all_stats$mean_dist,
           median_dist_all = all_stats$median_dist,
           violations = all_stats$n_violations,
-          mode = if (joint) "joint" else "independent",
+          mode = paste0(
+            if (joint) "joint" else "independent",
+            if (!buffer_overlap) "+no-overlap" else ""
+          ),
           seed = res[[nm]]$seed,
           stringsAsFactors = FALSE
         ))

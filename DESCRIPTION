@@ -26,7 +26,7 @@ Imports: arrow, base64enc, bslib, callr, checkmate, cli, curl, DBI,
         pingr, png, pool, purrr, qrcode, R6, rappdirs, readr,
         rhandsontable, rintrojs, rlang, rmapshaper, RSQLite, sass,
         scales, sf, shiny, shiny.i18n, shinybusy,
-        shinyFeedback, shinyjs, shinyWidgets, slippymath, sp, stars,
+        shinyFeedback, shinyjs, shinyWidgets, slippymath, stars,
         stats, stringdist, stringr, terra, tibble, tidyr, tippy, tools,
         units, utils, uuid, waiter, withr, wk, zip
 Suggests: covr, devEMF, devtools, diffdf, emayili, ggplot2, ggspatial,

@@ -330,16 +330,7 @@ st_read <- function(..., add_coordinates = TRUE) {
 }
 
 st_sample <- function(polygons, n = 1L, type = 'random') {
-  if (n == 1L && type == 'random') {
-    samples <- sf::st_sample(polygons, size = n, by_polygon = FALSE)
-  } else {
-    samples <- sf::as_Spatial(polygons)
-    samples <- sp::spsample(samples, n = n, type = type, iter = 100L)
-    samples <- samples |>
-      sf::st_as_sf() |>
-      sf::st_set_crs(4326L)
-  }
-  samples
+  sf::st_sample(polygons, size = n, type = type, by_polygon = FALSE)
 }
 
 st_select <- function(sf, ...) {

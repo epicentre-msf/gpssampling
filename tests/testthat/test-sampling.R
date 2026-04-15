@@ -966,6 +966,179 @@ test_that("sample_communities omits named_point_id when point_id_digits is NULL"
   }
 })
 
+# starting_point
+# ............................................................................
+
+test_that("starting_point shifts primary point_id numbering", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      starting_point = 300L
+    )
+  )
+
+  all_primary_ids <- unlist(lapply(result, function(x) x$primary$point_id))
+  expect_gte(min(all_primary_ids), 300L)
+})
+
+test_that("starting_point = 1L (default) starts numbering at 1", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  )
+
+  all_primary_ids <- unlist(lapply(result, function(x) x$primary$point_id))
+  expect_equal(min(all_primary_ids), 1L)
+})
+
+test_that("starting_point = 0L errors (must be >= 1)", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  expect_error(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      starting_point = 0L
+    )
+  )
+})
+
+# buffer_overlap
+# ............................................................................
+
+test_that("buffer_overlap=FALSE is equivalent to doubling min_distance", {
+  # 25 points on a 5x5 grid (~83m apart at equator)
+  # At this spacing: effective_dist=100m excludes adjacent points (83 < 100)
+  # but effective_dist=50m allows them (83 > 50)
+  coords <- expand.grid(
+    x = seq(0, 0.003, length.out = 5L),
+    y = seq(0, 0.003, length.out = 5L)
+  )
+  pts <- sf::st_sf(
+    id = seq_len(nrow(coords)),
+    community = "test",
+    geometry = sf::st_sfc(
+      lapply(seq_len(nrow(coords)), function(i) {
+        sf::st_point(c(coords$x[i], coords$y[i]))
+      }),
+      crs = 4326L
+    )
+  )
+
+  # buffer_overlap=FALSE + min_distance=50 => effective_dist=100
+  result_no_overlap <- withr::with_seed(42L, {
+    select_sample_points(pts, 3L, min_distance = 50, buffer_overlap = FALSE)
+  })
+  # buffer_overlap=TRUE + min_distance=100 => effective_dist=100 (same)
+  result_doubled <- withr::with_seed(42L, {
+    select_sample_points(pts, 3L, min_distance = 100, buffer_overlap = TRUE)
+  })
+
+  expect_equal(
+    sf::st_coordinates(result_no_overlap$primary),
+    sf::st_coordinates(result_doubled$primary)
+  )
+})
+
+test_that("buffer_overlap=TRUE (default) preserves existing behavior", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result_default <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  )
+  result_explicit <- suppressWarnings(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      buffer_overlap = TRUE
+    )
+  )
+
+  expect_equal(result_default, result_explicit)
+})
+
+test_that("buffer_overlap=FALSE adds '+no-overlap' to mode in summary_df", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      buffer_overlap = FALSE
+    )
+  )
+
+  df <- attr(result, "summary_df")
+  community_rows <- df[df$community != "TOTAL", ]
+  expect_true(all(grepl("no-overlap", community_rows$mode)))
+})
+
+test_that("buffer_overlap must be logical flag", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  expect_error(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      buffer_overlap = "no"
+    )
+  )
+})
+
 # Integration tests (network required)
 # ............................................................................
 
