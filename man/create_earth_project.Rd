@@ -7,7 +7,7 @@
 create_earth_project(
   samples_list,
   out_file,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_color = "#FF4500",
   secondary_color = "#1E90FF",
   primary_buffer_color = "#FF450044",
@@ -20,7 +20,9 @@ create_earth_project(
 
 \item{out_file}{Path for the output \code{.kml} file.}
 
-\item{buffer_radius}{Buffer radius in meters. Default \code{50}.}
+\item{buffer_radius}{Buffer radius in meters. Default \code{NULL}
+(derives from per-community \verb{$min_distance}). Pass an explicit
+value to override.}
 
 \item{primary_color}{Point color for primary set (\verb{#RRGGBB} or
 \verb{#RRGGBBAA}). Default \code{"#FF4500"} (orange-red).}

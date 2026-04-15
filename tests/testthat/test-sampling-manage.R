@@ -37,12 +37,15 @@ make_sample_result <- function() {
     )
   )
   pts_a$point_id <- 1:10
+  pts_a$named_point_id <- sprintf("%03d", 1:10)
   pts_b$point_id <- 11:18
+  pts_b$named_point_id <- sprintf("%03d", 11:18)
   sec_a <- sf::st_sf(
     id = 11:15,
     community = "alpha",
     selection_order = 1:5,
     point_id = 19:23,
+    named_point_id = sprintf("%03d", 19:23),
     geometry = sf::st_sfc(
       lapply(11:15, function(i) sf::st_point(c(i * 0.001, i * 0.001))),
       crs = 4326L
@@ -53,6 +56,7 @@ make_sample_result <- function() {
     community = "beta",
     selection_order = 1:4,
     point_id = 24:27,
+    named_point_id = sprintf("%03d", 24:27),
     geometry = sf::st_sfc(
       lapply(
         9:12,
@@ -82,7 +86,7 @@ make_sample_result <- function() {
 # split_batches
 # ............................................................................
 
-test_that("split_batches assigns round-robin batch numbers", {
+test_that("split_batches returns enriched structure with metadata", {
   samples <- make_sample_result()
   result <- split_batches(samples, n_batches = 3L, set = "primary")
 
@@ -90,13 +94,23 @@ test_that("split_batches assigns round-robin batch numbers", {
   expect_named(result, c("alpha", "beta"))
 
   for (nm in names(result)) {
-    expect_true("assigned_batch" %in% names(result[[nm]]))
-    batches <- result[[nm]]$assigned_batch
+    expect_true("batches" %in% names(result[[nm]]))
+    expect_true("min_distance" %in% names(result[[nm]]))
+    expect_true("n_buildings" %in% names(result[[nm]]))
+    expect_true("seed" %in% names(result[[nm]]))
+    expect_true("n_batches" %in% names(result[[nm]]))
+    expect_true("buildings" %in% names(result[[nm]]))
+    expect_s3_class(result[[nm]]$batches, "sf")
+    expect_true("assigned_batch" %in% names(result[[nm]]$batches))
+    batches <- result[[nm]]$batches$assigned_batch
     expect_true(all(batches %in% 1:3))
   }
 
   # First 3 points of alpha should be batches 1, 2, 3
-  expect_equal(result$alpha$assigned_batch[1:3], c(1L, 2L, 3L))
+  expect_equal(result$alpha$batches$assigned_batch[1:3], c(1L, 2L, 3L))
+  # Metadata preserved
+  expect_equal(result$alpha$min_distance, 50)
+  expect_equal(result$alpha$n_buildings, 10L)
 })
 
 test_that("split_batches works with named n_batches", {
@@ -106,16 +120,16 @@ test_that("split_batches works with named n_batches", {
     n_batches = c(alpha = 2L, beta = 4L),
     set = "primary"
   )
-  expect_true(all(result$alpha$assigned_batch %in% 1:2))
-  expect_true(all(result$beta$assigned_batch %in% 1:4))
+  expect_true(all(result$alpha$batches$assigned_batch %in% 1:2))
+  expect_true(all(result$beta$batches$assigned_batch %in% 1:4))
 })
 
 test_that("split_batches works on secondary set", {
   samples <- make_sample_result()
   result <- split_batches(samples, n_batches = 2L, set = "secondary")
-  expect_equal(nrow(result$alpha), 5L)
-  expect_equal(nrow(result$beta), 4L)
-  expect_true(all(result$alpha$assigned_batch %in% 1:2))
+  expect_equal(nrow(result$alpha$batches), 5L)
+  expect_equal(nrow(result$beta$batches), 4L)
+  expect_true(all(result$alpha$batches$assigned_batch %in% 1:2))
 })
 
 # create_buffers
@@ -154,7 +168,7 @@ test_that("create_buffers works on sample_communities list", {
 test_that("create_buffers works on split_batches output", {
   samples <- make_sample_result()
   batched <- split_batches(samples, n_batches = 2L, set = "primary")
-  # split_batches returns sf directly (not nested list)
+  # split_batches returns enriched list with $batches
   result <- create_buffers(batched, radius = 50)
   expect_type(result, "list")
   expect_named(result, c("alpha", "beta"))
@@ -233,7 +247,7 @@ test_that("export_points creates expected directory structure", {
   expect_true(fs::file_exists(batch1_gpkg))
 })
 
-test_that("export_points with buffers creates sqlitedb files", {
+test_that("export_points with buffers creates sqlitedb files with size in name", {
   samples <- make_sample_result()
   batched <- split_batches(samples, n_batches = 2L, set = "primary")
 
@@ -245,7 +259,6 @@ test_that("export_points with buffers creates sqlitedb files", {
     out_dir = tmp_dir,
     formats = c("gpkg"),
     include_buffers = TRUE,
-    buffer_radius = 100,
     set = "primary"
   )
 
@@ -255,6 +268,10 @@ test_that("export_points with buffers creates sqlitedb files", {
   for (p in tiles_rows$path) {
     expect_true(file.exists(p))
   }
+
+  # Buffer filenames include size suffix
+  buf_rows <- manifest[manifest$type == "buffers", ]
+  expect_true(all(grepl("_50m_", buf_rows$path)))
 })
 
 # zip_points
@@ -315,6 +332,27 @@ test_that("write_gpx uses point_id as waypoint name", {
   expect_equal(gpx_back$name, c("42", "43"))
 })
 
+test_that("write_gpx prefers named_point_id over point_id", {
+  pts <- sf::st_sf(
+    id = c("bldg_a", "bldg_b"),
+    point_id = c(42L, 43L),
+    named_point_id = c("042", "043"),
+    community = "alpha",
+    geometry = sf::st_sfc(
+      sf::st_point(c(0.001, 0.001)),
+      sf::st_point(c(0.002, 0.002)),
+      crs = 4326L
+    )
+  )
+
+  tmp <- tempfile(fileext = ".gpx")
+  on.exit(unlink(tmp), add = TRUE)
+  write_gpx(pts, tmp)
+
+  gpx_back <- sf::st_read(tmp, layer = "waypoints", quiet = TRUE)
+  expect_equal(gpx_back$name, c("042", "043"))
+})
+
 # create_earth_project
 # ............................................................................
 
@@ -324,10 +362,10 @@ test_that("create_earth_project creates valid KML", {
   tmp_kml <- tempfile(fileext = ".kml")
   on.exit(unlink(tmp_kml), add = TRUE)
 
+  # buffer_radius=NULL derives from $min_distance
   result <- create_earth_project(
     samples,
-    tmp_kml,
-    buffer_radius = 50
+    tmp_kml
   )
 
   expect_equal(result, tmp_kml)
@@ -343,15 +381,60 @@ test_that("create_earth_project creates valid KML", {
   expect_true(grepl("Primary Buffers", kml_full))
   expect_true(grepl("Secondary Buffers", kml_full))
 
-  # Check point_ids appear as placemark names
-  expect_true(grepl("<name>1</name>", kml_full))
-  expect_true(grepl("<name>19</name>", kml_full))
+  # Check named_point_ids appear as placemark names (zero-padded)
+  expect_true(grepl("<name>001</name>", kml_full))
+  expect_true(grepl("<name>019</name>", kml_full))
 
   # Check community folders
   expect_true(grepl("<name>alpha</name>", kml_full))
   expect_true(grepl("<name>beta</name>", kml_full))
 
-  # Check buffer placemarks
-  expect_true(grepl("<name>Buffer 1</name>", kml_full))
+  # Check buffer placemarks (uses named_point_id)
+  expect_true(grepl("<name>Buffer 001</name>", kml_full))
   expect_true(grepl("Polygon", kml_full))
+})
+
+# extract_metadata
+# ............................................................................
+
+test_that("extract_metadata returns correct structure", {
+  samples <- make_sample_result()
+  pri <- split_batches(samples, n_batches = 2L, set = "primary")
+
+  meta <- extract_metadata(pri)
+
+  expect_s3_class(meta, "data.frame")
+  expect_true(all(
+    c("community", "point_id", "named_point_id", "assigned_batch", "set") %in%
+      names(meta)
+  ))
+  expect_equal(unique(meta$set), "primary")
+  expect_equal(sort(unique(meta$community)), c("alpha", "beta"))
+  expect_equal(nrow(meta), 10L + 8L)
+})
+
+test_that("extract_metadata with primary and secondary", {
+  samples <- make_sample_result()
+  pri <- split_batches(samples, n_batches = 2L, set = "primary")
+  sec <- split_batches(samples, n_batches = 2L, set = "secondary")
+
+  meta <- extract_metadata(pri, sec)
+
+  expect_equal(sort(unique(meta$set)), c("primary", "secondary"))
+  expect_equal(nrow(meta), 10L + 8L + 5L + 4L)
+})
+
+test_that("extract_metadata carries buffer_size and n_teams attributes", {
+  samples <- make_sample_result()
+  pri <- split_batches(samples, n_batches = 3L, set = "primary")
+
+  meta <- extract_metadata(pri)
+
+  buf_sizes <- attr(meta, "buffer_size")
+  expect_named(buf_sizes, c("alpha", "beta"))
+  expect_equal(buf_sizes[["alpha"]], 50)
+
+  n_teams <- attr(meta, "n_teams")
+  expect_named(n_teams, c("alpha", "beta"))
+  expect_equal(n_teams[["alpha"]], 3L)
 })
