@@ -19,7 +19,9 @@ sample_communities(
   print_table = TRUE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
-  road_dir = NULL
+  road_dir = NULL,
+  starting_point = 1L,
+  buffer_overlap = TRUE
 )
 ```
 
@@ -95,6 +97,24 @@ sample_communities(
   [`fetch_community_roads()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.md)
   to pre-download roads. Default `NULL` (no caching).
 
+- starting_point:
+
+  Integer. Starting number for `point_id` assignment. Useful when
+  combining results from multiple survey rounds where IDs must not
+  restart at 1. Default `1L`.
+
+- buffer_overlap:
+
+  Logical. Controls whether the circular buffers of radius
+  `min_distance` around any two selected points are allowed to overlap.
+  If `TRUE` (default), the standard `min_distance` exclusion radius is
+  used. If `FALSE`, the exclusion radius is doubled to
+  `2 * min_distance`, preventing any two buffers from touching or
+  overlapping. Set to `FALSE` when field workers are instructed to
+  sample any valid building inside the buffer if the original point is
+  invalid, and you need to guarantee that no replacement building could
+  fall within another point's buffer.
+
 ## Value
 
 A named list. Each community element contains: `$buildings` (all
@@ -153,6 +173,26 @@ samples <- sample_communities(
   min_distance = 50,
   seed = 12345L,
   joint = TRUE
+)
+
+# Shift point IDs to start at 300 (e.g., continuing from a prior round)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = 50,
+  seed = 12345L,
+  starting_point = 300L
+)
+samples$community_one$primary$point_id # starts at 300
+
+# No buffer overlap: any two buffers of radius 50m never touch
+# (effective exclusion radius becomes 100m = 2 * 50)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = 50,
+  seed = 12345L,
+  buffer_overlap = FALSE
 )
 } # }
 ```

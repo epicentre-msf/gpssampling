@@ -13,7 +13,8 @@ create_buffer_tiles(
   min_zoom = 8L,
   max_zoom = 14L,
   fill_color = "#90EE9066",
-  boundary_color = "#228B22CC"
+  boundary_color = "#228B22CC",
+  quiet = FALSE
 )
 ```
 
@@ -45,6 +46,10 @@ create_buffer_tiles(
 
   Boundary color in `#RRGGBBAA` format. Default `"#228B22CC"` (forest
   green, 80% opacity).
+
+- quiet:
+
+  Logical. If `TRUE`, suppress progress messages. Default `FALSE`.
 
 ## Value
 

@@ -16,7 +16,9 @@ export_points(
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
   set = c("primary", "secondary"),
-  print_table = FALSE
+  print_table = FALSE,
+  overwrite = TRUE,
+  quiet = FALSE
 )
 ```
 
@@ -54,6 +56,16 @@ export_points(
   [`flextable::flextable()`](https://davidgohel.github.io/flextable/reference/flextable.html)
   as `attr(, "summary_table")` and the underlying data frame as
   `attr(, "summary_df")`. Default `FALSE`.
+
+- overwrite:
+
+  Logical. If `TRUE` (default), removes existing output directory for
+  the selected set before exporting. This prevents "database is locked"
+  errors when re-exporting SQLite tile overlays.
+
+- quiet:
+
+  Logical. If `TRUE`, suppress progress messages. Default `FALSE`.
 
 ## Value
 
