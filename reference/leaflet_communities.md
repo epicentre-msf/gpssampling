@@ -19,7 +19,7 @@ leaflet_communities(
   buildings_list = NULL,
   roads_list = NULL,
   color_batches = TRUE,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_color = "#e97a52",
   secondary_color = "#1E90FF",
   primary_buffer_color = "#90EE90",

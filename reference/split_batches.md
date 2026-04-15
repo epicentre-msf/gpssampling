@@ -28,8 +28,31 @@ split_batches(samples_list, n_batches, set = c("primary", "secondary"))
 
 ## Value
 
-A named list of `sf` POINT objects, each with an added `assigned_batch`
-column (integer, 1 to n_batches).
+A named list of communities. Each element is a list with:
+
+- `batches`:
+
+  `sf` POINT with `assigned_batch` column.
+
+- `min_distance`:
+
+  Buffer radius in meters.
+
+- `n_buildings`:
+
+  Total building count in the community.
+
+- `seed`:
+
+  Per-community RNG seed.
+
+- `n_batches`:
+
+  Number of batches.
+
+- `buildings`:
+
+  `sf` of all candidate buildings.
 
 ## Examples
 

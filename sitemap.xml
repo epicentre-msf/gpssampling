@@ -58,6 +58,7 @@
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/explore.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/exploreDirCache.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/export_points.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/extract_metadata.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/fetch_osm_buildings.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/filter_buildings.html</loc></url>
@@ -117,6 +118,7 @@
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/page_navbar.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/paste_ignore_NA.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/pct.html</loc></url>
+<url><loc>https://epicentre-msf.github.io/gpssampling/reference/plot_buffer_distribution.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/progress.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/progressBar.html</loc></url>
 <url><loc>https://epicentre-msf.github.io/gpssampling/reference/progressDone.html</loc></url>

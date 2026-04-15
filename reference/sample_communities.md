@@ -12,8 +12,10 @@ sample_communities(
   buildings_list,
   n_required,
   min_distance = 50,
+  default_distance = 50,
   seed,
   joint = FALSE,
+  point_id_digits = NULL,
   print_table = TRUE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
@@ -36,7 +38,16 @@ sample_communities(
 
 - min_distance:
 
-  Numeric, minimum distance in meters between any two selected points.
+  Minimum distance in meters between any two selected points. Either a
+  single numeric value (applied to all communities) or a **named numeric
+  vector** with per-community distances. Names must match entries in
+  `buildings_list`. Any community not found in the named vector uses
+  `default_distance`. Default `50`.
+
+- default_distance:
+
+  Numeric fallback distance in meters for communities not listed in a
+  named `min_distance` vector. Ignored when `min_distance` is a scalar.
   Default `50`.
 
 - seed:
@@ -56,6 +67,13 @@ sample_communities(
   reduces clustering in the secondary points. The first `n_required`
   drawn become primary; the rest become secondary. Default `FALSE`
   (independent draws).
+
+- point_id_digits:
+
+  Integer or `NULL`. When set, creates a `named_point_id` column with
+  zero-padded IDs of the given width (e.g., `point_id_digits = 3`
+  produces `"001"`, `"002"`, ...). Used as display name in GPX/KML
+  exports. Default `NULL` (no padding, exports use numeric `point_id`).
 
 - print_table:
 
@@ -82,13 +100,15 @@ sample_communities(
 A named list. Each community element contains: `$buildings` (all
 candidates), `$primary` (selected points with `selection_order` and
 `point_id`), `$secondary` (replacement points with `selection_order` and
-`point_id`, at most `n_required` per community), `$min_distance`, and
-`$seed`. Both primary and secondary are ordered by road proximity
-(nearest-neighbour chain). The `point_id` column is globally unique
-across all communities and sets: primary IDs are numbered
-1..N_total_primary, secondary IDs continue from N_total_primary + 1.
-When `print_table = TRUE`, the result carries two attributes:
-`attr(, "summary_table")` (a
+`point_id`, at most `n_required` per community), `$min_distance` (the
+resolved per-community distance in meters), and `$seed`. When
+`point_id_digits` is set, primary and secondary also carry a
+`named_point_id` column with zero-padded string IDs. Both primary and
+secondary are ordered by road proximity (nearest-neighbour chain). The
+`point_id` column is globally unique across all communities and sets:
+primary IDs are numbered 1..N_total_primary, secondary IDs continue from
+N_total_primary + 1. When `print_table = TRUE`, the result carries two
+attributes: `attr(, "summary_table")` (a
 [`flextable::flextable()`](https://davidgohel.github.io/flextable/reference/flextable.html)
 object ready for rendering in reports) and `attr(, "summary_df")` (the
 underlying data frame). Access via `attr(result, "summary_table")`.
@@ -97,12 +117,34 @@ underlying data frame). Access via `attr(result, "summary_table")`.
 
 ``` r
 if (FALSE) { # \dontrun{
+# Uniform distance for all communities
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_one = 30, community_two = 80),
   min_distance = 50,
   seed = 12345L
 )
+
+# Per-community distances (dense vs. sparse areas)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = c(community_one = 30, community_two = 80),
+  seed = 12345L
+)
+
+# Per-community with a default fallback for unlisted communities
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = c(community_one = 30),
+  default_distance = 60,
+  seed = 12345L
+)
+
+# Retrieve per-community distance from result
+samples$community_one$min_distance # 30
+samples$community_two$min_distance # 60 (default_distance)
 
 # Joint sampling (less clustered secondary points)
 samples <- sample_communities(

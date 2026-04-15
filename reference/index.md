@@ -71,6 +71,9 @@
 - [`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)
   : Export sample points, buffers, and tile overlays
 
+- [`extract_metadata()`](https://epicentre-msf.github.io/gpssampling/reference/extract_metadata.md)
+  : Extract metadata from batched sampling results
+
 - [`fetch_community_roads()`](https://epicentre-msf.github.io/gpssampling/reference/fetch_community_roads.md)
   : Fetch OSM roads for all communities
 
@@ -140,6 +143,9 @@
 
 - [`paste_ignore_NA()`](https://epicentre-msf.github.io/gpssampling/reference/paste_ignore_NA.md)
   : Paste Strings with Ignoring NA Values
+
+- [`plot_buffer_distribution()`](https://epicentre-msf.github.io/gpssampling/reference/plot_buffer_distribution.md)
+  : Plot the distribution of buildings per buffer
 
 - [`progressBar()`](https://epicentre-msf.github.io/gpssampling/reference/progressBar.md)
   : Create a progress bar

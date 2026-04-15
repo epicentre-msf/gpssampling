@@ -13,7 +13,7 @@ efficient field work."><meta property="og:image" content="https://epicentre-msf.
 
     <a class="navbar-brand me-2" href="../index.html">gpssampling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,8 +51,10 @@ efficient field work.</p>
 <span>  <span class="va">buildings_list</span>,</span>
 <span>  <span class="va">n_required</span>,</span>
 <span>  min_distance <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  default_distance <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  <span class="va">seed</span>,</span>
 <span>  joint <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  point_id_digits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  print_table <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  road_types <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"primary"</span>, <span class="st">"secondary"</span>, <span class="st">"tertiary"</span>, <span class="st">"residential"</span>, <span class="st">"trunk"</span>,</span>
 <span>    <span class="st">"unclassified"</span><span class="op">)</span>,</span>
@@ -76,8 +78,18 @@ integer applies the same size to all communities.</p></dd>
 
 
 <dt id="arg-min-distance">min_distance<a class="anchor" aria-label="anchor" href="#arg-min-distance"></a></dt>
-<dd><p>Numeric, minimum distance in meters between any
-two selected points. Default <code>50</code>.</p></dd>
+<dd><p>Minimum distance in meters between any two
+selected points. Either a single numeric value (applied to all
+communities) or a <strong>named numeric vector</strong> with per-community
+distances. Names must match entries in <code>buildings_list</code>. Any
+community not found in the named vector uses
+<code>default_distance</code>. Default <code>50</code>.</p></dd>
+
+
+<dt id="arg-default-distance">default_distance<a class="anchor" aria-label="anchor" href="#arg-default-distance"></a></dt>
+<dd><p>Numeric fallback distance in meters for
+communities not listed in a named <code>min_distance</code> vector.
+Ignored when <code>min_distance</code> is a scalar. Default <code>50</code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -97,6 +109,14 @@ drawn together in a single pass, enforcing the minimum distance
 across both sets. This reduces clustering in the secondary points.
 The first <code>n_required</code> drawn become primary; the rest become
 secondary. Default <code>FALSE</code> (independent draws).</p></dd>
+
+
+<dt id="arg-point-id-digits">point_id_digits<a class="anchor" aria-label="anchor" href="#arg-point-id-digits"></a></dt>
+<dd><p>Integer or <code>NULL</code>. When set, creates a
+<code>named_point_id</code> column with zero-padded IDs of the given width
+(e.g., <code>point_id_digits = 3</code> produces <code>"001"</code>, <code>"002"</code>, ...).
+Used as display name in GPX/KML exports. Default <code>NULL</code> (no
+padding, exports use numeric <code>point_id</code>).</p></dd>
 
 
 <dt id="arg-print-table">print_table<a class="anchor" aria-label="anchor" href="#arg-print-table"></a></dt>
@@ -124,7 +144,10 @@ to pre-download roads. Default <code>NULL</code> (no caching).</p></dd>
 <code>$buildings</code> (all candidates), <code>$primary</code> (selected points with
 <code>selection_order</code> and <code>point_id</code>), <code>$secondary</code> (replacement
 points with <code>selection_order</code> and <code>point_id</code>, at most <code>n_required</code>
-per community), <code>$min_distance</code>, and <code>$seed</code>. Both primary and
+per community), <code>$min_distance</code> (the resolved per-community
+distance in meters), and <code>$seed</code>. When <code>point_id_digits</code> is set,
+primary and secondary also carry a <code>named_point_id</code> column with
+zero-padded string IDs. Both primary and
 secondary are ordered by road proximity (nearest-neighbour chain).
 The <code>point_id</code> column is globally unique across all communities
 and sets: primary IDs are numbered 1..N_total_primary, secondary
@@ -138,12 +161,34 @@ via <code>attr(result, "summary_table")</code>.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Uniform distance for all communities</span></span></span>
 <span class="r-in"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">sample_communities</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">buildings_list</span>,</span></span>
 <span class="r-in"><span>  n_required <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">30</span>, community_two <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  min_distance <span class="op">=</span> <span class="fl">50</span>,</span></span>
 <span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">12345L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Per-community distances (dense vs. sparse areas)</span></span></span>
+<span class="r-in"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">sample_communities</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">buildings_list</span>,</span></span>
+<span class="r-in"><span>  n_required <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">30</span>, community_two <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  min_distance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">30</span>, community_two <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">12345L</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Per-community with a default fallback for unlisted communities</span></span></span>
+<span class="r-in"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">sample_communities</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">buildings_list</span>,</span></span>
+<span class="r-in"><span>  n_required <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">30</span>, community_two <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  min_distance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>community_one <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  default_distance <span class="op">=</span> <span class="fl">60</span>,</span></span>
+<span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">12345L</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Retrieve per-community distance from result</span></span></span>
+<span class="r-in"><span><span class="va">samples</span><span class="op">$</span><span class="va">community_one</span><span class="op">$</span><span class="va">min_distance</span> <span class="co"># 30</span></span></span>
+<span class="r-in"><span><span class="va">samples</span><span class="op">$</span><span class="va">community_two</span><span class="op">$</span><span class="va">min_distance</span> <span class="co"># 60 (default_distance)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Joint sampling (less clustered secondary points)</span></span></span>
 <span class="r-in"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">sample_communities</span><span class="op">(</span></span></span>

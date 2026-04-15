@@ -638,14 +638,14 @@ writes points, buffer polygons, and OsmAnd-compatible SQLite tile
 overlays to a structured directory.
 
 ``` r
-# Export primary points
+# Export primary points (with buffer stats for distribution plotting)
 manifest_pri <- export_points(
   primary_batches,
   out_dir = "output",
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
-  set = "primary"
+  set = "primary",
+  print_table = TRUE
 )
 
 # Export secondary points
@@ -654,7 +654,6 @@ manifest_sec <- export_points(
   out_dir = "output",
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
   set = "secondary"
 )
 ```
@@ -712,6 +711,34 @@ The `.sqlitedb` files are tile overlays that show buffer zones on OsmAnd
 
 The overlay shows semi-transparent green circles around each sampled
 point, helping field workers identify which buildings to visit.
+
+### Buffer building distribution
+
+When
+[`export_points()`](https://epicentre-msf.github.io/gpssampling/reference/export_points.md)
+is called with `print_table = TRUE`, it attaches per-buffer building
+counts to the manifest. Use
+[`plot_buffer_distribution()`](https://epicentre-msf.github.io/gpssampling/reference/plot_buffer_distribution.md)
+to visualise how buildings are distributed across buffers — useful for
+assessing sampling density uniformity.
+
+``` r
+# Plot the distribution of buildings per buffer
+plot_buffer_distribution(manifest_pri)
+```
+
+The histogram is faceted by community. Dashed red lines show the mean
+and dotted green lines the median. Customise appearance with
+`fill_color`, `binwidth`, and `free_y` parameters:
+
+``` r
+plot_buffer_distribution(
+  manifest_pri,
+  binwidth = 2,
+  fill_color = "#6A8E7F",
+  title = "Building density in buffer zones"
+)
+```
 
 ### Supported export formats
 
@@ -1207,13 +1234,14 @@ leaflet_communities(
 
 ### Mapping
 
-| Function                                                                                                    | Purpose                                                    |
-|-------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| [`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md) | Building footprint maps per community                      |
-| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)                 | Per-community static map with batch coloring and labels    |
-| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)                   | Zoomed-out static overview of all communities              |
-| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md)     | Generate and optionally save all static maps               |
-| [`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)     | Interactive leaflet map with layer controls and navigation |
+| Function                                                                                                          | Purpose                                                    |
+|-------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| [`map_cropped_buildings()`](https://epicentre-msf.github.io/gpssampling/reference/map_cropped_buildings.md)       | Building footprint maps per community                      |
+| [`map_community()`](https://epicentre-msf.github.io/gpssampling/reference/map_community.md)                       | Per-community static map with batch coloring and labels    |
+| [`map_overview()`](https://epicentre-msf.github.io/gpssampling/reference/map_overview.md)                         | Zoomed-out static overview of all communities              |
+| [`map_all_communities()`](https://epicentre-msf.github.io/gpssampling/reference/map_all_communities.md)           | Generate and optionally save all static maps               |
+| [`leaflet_communities()`](https://epicentre-msf.github.io/gpssampling/reference/leaflet_communities.md)           | Interactive leaflet map with layer controls and navigation |
+| [`plot_buffer_distribution()`](https://epicentre-msf.github.io/gpssampling/reference/plot_buffer_distribution.md) | Histogram of buildings per buffer from export results      |
 
 ## Troubleshooting
 

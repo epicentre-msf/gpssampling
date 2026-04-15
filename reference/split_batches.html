@@ -11,7 +11,7 @@ multiple teams."><meta property="og:image" content="https://epicentre-msf.github
 
     <a class="navbar-brand me-2" href="../index.html">gpssampling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,9 +68,26 @@ vector (per community). E.g., <code>5L</code> or <code>c(community_one = 5, comm
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list of <code>sf</code> POINT objects, each with an added
-<code>assigned_batch</code> column (integer, 1 to n_batches).</p>
-    </div>
+    <p>A named list of communities. Each element is a list with:</p><dl><dt><code>batches</code></dt>
+<dd><p><code>sf</code> POINT with <code>assigned_batch</code> column.</p></dd>
+
+<dt><code>min_distance</code></dt>
+<dd><p>Buffer radius in meters.</p></dd>
+
+<dt><code>n_buildings</code></dt>
+<dd><p>Total building count in the community.</p></dd>
+
+<dt><code>seed</code></dt>
+<dd><p>Per-community RNG seed.</p></dd>
+
+<dt><code>n_batches</code></dt>
+<dd><p>Number of batches.</p></dd>
+
+<dt><code>buildings</code></dt>
+<dd><p><code>sf</code> of all candidate buildings.</p></dd>
+
+
+</dl></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

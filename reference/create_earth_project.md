@@ -11,7 +11,7 @@ resulting file can be opened directly in Google Earth.
 create_earth_project(
   samples_list,
   out_file,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_color = "#FF4500",
   secondary_color = "#1E90FF",
   primary_buffer_color = "#FF450044",
@@ -33,7 +33,8 @@ create_earth_project(
 
 - buffer_radius:
 
-  Buffer radius in meters. Default `50`.
+  Buffer radius in meters. Default `NULL` (derives from per-community
+  `$min_distance`). Pass an explicit value to override.
 
 - primary_color:
 

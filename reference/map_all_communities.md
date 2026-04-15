@@ -15,7 +15,7 @@ map_all_communities(
   secondary_batches = NULL,
   color_batches = TRUE,
   out_dir = NULL,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_shape = 16,
   secondary_shape = 17,
   primary_buffer_color = "#90EE9066",

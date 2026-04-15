@@ -2,7 +2,10 @@
 
 Saves points in multiple formats, optionally generates buffer polygons
 and OsmAnd-compatible SQLite tile overlays. Each community gets a
-self-contained folder.
+self-contained folder. Buffer radius is derived from the per-community
+`$min_distance` in the enriched
+[`split_batches()`](https://epicentre-msf.github.io/gpssampling/reference/split_batches.md)
+output.
 
 ## Usage
 
@@ -12,8 +15,8 @@ export_points(
   out_dir,
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
-  set = c("primary", "secondary")
+  set = c("primary", "secondary"),
+  print_table = FALSE
 )
 ```
 
@@ -40,18 +43,27 @@ export_points(
   Whether to generate and export buffer polygons and SQLite tile
   overlays. Default `TRUE`.
 
-- buffer_radius:
-
-  Buffer radius in meters. Default `50`.
-
 - set:
 
   Which point set to export: `"primary"` (default) or `"secondary"`.
 
+- print_table:
+
+  Logical. If `TRUE`, computes buffer-level statistics (buildings per
+  buffer) and attaches a
+  [`flextable::flextable()`](https://davidgohel.github.io/flextable/reference/flextable.html)
+  as `attr(, "summary_table")` and the underlying data frame as
+  `attr(, "summary_df")`. Default `FALSE`.
+
 ## Value
 
 Invisibly, a tibble of exported file paths with columns: `community`,
-`set`, `batch`, `type`, `format`, `path`.
+`set`, `batch`, `type`, `format`, `path`. When `print_table = TRUE`,
+carries `summary_table`, `summary_df`, and `buffer_details` attributes.
+`buffer_details` is a data frame with per-buffer building counts
+(`community`, `buffer_idx`, `n_buildings`, `buffer_radius_m`) suitable
+for
+[`plot_buffer_distribution()`](https://epicentre-msf.github.io/gpssampling/reference/plot_buffer_distribution.md).
 
 ## Examples
 

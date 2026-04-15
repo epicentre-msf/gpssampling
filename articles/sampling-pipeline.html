@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gpssampling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1002,14 +1002,14 @@ WGS84.</p>
 <p><code><a href="../reference/export_points.html">export_points()</a></code> writes points, buffer polygons, and
 OsmAnd-compatible SQLite tile overlays to a structured directory.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Export primary points</span></span>
+<code class="sourceCode R"><span><span class="co"># Export primary points (with buffer stats for distribution plotting)</span></span>
 <span><span class="va">manifest_pri</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/export_points.html">export_points</a></span><span class="op">(</span></span>
 <span>  <span class="va">primary_batches</span>,</span>
 <span>  out_dir <span class="op">=</span> <span class="st">"output"</span>,</span>
 <span>  formats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gpkg"</span>, <span class="st">"gpx"</span><span class="op">)</span>,</span>
 <span>  include_buffers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  buffer_radius <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  set <span class="op">=</span> <span class="st">"primary"</span></span>
+<span>  set <span class="op">=</span> <span class="st">"primary"</span>,</span>
+<span>  print_table <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Export secondary points</span></span>
@@ -1018,7 +1018,6 @@ OsmAnd-compatible SQLite tile overlays to a structured directory.</p>
 <span>  out_dir <span class="op">=</span> <span class="st">"output"</span>,</span>
 <span>  formats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gpkg"</span>, <span class="st">"gpx"</span><span class="op">)</span>,</span>
 <span>  include_buffers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  buffer_radius <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  set <span class="op">=</span> <span class="st">"secondary"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
@@ -1078,6 +1077,29 @@ them:</p>
 </ol>
 <p>The overlay shows semi-transparent green circles around each sampled
 point, helping field workers identify which buildings to visit.</p>
+</div>
+<div class="section level3">
+<h3 id="buffer-building-distribution">Buffer building distribution<a class="anchor" aria-label="anchor" href="#buffer-building-distribution"></a>
+</h3>
+<p>When <code><a href="../reference/export_points.html">export_points()</a></code> is called with
+<code>print_table = TRUE</code>, it attaches per-buffer building counts
+to the manifest. Use <code><a href="../reference/plot_buffer_distribution.html">plot_buffer_distribution()</a></code> to
+visualise how buildings are distributed across buffers — useful for
+assessing sampling density uniformity.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Plot the distribution of buildings per buffer</span></span>
+<span><span class="fu"><a href="../reference/plot_buffer_distribution.html">plot_buffer_distribution</a></span><span class="op">(</span><span class="va">manifest_pri</span><span class="op">)</span></span></code></pre></div>
+<p>The histogram is faceted by community. Dashed red lines show the mean
+and dotted green lines the median. Customise appearance with
+<code>fill_color</code>, <code>binwidth</code>, and <code>free_y</code>
+parameters:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_buffer_distribution.html">plot_buffer_distribution</a></span><span class="op">(</span></span>
+<span>  <span class="va">manifest_pri</span>,</span>
+<span>  binwidth <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  fill_color <span class="op">=</span> <span class="st">"#6A8E7F"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Building density in buffer zones"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="supported-export-formats">Supported export formats<a class="anchor" aria-label="anchor" href="#supported-export-formats"></a>
@@ -1171,7 +1193,7 @@ point, helping field workers identify which buildings to visit.</p>
 <p><code><a href="../reference/create_earth_project.html">create_earth_project()</a></code> generates a KML file organized
 into folders for viewing in Google Earth. This is useful for reviewing
 the sampling plan on a desktop before going to the field.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/create_earth_project.html">create_earth_project</a></span><span class="op">(</span></span>
 <span>  <span class="va">samples</span>,</span>
 <span>  out_file <span class="op">=</span> <span class="st">"output/sampling_project.kml"</span>,</span>
@@ -1254,7 +1276,7 @@ use distinct colors (configurable).</p>
 </h2>
 <p><code><a href="../reference/zip_points.html">zip_points()</a></code> bundles GPX files and SQLite tile overlays
 into zip archives, ready for copying to field devices:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zips</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/zip_points.html">zip_points</a></span><span class="op">(</span></span>
 <span>  export_dir <span class="op">=</span> <span class="st">"output"</span>,</span>
 <span>  prefix <span class="op">=</span> <span class="st">"survey-"</span>,</span>
@@ -1305,7 +1327,7 @@ into zip archives, ready for copying to field devices:</p>
 <p><code><a href="../reference/email_points.html">email_points()</a></code> sends zip archives as email attachments.
 It uses the <code>emayili</code> package (must be installed separately)
 and requires SMTP credentials.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/email_points.html">email_points</a></span><span class="op">(</span></span>
 <span>  zip_files <span class="op">=</span> <span class="va">zips</span>,</span>
 <span>  to <span class="op">=</span> <span class="st">"fieldteam@example.org"</span>,</span>
@@ -1319,7 +1341,7 @@ file):</p>
 <span><span class="va">EMAIL_USER</span><span class="op">=</span><span class="va">your.email</span><span class="op">@</span><span class="va">example.org</span></span>
 <span><span class="va">EMAIL_PASSWORD</span><span class="op">=</span><span class="va">your</span><span class="op">-</span><span class="va">app</span><span class="op">-</span><span class="va">password</span></span></code></pre>
 <p>Or pass them directly:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/email_points.html">email_points</a></span><span class="op">(</span></span>
 <span>  zip_files <span class="op">=</span> <span class="va">zips</span>,</span>
 <span>  to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"team1@example.org"</span>, <span class="st">"team2@example.org"</span><span class="op">)</span>,</span>
@@ -1353,7 +1375,7 @@ uniform point color</li>
 <strong>Per-community secondary maps</strong> with batch coloring
 (if secondary points are provided)</li>
 </ul>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">maps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_all_communities.html">map_all_communities</a></span><span class="op">(</span></span>
 <span>  <span class="va">primary_batches</span>,</span>
 <span>  <span class="va">communities</span>,</span>
@@ -1454,7 +1476,7 @@ only</td>
 </h3>
 <p><code><a href="../reference/map_community.html">map_community()</a></code> gives full control over a single
 map:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_community.html">map_community</a></span><span class="op">(</span></span>
 <span>  community_name <span class="op">=</span> <span class="st">"community_one"</span>,</span>
 <span>  community_sf <span class="op">=</span> <span class="va">communities</span><span class="op">[</span><span class="va">communities</span><span class="op">$</span><span class="va">name</span> <span class="op">==</span> <span class="st">"community_one"</span>, <span class="op">]</span>,</span>
@@ -1576,7 +1598,7 @@ pairwise distance</li>
 </h3>
 <p><code><a href="../reference/map_overview.html">map_overview()</a></code> creates a zoomed-out map of all
 communities:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p_overview</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_overview.html">map_overview</a></span><span class="op">(</span></span>
 <span>  <span class="va">primary_batches</span>,</span>
 <span>  <span class="va">communities</span>,</span>
@@ -1604,7 +1626,7 @@ give a bird’s-eye view of the sampling plan.</p>
 with layer toggles, a community navigation panel, and multiple base map
 options. This is ideal for digital review, presentations, and sharing
 with stakeholders.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/leaflet_communities.html">leaflet_communities</a></span><span class="op">(</span></span>
 <span>  <span class="va">primary_batches</span>,</span>
 <span>  <span class="va">communities</span>,</span>
@@ -1725,7 +1747,7 @@ identifies the building closest to an OSM road in each community. The
 main sampling pipeline uses this logic internally (via
 <code>order_selected_points()</code>), but you can call it independently
 for other purposes:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">starts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_start_points.html">find_start_points</a></span><span class="op">(</span><span class="va">buildings_list</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Finding road-nearest start points for 4 communities...</span></span>
 <span><span class="co">#&gt;   community_one: querying roads for 834 points...</span></span>
@@ -1744,7 +1766,7 @@ values.</p>
 </h2>
 <p>Here is the full pipeline in a single script, ready to copy and
 adapt:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://epicentre-msf.github.io/gpssampling/">gpssampling</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -1976,6 +1998,10 @@ ordering</td>
 <td><code><a href="../reference/leaflet_communities.html">leaflet_communities()</a></code></td>
 <td>Interactive leaflet map with layer controls and navigation</td>
 </tr>
+<tr class="even">
+<td><code><a href="../reference/plot_buffer_distribution.html">plot_buffer_distribution()</a></code></td>
+<td>Histogram of buildings per buffer from export results</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -2029,7 +2055,7 @@ the available buildings.</li>
 provider down), maps are rendered without a basemap. The data layers
 (points, buffers, boundaries) still appear correctly. Try a different
 <code>basemap</code> provider:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/map_all_communities.html">map_all_communities</a></span><span class="op">(</span></span>
 <span>  <span class="va">primary_batches</span>,</span>
 <span>  <span class="va">communities</span>,</span>
