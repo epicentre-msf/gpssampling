@@ -17,8 +17,15 @@ vector (per community). E.g., \code{5L} or \code{c(community_one = 5, community_
 \code{"secondary"}.}
 }
 \value{
-A named list of \code{sf} POINT objects, each with an added
-\code{assigned_batch} column (integer, 1 to n_batches).
+A named list of communities. Each element is a list with:
+\describe{
+\item{\code{batches}}{\code{sf} POINT with \code{assigned_batch} column.}
+\item{\code{min_distance}}{Buffer radius in meters.}
+\item{\code{n_buildings}}{Total building count in the community.}
+\item{\code{seed}}{Per-community RNG seed.}
+\item{\code{n_batches}}{Number of batches.}
+\item{\code{buildings}}{\code{sf} of all candidate buildings.}
+}
 }
 \description{
 Distributes primary or secondary sample points into numbered batches

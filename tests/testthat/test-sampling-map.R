@@ -487,13 +487,19 @@ test_that("leaflet_communities with buildings and roads", {
     dx <- 0.0002
     sf::st_polygon(list(matrix(
       c(
-        cx[i] - dx, cy[i] - dx,
-        cx[i] + dx, cy[i] - dx,
-        cx[i] + dx, cy[i] + dx,
-        cx[i] - dx, cy[i] + dx,
-        cx[i] - dx, cy[i] - dx
+        cx[i] - dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] - dx,
+        cx[i] + dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] + dx,
+        cx[i] - dx,
+        cy[i] - dx
       ),
-      ncol = 2L, byrow = TRUE
+      ncol = 2L,
+      byrow = TRUE
     )))
   })
   buildings <- sf::st_sf(
@@ -536,4 +542,98 @@ test_that("leaflet_communities saves HTML when out_file given", {
 
   expect_true(file.exists(tmp_file))
   expect_true(file.size(tmp_file) > 0L)
+})
+
+
+# plot_buffer_distribution
+# ............................................................................
+
+make_buffer_manifest <- function(n_communities = 2L) {
+  rows <- list()
+  for (i in seq_len(n_communities)) {
+    nm <- paste0("community_", letters[i])
+    set.seed(i)
+    rows <- c(
+      rows,
+      list(data.frame(
+        community = nm,
+        buffer_idx = seq_len(10L),
+        n_buildings = sample(1:20, 10L, replace = TRUE),
+        buffer_radius_m = 50,
+        stringsAsFactors = FALSE
+      ))
+    )
+  }
+  manifest <- tibble::tibble(
+    community = character(),
+    set = character(),
+    batch = character(),
+    type = character(),
+    format = character(),
+    path = character()
+  )
+  attr(manifest, "buffer_details") <- do.call(rbind, rows)
+  manifest
+}
+
+test_that("plot_buffer_distribution returns a ggplot", {
+  skip_if_not_installed("ggplot2")
+
+  manifest <- make_buffer_manifest()
+  p <- plot_buffer_distribution(manifest)
+
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_buffer_distribution facets by community", {
+  skip_if_not_installed("ggplot2")
+
+  manifest <- make_buffer_manifest(n_communities = 3L)
+  p <- plot_buffer_distribution(manifest)
+
+  # Facet wrap should be present for multi-community
+  expect_true(inherits(p$facet, "FacetWrap"))
+})
+
+test_that("plot_buffer_distribution single community has no facets", {
+  skip_if_not_installed("ggplot2")
+
+  manifest <- make_buffer_manifest(n_communities = 1L)
+  p <- plot_buffer_distribution(manifest)
+
+  expect_s3_class(p, "ggplot")
+  # Single community should not facet
+  expect_false(inherits(p$facet, "FacetWrap"))
+})
+
+test_that("plot_buffer_distribution respects custom parameters", {
+  skip_if_not_installed("ggplot2")
+
+  manifest <- make_buffer_manifest()
+  p <- plot_buffer_distribution(
+    manifest,
+    fill_color = "#FF0000",
+    binwidth = 2,
+    title = "Custom Title",
+    subtitle = "Custom Subtitle",
+    free_y = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(p$labels$title, "Custom Title")
+  expect_equal(p$labels$subtitle, "Custom Subtitle")
+})
+
+test_that("plot_buffer_distribution errors without buffer_details", {
+  skip_if_not_installed("ggplot2")
+
+  manifest <- tibble::tibble(
+    community = character(),
+    set = character()
+  )
+
+  expect_error(
+    plot_buffer_distribution(manifest),
+    "buffer_details"
+  )
 })

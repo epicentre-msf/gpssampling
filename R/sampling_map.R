@@ -2,6 +2,7 @@
 #
 # Publication-quality static maps showing communities, sampled points,
 # and buffers. Uses ggplot2 + maptiles + ggspatial (all in Suggests).
+# Also includes distribution plots for buffer-level statistics.
 
 #' Compute minimum pairwise distance (meters) for a set of points
 #' @noRd
@@ -163,11 +164,18 @@ map_community <- function(
       )
   }
 
-  if (show_labels && "point_id" %in% names(points_sf)) {
+  label_col <- if ("named_point_id" %in% names(points_sf)) {
+    "named_point_id"
+  } else if ("point_id" %in% names(points_sf)) {
+    "point_id"
+  } else {
+    NULL
+  }
+  if (show_labels && !is.null(label_col)) {
     p <- p +
       ggplot2::geom_sf_text(
         data = points_sf,
-        ggplot2::aes(label = .data$point_id),
+        ggplot2::aes(label = .data[[label_col]]),
         size = label_size,
         fontface = "bold",
         vjust = -0.8
@@ -239,12 +247,13 @@ map_overview <- function(
 
   all_points <- list()
   for (nm in names(points_list)) {
-    pts <- if (inherits(points_list[[nm]], "sf")) {
-      points_list[[nm]]
-    } else if (
-      is.list(points_list[[nm]]) && "primary" %in% names(points_list[[nm]])
-    ) {
-      points_list[[nm]][["primary"]]
+    entry <- points_list[[nm]]
+    pts <- if (is.list(entry) && "batches" %in% names(entry)) {
+      entry[["batches"]]
+    } else if (inherits(entry, "sf")) {
+      entry
+    } else if (is.list(entry) && "primary" %in% names(entry)) {
+      entry[["primary"]]
     } else {
       next
     }
@@ -379,7 +388,7 @@ map_all_communities <- function(
   secondary_batches = NULL,
   color_batches = TRUE,
   out_dir = NULL,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_shape = 16,
   secondary_shape = 17,
   primary_buffer_color = "#90EE9066",
@@ -404,7 +413,7 @@ map_all_communities <- function(
     primary_batches,
     communities_sf,
     community_id_col = community_id_col,
-    buffer_radius = buffer_radius,
+    buffer_radius = buffer_radius %||% 50,
     ...
   )
 
@@ -418,10 +427,19 @@ map_all_communities <- function(
       next
     }
 
+    # Resolve per-community buffer radius
+    entry <- primary_batches[[nm]]
+    nm_buf_radius <- buffer_radius %||%
+      (if (is.list(entry) && "min_distance" %in% names(entry)) {
+        entry[["min_distance"]]
+      } else {
+        50
+      })
+
     # Primary map
-    pri_pts <- primary_batches[[nm]]
-    if (inherits(pri_pts, "sf") && nrow(pri_pts) > 0L) {
-      pri_bufs <- buffer_sf(pri_pts, buffer_radius)
+    pri_pts <- extract_points(entry)
+    if (!is.null(pri_pts) && inherits(pri_pts, "sf") && nrow(pri_pts) > 0L) {
+      pri_bufs <- buffer_sf(pri_pts, nm_buf_radius)
       map_name <- paste0(nm, "_primary")
 
       cli::cli_inform("Generating map for {.val {nm}} (primary)...")
@@ -438,14 +456,14 @@ map_all_communities <- function(
     }
 
     # Secondary map
-    if (
-      !is.null(secondary_batches) &&
-        nm %in% names(secondary_batches) &&
-        inherits(secondary_batches[[nm]], "sf") &&
-        nrow(secondary_batches[[nm]]) > 0L
+    sec_entry <- if (
+      !is.null(secondary_batches) && nm %in% names(secondary_batches)
     ) {
-      sec_pts <- secondary_batches[[nm]]
-      sec_bufs <- buffer_sf(sec_pts, buffer_radius)
+      secondary_batches[[nm]]
+    }
+    sec_pts <- if (!is.null(sec_entry)) extract_points(sec_entry)
+    if (!is.null(sec_pts) && inherits(sec_pts, "sf") && nrow(sec_pts) > 0L) {
+      sec_bufs <- buffer_sf(sec_pts, nm_buf_radius)
       map_name <- paste0(nm, "_secondary")
 
       # Compute min distances: secondary-only and all (primary + secondary)
@@ -832,7 +850,7 @@ leaflet_communities <- function(
   buildings_list = NULL,
   roads_list = NULL,
   color_batches = TRUE,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_color = "#e97a52",
   secondary_color = "#1E90FF",
   primary_buffer_color = "#90EE90",
@@ -1019,7 +1037,10 @@ leaflet_communities <- function(
   all_batches <- sort(unique(unlist(lapply(
     primary_batches,
     function(x) {
-      if ("assigned_batch" %in% names(x)) unique(x$assigned_batch)
+      pts <- extract_points(x)
+      if (!is.null(pts) && "assigned_batch" %in% names(pts)) {
+        unique(pts$assigned_batch)
+      }
     }
   ))))
   batch_pal <- if (length(all_batches) > 0L && color_batches) {
@@ -1028,10 +1049,20 @@ leaflet_communities <- function(
 
   # --- Pass 1: Add ALL buffers first (renders below points) ---
   for (nm in community_names) {
-    pri_pts <- primary_batches[[nm]]
-    if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
+    pri_entry <- primary_batches[[nm]]
+    pri_pts <- extract_points(pri_entry)
+    if (is.null(pri_pts) || !inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) {
+      next
+    }
 
-    pri_bufs <- buffer_sf(pri_pts, buffer_radius)
+    nm_buf_radius <- buffer_radius %||%
+      (if (is.list(pri_entry) && "min_distance" %in% names(pri_entry)) {
+        pri_entry[["min_distance"]]
+      } else {
+        50
+      })
+
+    pri_bufs <- buffer_sf(pri_pts, nm_buf_radius)
     m <- m |>
       leaflet::addPolygons(
         data = pri_bufs,
@@ -1043,13 +1074,18 @@ leaflet_communities <- function(
         options = leaflet::pathOptions(pane = "buffers")
       )
 
-    if (
-      !is.null(secondary_batches) &&
-        nm %in% names(secondary_batches) &&
-        inherits(secondary_batches[[nm]], "sf") &&
-        nrow(secondary_batches[[nm]]) > 0L
+    sec_entry <- if (
+      !is.null(secondary_batches) && nm %in% names(secondary_batches)
     ) {
-      sec_bufs <- buffer_sf(secondary_batches[[nm]], buffer_radius)
+      secondary_batches[[nm]]
+    }
+    sec_pts_buf <- if (!is.null(sec_entry)) extract_points(sec_entry)
+    if (
+      !is.null(sec_pts_buf) &&
+        inherits(sec_pts_buf, "sf") &&
+        nrow(sec_pts_buf) > 0L
+    ) {
+      sec_bufs <- buffer_sf(sec_pts_buf, nm_buf_radius)
       m <- m |>
         leaflet::addPolygons(
           data = sec_bufs,
@@ -1065,10 +1101,13 @@ leaflet_communities <- function(
 
   # --- Pass 2: Add ALL points on top of buffers ---
   for (nm in community_names) {
-    pri_pts <- primary_batches[[nm]]
-    if (!inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) next
+    pri_pts <- extract_points(primary_batches[[nm]])
+    if (is.null(pri_pts) || !inherits(pri_pts, "sf") || nrow(pri_pts) == 0L) {
+      next
+    }
 
     has_batch <- color_batches && "assigned_batch" %in% names(pri_pts)
+    has_named_pid <- "named_point_id" %in% names(pri_pts)
     has_pid <- "point_id" %in% names(pri_pts)
 
     pri_colors <- if (has_batch && !is.null(batch_pal)) {
@@ -1076,7 +1115,9 @@ leaflet_communities <- function(
     } else {
       primary_color
     }
-    pri_labels <- if (has_pid) {
+    pri_labels <- if (has_named_pid) {
+      pri_pts$named_point_id
+    } else if (has_pid) {
       as.character(pri_pts$point_id)
     } else {
       as.character(seq_len(nrow(pri_pts)))
@@ -1111,15 +1152,20 @@ leaflet_communities <- function(
       )
 
     # Secondary points
-    if (
-      !is.null(secondary_batches) &&
-        nm %in% names(secondary_batches) &&
-        inherits(secondary_batches[[nm]], "sf") &&
-        nrow(secondary_batches[[nm]]) > 0L
+    sec_entry <- if (
+      !is.null(secondary_batches) && nm %in% names(secondary_batches)
     ) {
-      sec_pts <- secondary_batches[[nm]]
+      secondary_batches[[nm]]
+    }
+    sec_pts <- if (!is.null(sec_entry)) extract_points(sec_entry)
+    if (
+      !is.null(sec_pts) &&
+        inherits(sec_pts, "sf") &&
+        nrow(sec_pts) > 0L
+    ) {
       has_sec_batch <- color_batches &&
         "assigned_batch" %in% names(sec_pts)
+      has_sec_named_pid <- "named_point_id" %in% names(sec_pts)
       has_sec_pid <- "point_id" %in% names(sec_pts)
 
       sec_colors <- if (has_sec_batch && !is.null(batch_pal)) {
@@ -1127,7 +1173,9 @@ leaflet_communities <- function(
       } else {
         secondary_color
       }
-      sec_labels <- if (has_sec_pid) {
+      sec_labels <- if (has_sec_named_pid) {
+        sec_pts$named_point_id
+      } else if (has_sec_pid) {
         as.character(sec_pts$point_id)
       } else {
         as.character(seq_len(nrow(sec_pts)))
@@ -1242,4 +1290,157 @@ leaflet_communities <- function(
 
   cli::cli_inform("Interactive map ready.")
   m
+}
+
+
+# Buffer Distribution Plots
+# ............................................................................
+
+#' Plot the distribution of buildings per buffer
+#'
+#' Creates a ggplot histogram showing how many buildings fall within
+#' each buffer zone, faceted by community. Useful for assessing
+#' sampling density uniformity across communities. Vertical dashed
+#' lines indicate the median and mean per community.
+#'
+#' Requires `ggplot2` (in Suggests).
+#'
+#' @param export_result The manifest returned by [export_points()] when
+#'   called with `print_table = TRUE`. Must carry a `buffer_details`
+#'   attribute (data frame with columns `community`, `buffer_idx`,
+#'   `n_buildings`, `buffer_radius_m`).
+#' @param fill_color Bar fill color. Default `"#5B9BD5"`.
+#' @param mean_color Color for the mean line. Default `"#D94F4F"`.
+#' @param median_color Color for the median line. Default `"#2E8B57"`.
+#' @param binwidth Histogram bin width. If `NULL` (default), ggplot2
+#'   picks an automatic value.
+#' @param title Plot title. Default `"Buildings per Buffer"`.
+#' @param subtitle Plot subtitle. If `NULL` (default), auto-generated
+#'   from community count and total buffer count.
+#' @param free_y Logical. If `TRUE` (default), facet y-axes are free
+#'   (communities with different buffer counts get their own scale).
+#' @return A `ggplot` object.
+#' @export
+#' @examples
+#' \dontrun{
+#' manifest <- export_points(batched, "output", print_table = TRUE)
+#' plot_buffer_distribution(manifest)
+#' }
+plot_buffer_distribution <- function(
+  export_result,
+  fill_color = "#5B9BD5",
+  mean_color = "#D94F4F",
+  median_color = "#2E8B57",
+  binwidth = NULL,
+  title = "Buildings per Buffer",
+  subtitle = NULL,
+  free_y = TRUE
+) {
+  rlang::check_installed("ggplot2", reason = "for distribution plots")
+
+  buffer_details <- attr(export_result, "buffer_details")
+  if (is.null(buffer_details) || nrow(buffer_details) == 0L) {
+    cli::cli_abort(c(
+      "No {.field buffer_details} attribute found on {.arg export_result}.",
+      "i" = "Run {.fn export_points} with {.code print_table = TRUE}."
+    ))
+  }
+
+  checkmate::assert_data_frame(buffer_details, min.rows = 1L)
+  checkmate::assert_string(fill_color)
+  checkmate::assert_string(mean_color)
+  checkmate::assert_string(median_color)
+  checkmate::assert_number(binwidth, lower = 0.1, null.ok = TRUE)
+  checkmate::assert_string(title)
+  checkmate::assert_string(subtitle, null.ok = TRUE)
+  checkmate::assert_flag(free_y)
+
+  n_communities <- length(unique(buffer_details$community))
+  n_buffers <- nrow(buffer_details)
+
+  if (is.null(subtitle)) {
+    subtitle <- glue::glue(
+      "{n_buffers} buffer{if (n_buffers != 1L) 's' else ''} across ",
+      "{n_communities} communit{if (n_communities != 1L) 'ies' else 'y'}"
+    )
+  }
+
+  # Per-community summary stats for annotation lines
+  stats_df <- buffer_details |>
+    dplyr::group_by(.data$community) |>
+    dplyr::summarise(
+      mean_bldgs = mean(.data$n_buildings),
+      median_bldgs = stats::median(.data$n_buildings),
+      .groups = "drop"
+    )
+
+  facet_scales <- if (free_y) "free_y" else "fixed"
+
+  p <- ggplot2::ggplot(
+    buffer_details,
+    ggplot2::aes(x = .data$n_buildings)
+  )
+
+  if (is.null(binwidth)) {
+    p <- p +
+      ggplot2::geom_histogram(
+        fill = fill_color,
+        color = "white",
+        linewidth = 0.3
+      )
+  } else {
+    p <- p +
+      ggplot2::geom_histogram(
+        binwidth = binwidth,
+        fill = fill_color,
+        color = "white",
+        linewidth = 0.3
+      )
+  }
+
+  p <- p +
+    ggplot2::geom_vline(
+      data = stats_df,
+      ggplot2::aes(xintercept = .data$mean_bldgs),
+      linetype = "dashed",
+      color = mean_color,
+      linewidth = 0.7
+    ) +
+    ggplot2::geom_vline(
+      data = stats_df,
+      ggplot2::aes(xintercept = .data$median_bldgs),
+      linetype = "dotted",
+      color = median_color,
+      linewidth = 0.7
+    )
+
+  if (n_communities > 1L) {
+    p <- p +
+      ggplot2::facet_wrap(
+        ggplot2::vars(.data$community),
+        scales = facet_scales
+      )
+  }
+
+  p <- p +
+    ggplot2::labs(
+      title = title,
+      subtitle = subtitle,
+      x = "Number of buildings per buffer",
+      y = "Count",
+      caption = paste0(
+        "Dashed line = mean | ",
+        "Dotted line = median"
+      )
+    ) +
+    ggplot2::theme_light() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", size = 14),
+      plot.subtitle = ggplot2::element_text(size = 10, color = "grey40"),
+      plot.caption = ggplot2::element_text(size = 8, color = "grey50"),
+      strip.text = ggplot2::element_text(face = "bold", size = 11),
+      panel.grid.minor = ggplot2::element_blank()
+    )
+
+  p
 }

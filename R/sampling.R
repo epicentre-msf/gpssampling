@@ -1170,8 +1170,15 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #' @param n_required Named integer vector of required sample sizes per
 #'   community. Names must match `buildings_list`. A single unnamed
 #'   integer applies the same size to all communities.
-#' @param min_distance Numeric, minimum distance in meters between any
-#'   two selected points. Default `50`.
+#' @param min_distance Minimum distance in meters between any two
+#'   selected points. Either a single numeric value (applied to all
+#'   communities) or a **named numeric vector** with per-community
+#'   distances. Names must match entries in `buildings_list`. Any
+#'   community not found in the named vector uses
+#'   `default_distance`. Default `50`.
+#' @param default_distance Numeric fallback distance in meters for
+#'   communities not listed in a named `min_distance` vector.
+#'   Ignored when `min_distance` is a scalar. Default `50`.
 #' @param seed Integer RNG seed for reproducibility (**required**, no
 #'   default). A per-community seed is derived from `seed` and the
 #'   community name, so adding or removing a community does not change
@@ -1180,6 +1187,11 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #'   R 3.6.0 changed the default sampling algorithm
 #'   (`sample.kind = "Rejection"`), so results from R < 3.6 and
 #'   R >= 3.6 will differ even with the same seed.
+#' @param point_id_digits Integer or `NULL`. When set, creates a
+#'   `named_point_id` column with zero-padded IDs of the given width
+#'   (e.g., `point_id_digits = 3` produces `"001"`, `"002"`, ...).
+#'   Used as display name in GPX/KML exports. Default `NULL` (no
+#'   padding, exports use numeric `point_id`).
 #' @param joint Logical. If `TRUE`, primary and secondary points are
 #'   drawn together in a single pass, enforcing the minimum distance
 #'   across both sets. This reduces clustering in the secondary points.
@@ -1199,7 +1211,10 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #'   `$buildings` (all candidates), `$primary` (selected points with
 #'   `selection_order` and `point_id`), `$secondary` (replacement
 #'   points with `selection_order` and `point_id`, at most `n_required`
-#'   per community), `$min_distance`, and `$seed`. Both primary and
+#'   per community), `$min_distance` (the resolved per-community
+#'   distance in meters), and `$seed`. When `point_id_digits` is set,
+#'   primary and secondary also carry a `named_point_id` column with
+#'   zero-padded string IDs. Both primary and
 #'   secondary are ordered by road proximity (nearest-neighbour chain).
 #'   The `point_id` column is globally unique across all communities
 #'   and sets: primary IDs are numbered 1..N_total_primary, secondary
@@ -1211,12 +1226,34 @@ compute_distance_stats <- function(pts_sf, threshold = 50) {
 #' @export
 #' @examples
 #' \dontrun{
+#' # Uniform distance for all communities
 #' samples <- sample_communities(
 #'   buildings_list,
 #'   n_required = c(community_one = 30, community_two = 80),
 #'   min_distance = 50,
 #'   seed = 12345L
 #' )
+#'
+#' # Per-community distances (dense vs. sparse areas)
+#' samples <- sample_communities(
+#'   buildings_list,
+#'   n_required = c(community_one = 30, community_two = 80),
+#'   min_distance = c(community_one = 30, community_two = 80),
+#'   seed = 12345L
+#' )
+#'
+#' # Per-community with a default fallback for unlisted communities
+#' samples <- sample_communities(
+#'   buildings_list,
+#'   n_required = c(community_one = 30, community_two = 80),
+#'   min_distance = c(community_one = 30),
+#'   default_distance = 60,
+#'   seed = 12345L
+#' )
+#'
+#' # Retrieve per-community distance from result
+#' samples$community_one$min_distance # 30
+#' samples$community_two$min_distance # 60 (default_distance)
 #'
 #' # Joint sampling (less clustered secondary points)
 #' samples <- sample_communities(
@@ -1231,8 +1268,10 @@ sample_communities <- function(
   buildings_list,
   n_required,
   min_distance = 50,
+  default_distance = 50,
   seed,
   joint = FALSE,
+  point_id_digits = NULL,
   print_table = TRUE,
   road_types = c(
     "primary",
@@ -1245,12 +1284,37 @@ sample_communities <- function(
   road_dir = NULL
 ) {
   checkmate::assert_list(buildings_list, types = "sf", min.len = 1L)
-  checkmate::assert_number(min_distance, lower = 0)
+  checkmate::assert_numeric(min_distance, lower = 0, min.len = 1L)
+  checkmate::assert_number(default_distance, lower = 0)
   checkmate::assert_int(seed)
   checkmate::assert_flag(joint)
+  if (!is.null(point_id_digits)) {
+    checkmate::assert_int(point_id_digits, lower = 1L, upper = 10L)
+  }
   checkmate::assert_flag(print_table)
 
   community_names <- names(buildings_list)
+
+  # --- Resolve per-community min_distance ---
+  # Scalar: apply to all. Named vector: match by community name,
+  # unmatched communities fall back to default_distance.
+  if (length(min_distance) == 1L && is.null(names(min_distance))) {
+    min_dist_map <- rep(min_distance, length(community_names))
+    names(min_dist_map) <- community_names
+  } else {
+    nms <- names(min_distance)
+    min_dist_map <- vapply(
+      community_names,
+      function(nm) {
+        if (!is.null(nms) && nm %in% nms) {
+          min_distance[[nm]]
+        } else {
+          default_distance
+        }
+      },
+      numeric(1L)
+    )
+  }
 
   if (length(n_required) == 1L && is.null(names(n_required))) {
     n_required <- rep(as.integer(n_required), length(community_names))
@@ -1295,14 +1359,15 @@ sample_communities <- function(
   res <- list()
   for (nm in sorted_names) {
     community_seed <- derive_community_seed(seed, nm)
+    nm_dist <- min_dist_map[[nm]]
     cli::cli_inform(
-      "  Sampling {.val {nm}} ({n_required[[nm]]} points, seed {community_seed})..."
+      "  Sampling {.val {nm}} ({n_required[[nm]]} points, min dist {nm_dist}m, seed {community_seed})..."
     )
     sampled <- withr::with_seed(community_seed, {
       select_sample_points(
         buildings_list[[nm]],
         n_required[[nm]],
-        min_distance,
+        nm_dist,
         joint = joint
       )
     })
@@ -1331,7 +1396,7 @@ sample_communities <- function(
       buildings = buildings_list[[nm]],
       primary = ordered_primary,
       secondary = ordered_secondary,
-      min_distance = min_distance,
+      min_distance = nm_dist,
       seed = community_seed
     )
   }
@@ -1365,19 +1430,37 @@ sample_communities <- function(
     "Assigned {primary_offset} primary + {secondary_offset - primary_offset} secondary point IDs."
   )
 
+  # --- Create named_point_id (zero-padded) when requested ---
+  if (!is.null(point_id_digits)) {
+    fmt <- paste0("%0", point_id_digits, "d")
+    for (nm in sorted_names) {
+      res[[nm]]$primary$named_point_id <- sprintf(
+        fmt,
+        res[[nm]]$primary$point_id
+      )
+      if (nrow(res[[nm]]$secondary) > 0L) {
+        res[[nm]]$secondary$named_point_id <- sprintf(
+          fmt,
+          res[[nm]]$secondary$point_id
+        )
+      }
+    }
+  }
+
   # --- Summary table ---
   if (print_table) {
     rows <- list()
     for (nm in sorted_names) {
+      nm_dist <- res[[nm]]$min_distance
       n_buildings <- nrow(res[[nm]]$buildings)
       n_pri <- nrow(res[[nm]]$primary)
       n_sec <- nrow(res[[nm]]$secondary)
       n_all <- n_pri + n_sec
 
-      pri_stats <- compute_distance_stats(res[[nm]]$primary, min_distance)
-      sec_stats <- compute_distance_stats(res[[nm]]$secondary, min_distance)
+      pri_stats <- compute_distance_stats(res[[nm]]$primary, nm_dist)
+      sec_stats <- compute_distance_stats(res[[nm]]$secondary, nm_dist)
       all_pts <- dplyr::bind_rows(res[[nm]]$primary, res[[nm]]$secondary)
-      all_stats <- compute_distance_stats(all_pts, min_distance)
+      all_stats <- compute_distance_stats(all_pts, nm_dist)
 
       rows <- c(
         rows,
@@ -1388,7 +1471,7 @@ sample_communities <- function(
           n_secondary = n_sec,
           n_total = n_all,
           coverage_pct = round(n_all / n_buildings * 100, 1),
-          min_dist_requested = min_distance,
+          min_dist_requested = nm_dist,
           min_dist_primary = pri_stats$min_dist,
           min_dist_secondary = sec_stats$min_dist,
           min_dist_all = all_stats$min_dist,
@@ -1415,7 +1498,7 @@ sample_communities <- function(
         sum(summary_df$n_total) / sum(summary_df$buildings) * 100,
         1
       ),
-      min_dist_requested = min_distance,
+      min_dist_requested = NA_real_,
       min_dist_primary = round(
         min(summary_df$min_dist_primary, na.rm = TRUE),
         1
@@ -1488,10 +1571,11 @@ sample_communities <- function(
         )
     }
 
-    # Highlight min_dist_all below threshold
+    # Highlight min_dist_all below its per-community threshold
     below_threshold <- which(
       !is.na(summary_df$min_dist_all) &
-        summary_df$min_dist_all < min_distance
+        !is.na(summary_df$min_dist_requested) &
+        summary_df$min_dist_all < summary_df$min_dist_requested
     )
     if (length(below_threshold) > 0L) {
       ft <- ft |>

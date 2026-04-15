@@ -8,8 +8,10 @@ sample_communities(
   buildings_list,
   n_required,
   min_distance = 50,
+  default_distance = 50,
   seed,
   joint = FALSE,
+  point_id_digits = NULL,
   print_table = TRUE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
@@ -24,8 +26,16 @@ sample_communities(
 community. Names must match \code{buildings_list}. A single unnamed
 integer applies the same size to all communities.}
 
-\item{min_distance}{Numeric, minimum distance in meters between any
-two selected points. Default \code{50}.}
+\item{min_distance}{Minimum distance in meters between any two
+selected points. Either a single numeric value (applied to all
+communities) or a \strong{named numeric vector} with per-community
+distances. Names must match entries in \code{buildings_list}. Any
+community not found in the named vector uses
+\code{default_distance}. Default \code{50}.}
+
+\item{default_distance}{Numeric fallback distance in meters for
+communities not listed in a named \code{min_distance} vector.
+Ignored when \code{min_distance} is a scalar. Default \code{50}.}
 
 \item{seed}{Integer RNG seed for reproducibility (\strong{required}, no
 default). A per-community seed is derived from \code{seed} and the
@@ -41,6 +51,12 @@ drawn together in a single pass, enforcing the minimum distance
 across both sets. This reduces clustering in the secondary points.
 The first \code{n_required} drawn become primary; the rest become
 secondary. Default \code{FALSE} (independent draws).}
+
+\item{point_id_digits}{Integer or \code{NULL}. When set, creates a
+\code{named_point_id} column with zero-padded IDs of the given width
+(e.g., \code{point_id_digits = 3} produces \code{"001"}, \code{"002"}, ...).
+Used as display name in GPX/KML exports. Default \code{NULL} (no
+padding, exports use numeric \code{point_id}).}
 
 \item{print_table}{Logical. If \code{TRUE} (default), prints a
 \code{\link[flextable:flextable]{flextable::flextable()}} summary at the end of sampling with
@@ -60,7 +76,10 @@ A named list. Each community element contains:
 \verb{$buildings} (all candidates), \verb{$primary} (selected points with
 \code{selection_order} and \code{point_id}), \verb{$secondary} (replacement
 points with \code{selection_order} and \code{point_id}, at most \code{n_required}
-per community), \verb{$min_distance}, and \verb{$seed}. Both primary and
+per community), \verb{$min_distance} (the resolved per-community
+distance in meters), and \verb{$seed}. When \code{point_id_digits} is set,
+primary and secondary also carry a \code{named_point_id} column with
+zero-padded string IDs. Both primary and
 secondary are ordered by road proximity (nearest-neighbour chain).
 The \code{point_id} column is globally unique across all communities
 and sets: primary IDs are numbered 1..N_total_primary, secondary
@@ -78,12 +97,34 @@ efficient field work.
 }
 \examples{
 \dontrun{
+# Uniform distance for all communities
 samples <- sample_communities(
   buildings_list,
   n_required = c(community_one = 30, community_two = 80),
   min_distance = 50,
   seed = 12345L
 )
+
+# Per-community distances (dense vs. sparse areas)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = c(community_one = 30, community_two = 80),
+  seed = 12345L
+)
+
+# Per-community with a default fallback for unlisted communities
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = c(community_one = 30),
+  default_distance = 60,
+  seed = 12345L
+)
+
+# Retrieve per-community distance from result
+samples$community_one$min_distance # 30
+samples$community_two$min_distance # 60 (default_distance)
 
 # Joint sampling (less clustered secondary points)
 samples <- sample_communities(

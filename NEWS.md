@@ -1,3 +1,5 @@
+# gpssampling 0.3.0
+
 # gpssampling 0.2.0
 
 ## Breaking changes

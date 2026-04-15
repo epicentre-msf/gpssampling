@@ -9,8 +9,8 @@ export_points(
   out_dir,
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
-  set = c("primary", "secondary")
+  set = c("primary", "secondary"),
+  print_table = FALSE
 )
 }
 \arguments{
@@ -25,19 +25,28 @@ export_points(
 \item{include_buffers}{Whether to generate and export buffer polygons
 and SQLite tile overlays. Default \code{TRUE}.}
 
-\item{buffer_radius}{Buffer radius in meters. Default \code{50}.}
-
 \item{set}{Which point set to export: \code{"primary"} (default) or
 \code{"secondary"}.}
+
+\item{print_table}{Logical. If \code{TRUE}, computes buffer-level
+statistics (buildings per buffer) and attaches a
+\code{\link[flextable:flextable]{flextable::flextable()}} as \code{attr(, "summary_table")} and the
+underlying data frame as \code{attr(, "summary_df")}. Default \code{FALSE}.}
 }
 \value{
 Invisibly, a tibble of exported file paths with columns:
-\code{community}, \code{set}, \code{batch}, \code{type}, \code{format}, \code{path}.
+\code{community}, \code{set}, \code{batch}, \code{type}, \code{format}, \code{path}. When
+\code{print_table = TRUE}, carries \code{summary_table}, \code{summary_df}, and
+\code{buffer_details} attributes. \code{buffer_details} is a data frame with
+per-buffer building counts (\code{community}, \code{buffer_idx},
+\code{n_buildings}, \code{buffer_radius_m}) suitable for
+\code{\link[=plot_buffer_distribution]{plot_buffer_distribution()}}.
 }
 \description{
 Saves points in multiple formats, optionally generates buffer polygons
 and OsmAnd-compatible SQLite tile overlays. Each community gets a
-self-contained folder.
+self-contained folder. Buffer radius is derived from the per-community
+\verb{$min_distance} in the enriched \code{\link[=split_batches]{split_batches()}} output.
 }
 \examples{
 \dontrun{

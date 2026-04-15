@@ -1,7 +1,7 @@
 Type: Package
 Package: gpssampling
 Title: GPS Sampling
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("Yves", "Amevoin", email = "epicentre-msf@users.noreply.github.com",
            role = c("aut", "cre")),

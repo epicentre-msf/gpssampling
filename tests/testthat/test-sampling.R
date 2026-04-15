@@ -664,7 +664,8 @@ test_that("select_sample_points joint=TRUE with tight pool", {
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(
         c(0, 0, 0.05, 0, 0.05, 0.05, 0, 0.05, 0, 0),
-        ncol = 2L, byrow = TRUE
+        ncol = 2L,
+        byrow = TRUE
       ))),
       crs = 4326L
     )
@@ -718,7 +719,11 @@ test_that("sample_communities joint=TRUE produces valid output", {
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
 
-  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  n_req <- vapply(
+    bl,
+    function(x) as.integer(min(5L, floor(nrow(x) / 2L))),
+    integer(1L)
+  )
   skip_if(any(n_req < 2L), "Not enough points")
 
   result <- sample_communities(
@@ -742,11 +747,27 @@ test_that("sample_communities joint=TRUE is reproducible", {
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
 
-  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  n_req <- vapply(
+    bl,
+    function(x) as.integer(min(5L, floor(nrow(x) / 2L))),
+    integer(1L)
+  )
   skip_if(any(n_req < 2L), "Not enough points")
 
-  r1 <- sample_communities(bl, n_req, min_distance = 10, seed = 99L, joint = TRUE)
-  r2 <- sample_communities(bl, n_req, min_distance = 10, seed = 99L, joint = TRUE)
+  r1 <- sample_communities(
+    bl,
+    n_req,
+    min_distance = 10,
+    seed = 99L,
+    joint = TRUE
+  )
+  r2 <- sample_communities(
+    bl,
+    n_req,
+    min_distance = 10,
+    seed = 99L,
+    joint = TRUE
+  )
 
   for (nm in names(bl)) {
     expect_equal(
@@ -765,15 +786,184 @@ test_that("sample_communities joint point_id is globally unique", {
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
 
-  n_req <- vapply(bl, function(x) as.integer(min(5L, floor(nrow(x) / 2L))), integer(1L))
+  n_req <- vapply(
+    bl,
+    function(x) as.integer(min(5L, floor(nrow(x) / 2L))),
+    integer(1L)
+  )
   skip_if(any(n_req < 2L), "Not enough points")
 
-  result <- sample_communities(bl, n_req, min_distance = 10, seed = 42L, joint = TRUE)
+  result <- sample_communities(
+    bl,
+    n_req,
+    min_distance = 10,
+    seed = 42L,
+    joint = TRUE
+  )
 
   all_ids <- unlist(lapply(result, function(x) {
     c(x$primary$point_id, x$secondary$point_id)
   }))
   expect_false(anyDuplicated(all_ids) > 0L)
+})
+
+# Per-community min_distance
+# ............................................................................
+
+test_that("sample_communities accepts named vector min_distance", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  # Named vector with per-community distances
+  dists <- c(alpha = 10, beta = 20)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = dists, seed = 42L)
+  )
+
+  expect_equal(result[["alpha"]]$min_distance, 10)
+  expect_equal(result[["beta"]]$min_distance, 20)
+})
+
+test_that("sample_communities per-community min_distance uses default_distance fallback", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  # Only alpha is named, beta falls back to default_distance
+  dists <- c(alpha = 10)
+
+  result <- suppressWarnings(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = dists,
+      default_distance = 99,
+      seed = 42L
+    )
+  )
+
+  expect_equal(result[["alpha"]]$min_distance, 10)
+  expect_equal(result[["beta"]]$min_distance, 99)
+})
+
+test_that("sample_communities per-community min_distance uses 50 when default_distance omitted", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  # Only alpha is named, beta has no match
+  dists <- c(alpha = 10)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = dists, seed = 42L)
+  )
+
+  expect_equal(result[["alpha"]]$min_distance, 10)
+  expect_equal(result[["beta"]]$min_distance, 50) # default_distance default
+})
+
+test_that("sample_communities per-community min_distance appears in summary_df", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  dists <- c(alpha = 10, beta = 20)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = dists, seed = 42L)
+  )
+
+  sdf <- attr(result, "summary_df")
+  expect_true(!is.null(sdf))
+  # Per-community rows have their own thresholds
+  alpha_row <- sdf[sdf$community == "alpha", ]
+  beta_row <- sdf[sdf$community == "beta", ]
+  expect_equal(alpha_row$min_dist_requested, 10)
+  expect_equal(beta_row$min_dist_requested, 20)
+  # TOTAL row has NA
+  total_row <- sdf[sdf$community == "TOTAL", ]
+  expect_true(is.na(total_row$min_dist_requested))
+})
+
+test_that("sample_communities scalar min_distance still works (backward compat)", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 50, seed = 42L)
+  )
+
+  for (nm in names(result)) {
+    expect_equal(result[[nm]]$min_distance, 50)
+  }
+})
+
+# named_point_id
+# ............................................................................
+
+test_that("sample_communities creates named_point_id when point_id_digits is set", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(
+      bl,
+      n_req,
+      min_distance = 0,
+      seed = 42L,
+      point_id_digits = 3L
+    )
+  )
+
+  for (nm in names(result)) {
+    expect_true("named_point_id" %in% names(result[[nm]]$primary))
+    # Check zero-padding
+    expect_true(all(nchar(result[[nm]]$primary$named_point_id) == 3L))
+    # Check values match point_id
+    expect_equal(
+      result[[nm]]$primary$named_point_id,
+      sprintf("%03d", result[[nm]]$primary$point_id)
+    )
+  }
+})
+
+test_that("sample_communities omits named_point_id when point_id_digits is NULL", {
+  buildings <- make_buildings(50L)
+  communities <- make_communities()
+  bl <- crop_buildings(buildings, communities, community_id_col = "name")
+
+  sizes <- vapply(bl, nrow, integer(1L))
+  n_req <- pmin(sizes, 3L)
+
+  result <- suppressWarnings(
+    sample_communities(bl, n_req, min_distance = 0, seed = 42L)
+  )
+
+  for (nm in names(result)) {
+    expect_false("named_point_id" %in% names(result[[nm]]$primary))
+  }
 })
 
 # Integration tests (network required)

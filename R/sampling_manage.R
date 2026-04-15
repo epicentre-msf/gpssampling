@@ -15,8 +15,15 @@
 #'   vector (per community). E.g., `5L` or `c(community_one = 5, community_two = 3)`.
 #' @param set Which point set to split: `"primary"` (default) or
 #'   `"secondary"`.
-#' @return A named list of `sf` POINT objects, each with an added
-#'   `assigned_batch` column (integer, 1 to n_batches).
+#' @return A named list of communities. Each element is a list with:
+#'   \describe{
+#'     \item{`batches`}{`sf` POINT with `assigned_batch` column.}
+#'     \item{`min_distance`}{Buffer radius in meters.}
+#'     \item{`n_buildings`}{Total building count in the community.}
+#'     \item{`seed`}{Per-community RNG seed.}
+#'     \item{`n_batches`}{Number of batches.}
+#'     \item{`buildings`}{`sf` of all candidate buildings.}
+#'   }
 #' @export
 #' @examples
 #' \dontrun{
@@ -64,8 +71,102 @@ split_batches <- function(
 
     pts$assigned_batch <- ((seq_len(nrow(pts)) - 1L) %% nb) + 1L
 
-    result[[nm]] <- pts
+    result[[nm]] <- list(
+      batches = pts,
+      min_distance = samples_list[[nm]]$min_distance,
+      n_buildings = nrow(samples_list[[nm]]$buildings),
+      seed = samples_list[[nm]]$seed,
+      n_batches = nb,
+      buildings = samples_list[[nm]]$buildings
+    )
   }
+
+  result
+}
+
+
+#' Extract metadata from batched sampling results
+#'
+#' Combines primary and (optionally) secondary batched results into a
+#' single data frame with per-point metadata. Useful for creating
+#' field assignment sheets.
+#'
+#' @param primary Output of [split_batches()] for the primary set.
+#' @param secondary Output of [split_batches()] for the secondary
+#'   set. Default `NULL` (primary only).
+#' @return A `data.frame` with columns: `community`, `point_id`,
+#'   `named_point_id` (when available), `assigned_batch`, `set`.
+#'   Carries two attributes: `buffer_size` (named numeric vector of
+#'   per-community buffer radii) and `n_teams` (named integer vector
+#'   of per-community batch counts).
+#' @export
+#' @examples
+#' \dontrun{
+#' meta <- extract_metadata(primary_batches, secondary_batches)
+#' attr(meta, "buffer_size")
+#' attr(meta, "n_teams")
+#' }
+extract_metadata <- function(primary, secondary = NULL) {
+  checkmate::assert_list(primary, min.len = 1L)
+
+  extract_set <- function(batched, set_name) {
+    rows <- list()
+    for (nm in names(batched)) {
+      pts <- extract_points(batched[[nm]])
+      if (is.null(pts)) {
+        cli::cli_abort(
+          "Cannot extract points from {.val {nm}}."
+        )
+      }
+      row <- data.frame(
+        community = nm,
+        point_id = pts$point_id,
+        assigned_batch = pts$assigned_batch,
+        set = set_name,
+        stringsAsFactors = FALSE
+      )
+      if ("named_point_id" %in% names(pts)) {
+        row$named_point_id <- pts$named_point_id
+      }
+      rows <- c(rows, list(row))
+    }
+    do.call(rbind, rows)
+  }
+
+  result <- extract_set(primary, "primary")
+  if (!is.null(secondary)) {
+    checkmate::assert_list(secondary, min.len = 1L)
+    sec_df <- extract_set(secondary, "secondary")
+    result <- rbind(result, sec_df)
+  }
+
+  # Build metadata attributes
+  buffer_sizes <- vapply(
+    primary,
+    function(entry) {
+      if (is.list(entry) && "min_distance" %in% names(entry)) {
+        entry[["min_distance"]]
+      } else {
+        NA_real_
+      }
+    },
+    numeric(1L)
+  )
+
+  n_teams <- vapply(
+    primary,
+    function(entry) {
+      if (is.list(entry) && "n_batches" %in% names(entry)) {
+        as.integer(entry[["n_batches"]])
+      } else {
+        NA_integer_
+      }
+    },
+    integer(1L)
+  )
+
+  attr(result, "buffer_size") <- buffer_sizes
+  attr(result, "n_teams") <- n_teams
 
   result
 }
@@ -108,11 +209,8 @@ create_buffers <- function(x, radius = 50, set = c("primary", "secondary")) {
 
   result <- list()
   for (nm in names(x)) {
-    pts <- if (is.list(x[[nm]]) && set %in% names(x[[nm]])) {
-      x[[nm]][[set]]
-    } else if (inherits(x[[nm]], "sf")) {
-      x[[nm]]
-    } else {
+    pts <- extract_points(x[[nm]], set)
+    if (is.null(pts)) {
       cli::cli_abort(
         "Cannot extract points from {.val {nm}}. Expected sf or list with {.val {set}} element."
       )
@@ -131,6 +229,31 @@ buffer_sf <- function(pts, radius) {
   buffers <- sf::st_transform(buffers_utm, 4326L)
   buffers$buffer_radius_m <- radius
   buffers
+}
+
+
+#' Extract sf points from various input shapes
+#'
+#' Handles enriched `split_batches()` output (list with `$batches`),
+#' bare `sf`, or `sample_communities()` output (list with `$primary`/
+#' `$secondary`).
+#'
+#' @param entry A single community element from any of the above.
+#' @param set Which set to extract when `entry` is a
+#'   `sample_communities()` element: `"primary"` or `"secondary"`.
+#' @return An `sf` POINT object, or `NULL` if extraction fails.
+#' @noRd
+extract_points <- function(entry, set = NULL) {
+  if (is.list(entry) && "batches" %in% names(entry)) {
+    return(entry[["batches"]])
+  }
+  if (inherits(entry, "sf")) {
+    return(entry)
+  }
+  if (is.list(entry) && !is.null(set) && set %in% names(entry)) {
+    return(entry[[set]])
+  }
+  NULL
 }
 
 
@@ -315,7 +438,8 @@ render_tile <- function(buffers_sf, merc_bb, fill_color, boundary_color) {
 #'
 #' Saves points in multiple formats, optionally generates buffer polygons
 #' and OsmAnd-compatible SQLite tile overlays. Each community gets a
-#' self-contained folder.
+#' self-contained folder. Buffer radius is derived from the per-community
+#' `$min_distance` in the enriched [split_batches()] output.
 #'
 #' @param samples_list Output of [split_batches()] (preferred) or
 #'   [sample_communities()].
@@ -324,11 +448,19 @@ render_tile <- function(buffers_sf, merc_bb, fill_color, boundary_color) {
 #'   `"shp"`, `"kml"`. Default `c("gpkg", "gpx")`.
 #' @param include_buffers Whether to generate and export buffer polygons
 #'   and SQLite tile overlays. Default `TRUE`.
-#' @param buffer_radius Buffer radius in meters. Default `50`.
 #' @param set Which point set to export: `"primary"` (default) or
 #'   `"secondary"`.
+#' @param print_table Logical. If `TRUE`, computes buffer-level
+#'   statistics (buildings per buffer) and attaches a
+#'   [flextable::flextable()] as `attr(, "summary_table")` and the
+#'   underlying data frame as `attr(, "summary_df")`. Default `FALSE`.
 #' @return Invisibly, a tibble of exported file paths with columns:
-#'   `community`, `set`, `batch`, `type`, `format`, `path`.
+#'   `community`, `set`, `batch`, `type`, `format`, `path`. When
+#'   `print_table = TRUE`, carries `summary_table`, `summary_df`, and
+#'   `buffer_details` attributes. `buffer_details` is a data frame with
+#'   per-buffer building counts (`community`, `buffer_idx`,
+#'   `n_buildings`, `buffer_radius_m`) suitable for
+#'   [plot_buffer_distribution()].
 #' @export
 #' @examples
 #' \dontrun{
@@ -339,14 +471,14 @@ export_points <- function(
   out_dir,
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
-  set = c("primary", "secondary")
+  set = c("primary", "secondary"),
+  print_table = FALSE
 ) {
   set <- match.arg(set)
   checkmate::assert_list(samples_list, min.len = 1L)
   checkmate::assert_character(formats, min.len = 1L)
   checkmate::assert_flag(include_buffers)
-  checkmate::assert_number(buffer_radius, lower = 0)
+  checkmate::assert_flag(print_table)
 
   n_communities <- length(samples_list)
   cli::cli_inform(
@@ -362,11 +494,26 @@ export_points <- function(
     path = character()
   )
 
+  # Collect per-community info for summary
+  summary_rows <- list()
+  detail_rows <- list()
+
   for (nm in names(samples_list)) {
-    pts <- if (inherits(samples_list[[nm]], "sf")) {
-      samples_list[[nm]]
+    entry <- samples_list[[nm]]
+    pts <- extract_points(entry, set)
+    if (is.null(pts)) {
+      cli::cli_abort(
+        "Cannot extract points from {.val {nm}}."
+      )
+    }
+
+    # Resolve buffer radius from metadata
+    buf_radius <- if (is.list(entry) && "min_distance" %in% names(entry)) {
+      entry[["min_distance"]]
+    } else if (is.list(entry) && !inherits(entry, "sf")) {
+      entry[["min_distance"]]
     } else {
-      samples_list[[nm]][[set]]
+      NULL
     }
 
     community_dir <- fs::path(out_dir, set, nm)
@@ -413,10 +560,16 @@ export_points <- function(
 
     # Buffers + SQLite tiles
     if (include_buffers) {
-      buffers <- buffer_sf(pts, buffer_radius)
+      if (is.null(buf_radius)) {
+        cli::cli_abort(
+          "Cannot determine buffer radius for {.val {nm}}. Use enriched {.fn split_batches} output."
+        )
+      }
+      buf_int <- as.integer(buf_radius)
+      buffers <- buffer_sf(pts, buf_radius)
 
       for (fmt in c("gpkg", "gpx")) {
-        fname <- glue::glue("{nm}_buffers_all.{fmt}")
+        fname <- glue::glue("{nm}_buffers_{buf_int}m_all.{fmt}")
         fpath <- fs::path(community_dir, fname)
         write_spatial(buffers, fpath, fmt)
         manifest <- tibble::add_row(
@@ -433,7 +586,7 @@ export_points <- function(
       # SQLite tiles for all buffers
       tiles_path <- fs::path(
         community_dir,
-        glue::glue("{nm}_buffers_all.sqlitedb")
+        glue::glue("{nm}_buffers_{buf_int}m_all.sqlitedb")
       )
       create_buffer_tiles(buffers, as.character(tiles_path))
       manifest <- tibble::add_row(
@@ -452,7 +605,9 @@ export_points <- function(
           batch_buffers <- buffers[buffers$assigned_batch == b, ]
 
           for (fmt in c("gpkg", "gpx")) {
-            fname <- glue::glue("{nm}_buffers_batch_{b}.{fmt}")
+            fname <- glue::glue(
+              "{nm}_buffers_{buf_int}m_batch_{b}.{fmt}"
+            )
             fpath <- fs::path(community_dir, fname)
             write_spatial(batch_buffers, fpath, fmt)
             manifest <- tibble::add_row(
@@ -468,7 +623,7 @@ export_points <- function(
 
           btiles_path <- fs::path(
             community_dir,
-            glue::glue("{nm}_buffers_batch_{b}.sqlitedb")
+            glue::glue("{nm}_buffers_{buf_int}m_batch_{b}.sqlitedb")
           )
           create_buffer_tiles(batch_buffers, as.character(btiles_path))
           manifest <- tibble::add_row(
@@ -482,12 +637,79 @@ export_points <- function(
           )
         }
       }
+
+      # Collect stats for summary table
+      if (print_table) {
+        buildings_sf <- if (is.list(entry) && "buildings" %in% names(entry)) {
+          entry[["buildings"]]
+        } else {
+          NULL
+        }
+        if (!is.null(buildings_sf) && nrow(buildings_sf) > 0L) {
+          hits <- sf::st_intersects(buffers, buildings_sf)
+          bldgs_per_buf <- lengths(hits)
+          summary_rows <- c(
+            summary_rows,
+            list(data.frame(
+              community = nm,
+              n_points = nrow(pts),
+              buffer_radius_m = buf_radius,
+              n_buildings = nrow(buildings_sf),
+              avg_bldgs_per_buffer = round(mean(bldgs_per_buf), 1),
+              min_bldgs_per_buffer = min(bldgs_per_buf),
+              max_bldgs_per_buffer = max(bldgs_per_buf),
+              median_bldgs_per_buffer = round(
+                stats::median(bldgs_per_buf),
+                1
+              ),
+              stringsAsFactors = FALSE
+            ))
+          )
+          # Raw per-buffer counts for distribution plotting
+          detail_rows <- c(
+            detail_rows,
+            list(data.frame(
+              community = nm,
+              buffer_idx = seq_along(bldgs_per_buf),
+              n_buildings = bldgs_per_buf,
+              buffer_radius_m = buf_radius,
+              stringsAsFactors = FALSE
+            ))
+          )
+        }
+      }
     }
   }
 
   cli::cli_inform(
     "Exported {nrow(manifest)} files to {.path {out_dir}}"
   )
+
+  # --- Summary table ---
+  if (print_table && length(summary_rows) > 0L) {
+    summary_df <- do.call(rbind, summary_rows)
+
+    ft <- flextable::flextable(summary_df) |>
+      flextable::set_header_labels(
+        community = "Community",
+        n_points = "Points",
+        buffer_radius_m = "Buffer\nRadius (m)",
+        n_buildings = "Buildings",
+        avg_bldgs_per_buffer = "Avg Bldgs\n/ Buffer",
+        min_bldgs_per_buffer = "Min Bldgs\n/ Buffer",
+        max_bldgs_per_buffer = "Max Bldgs\n/ Buffer",
+        median_bldgs_per_buffer = "Median Bldgs\n/ Buffer"
+      ) |>
+      flextable::autofit() |>
+      flextable::set_caption("Export Summary: Buffer Statistics")
+
+    attr(manifest, "summary_table") <- ft
+    attr(manifest, "summary_df") <- summary_df
+    if (length(detail_rows) > 0L) {
+      attr(manifest, "buffer_details") <- do.call(rbind, detail_rows)
+    }
+  }
+
   invisible(manifest)
 }
 
@@ -537,10 +759,18 @@ write_gpx <- function(sf_obj, path) {
   if (all(geom_type %in% c("POINT", "MULTIPOINT"))) {
     gpx_obj <- sf_obj |>
       dplyr::select(
-        dplyr::any_of(c("point_id", "id", "community", "assigned_batch"))
+        dplyr::any_of(
+          c("named_point_id", "point_id", "id", "community", "assigned_batch")
+        )
       )
-    # Use point_id as GPX name (preferred), fall back to id
-    if ("point_id" %in% names(gpx_obj)) {
+    # Prefer named_point_id > point_id > id for GPX name
+    if ("named_point_id" %in% names(gpx_obj)) {
+      gpx_obj$name <- gpx_obj$named_point_id
+      gpx_obj <- gpx_obj |>
+        dplyr::select(
+          -dplyr::any_of(c("named_point_id", "point_id", "id"))
+        )
+    } else if ("point_id" %in% names(gpx_obj)) {
       gpx_obj$name <- as.character(gpx_obj$point_id)
       gpx_obj <- gpx_obj |>
         dplyr::select(-dplyr::any_of(c("point_id", "id")))
@@ -563,9 +793,17 @@ write_gpx <- function(sf_obj, path) {
     ))
     gpx_lines <- lines |>
       dplyr::select(
-        dplyr::any_of(c("point_id", "id", "community", "assigned_batch"))
+        dplyr::any_of(
+          c("named_point_id", "point_id", "id", "community", "assigned_batch")
+        )
       )
-    if ("point_id" %in% names(gpx_lines)) {
+    if ("named_point_id" %in% names(gpx_lines)) {
+      gpx_lines$name <- gpx_lines$named_point_id
+      gpx_lines <- gpx_lines |>
+        dplyr::select(
+          -dplyr::any_of(c("named_point_id", "point_id", "id"))
+        )
+    } else if ("point_id" %in% names(gpx_lines)) {
       gpx_lines$name <- as.character(gpx_lines$point_id)
       gpx_lines <- gpx_lines |>
         dplyr::select(-dplyr::any_of(c("point_id", "id")))
@@ -735,7 +973,9 @@ email_points <- function(
 #'
 #' @param samples_list Output of [sample_communities()].
 #' @param out_file Path for the output `.kml` file.
-#' @param buffer_radius Buffer radius in meters. Default `50`.
+#' @param buffer_radius Buffer radius in meters. Default `NULL`
+#'   (derives from per-community `$min_distance`). Pass an explicit
+#'   value to override.
 #' @param primary_color Point color for primary set (`#RRGGBB` or
 #'   `#RRGGBBAA`). Default `"#FF4500"` (orange-red).
 #' @param secondary_color Point color for secondary set. Default
@@ -755,7 +995,7 @@ email_points <- function(
 create_earth_project <- function(
   samples_list,
   out_file,
-  buffer_radius = 50,
+  buffer_radius = NULL,
   primary_color = "#FF4500",
   secondary_color = "#1E90FF",
   primary_buffer_color = "#FF450044",
@@ -764,7 +1004,9 @@ create_earth_project <- function(
 ) {
   checkmate::assert_list(samples_list, min.len = 1L)
   checkmate::assert_path_for_output(out_file, overwrite = TRUE)
-  checkmate::assert_number(buffer_radius, lower = 0)
+  if (!is.null(buffer_radius)) {
+    checkmate::assert_number(buffer_radius, lower = 0)
+  }
   checkmate::assert_string(title)
 
   community_names <- sort(names(samples_list))
@@ -811,7 +1053,8 @@ create_earth_project <- function(
   for (nm in community_names) {
     pts <- samples_list[[nm]]$primary
     if (is.null(pts) || nrow(pts) == 0L) next
-    bufs <- buffer_sf(pts, buffer_radius)
+    radius <- buffer_radius %||% samples_list[[nm]]$min_distance %||% 50
+    bufs <- buffer_sf(pts, radius)
     kml <- c(kml, kml_buffers_folder(bufs, nm, "#primary_buf_style"))
   }
   kml <- c(kml, "  </Folder>")
@@ -821,7 +1064,8 @@ create_earth_project <- function(
   for (nm in community_names) {
     pts <- samples_list[[nm]]$secondary
     if (is.null(pts) || nrow(pts) == 0L) next
-    bufs <- buffer_sf(pts, buffer_radius)
+    radius <- buffer_radius %||% samples_list[[nm]]$min_distance %||% 50
+    bufs <- buffer_sf(pts, radius)
     kml <- c(kml, kml_buffers_folder(bufs, nm, "#secondary_buf_style"))
   }
   kml <- c(kml, "  </Folder>")
@@ -908,6 +1152,7 @@ kml_poly_style <- function(id, color) {
 kml_points_folder <- function(pts_sf, community_name, style_url) {
   pts_4326 <- sf::st_transform(pts_sf, 4326L)
   coords <- sf::st_coordinates(pts_4326)
+  has_named_pid <- "named_point_id" %in% names(pts_4326)
   has_pid <- "point_id" %in% names(pts_4326)
   has_batch <- "assigned_batch" %in% names(pts_4326)
 
@@ -917,7 +1162,13 @@ kml_points_folder <- function(pts_sf, community_name, style_url) {
   )
 
   for (i in seq_len(nrow(pts_4326))) {
-    pid <- if (has_pid) pts_4326$point_id[i] else i
+    pid <- if (has_named_pid) {
+      pts_4326$named_point_id[i]
+    } else if (has_pid) {
+      pts_4326$point_id[i]
+    } else {
+      i
+    }
     desc_parts <- paste0("Community: ", community_name)
     if (has_batch) {
       desc_parts <- paste0(
@@ -957,6 +1208,7 @@ kml_points_folder <- function(pts_sf, community_name, style_url) {
 #' @noRd
 kml_buffers_folder <- function(bufs_sf, community_name, style_url) {
   bufs_4326 <- sf::st_transform(bufs_sf, 4326L)
+  has_named_pid <- "named_point_id" %in% names(bufs_4326)
   has_pid <- "point_id" %in% names(bufs_4326)
 
   lines <- c(
@@ -965,7 +1217,13 @@ kml_buffers_folder <- function(bufs_sf, community_name, style_url) {
   )
 
   for (i in seq_len(nrow(bufs_4326))) {
-    pid <- if (has_pid) bufs_4326$point_id[i] else i
+    pid <- if (has_named_pid) {
+      bufs_4326$named_point_id[i]
+    } else if (has_pid) {
+      bufs_4326$point_id[i]
+    } else {
+      i
+    }
     geom <- sf::st_geometry(bufs_4326)[[i]]
 
     # Extract outer ring coordinates (works for POLYGON and MULTIPOLYGON)
