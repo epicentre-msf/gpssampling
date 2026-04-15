@@ -52,16 +52,13 @@ jobs:
         run: roxygen2::roxygenise()
         shell: Rscript {0}
 
-      - name: Commit documentation updates
+      - name: Check documentation is up to date
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add man/ NAMESPACE
           if git diff --staged --quiet; then
-            echo "No documentation changes to commit"
+            echo "Documentation is up to date"
           else
-            git commit -m "docs: regenerate documentation [skip ci]"
-            git push
+            echo "::warning::Documentation is out of sync with source. Run roxygen2::roxygenise() locally and commit the changes."
           fi
 
   release:
