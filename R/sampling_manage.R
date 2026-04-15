@@ -272,6 +272,8 @@ extract_points <- function(entry, set = NULL) {
 #'   `"#90EE9066"` (light green, 40% opacity).
 #' @param boundary_color Boundary color in `#RRGGBBAA` format. Default
 #'   `"#228B22CC"` (forest green, 80% opacity).
+#' @param quiet Logical. If `TRUE`, suppress progress messages. Default
+#'   `FALSE`.
 #' @return Invisibly, the path to the created `.sqlitedb` file.
 #' @export
 #' @examples
@@ -284,23 +286,27 @@ create_buffer_tiles <- function(
   min_zoom = 8L,
   max_zoom = 14L,
   fill_color = "#90EE9066",
-  boundary_color = "#228B22CC"
+  boundary_color = "#228B22CC",
+  quiet = FALSE
 ) {
   checkmate::assert_class(buffers_sf, "sf")
   checkmate::assert_path_for_output(out_file, overwrite = TRUE)
   checkmate::assert_int(min_zoom, lower = 1L, upper = 20L)
   checkmate::assert_int(max_zoom, lower = min_zoom, upper = 20L)
+  checkmate::assert_flag(quiet)
 
   buffers_4326 <- sf::st_transform(buffers_sf, 4326L)
   buffers_3857 <- sf::st_transform(buffers_sf, 3857L)
   bbox <- sf::st_bbox(buffers_4326)
 
-  cli::cli_inform(
-    "Rendering buffer tiles ({nrow(buffers_sf)} buffer{?s}, zoom {min_zoom}-{max_zoom})..."
-  )
+  if (!quiet) {
+    cli::cli_inform(
+      "Rendering buffer tiles ({nrow(buffers_sf)} buffer{?s}, zoom {min_zoom}-{max_zoom})..."
+    )
+  }
 
   if (file.exists(out_file)) {
-    file.remove(out_file)
+    unlink(out_file, force = TRUE)
   }
 
   con <- DBI::dbConnect(RSQLite::SQLite(), out_file)
@@ -345,9 +351,11 @@ create_buffer_tiles <- function(
   for (z in seq(min_zoom, max_zoom)) {
     tile_grid <- suppressWarnings(slippymath::bbox_to_tile_grid(bbox, zoom = z))
     tiles <- tile_grid$tiles
-    cli::cli_inform(
-      "  Zoom {z}: {nrow(tiles)} tile{?s}..."
-    )
+    if (!quiet) {
+      cli::cli_inform(
+        "  Zoom {z}: {nrow(tiles)} tile{?s}..."
+      )
+    }
 
     n_tiles <- 2L^z
     tile_size <- 2 * merc_origin / n_tiles
@@ -454,6 +462,12 @@ render_tile <- function(buffers_sf, merc_bb, fill_color, boundary_color) {
 #'   statistics (buildings per buffer) and attaches a
 #'   [flextable::flextable()] as `attr(, "summary_table")` and the
 #'   underlying data frame as `attr(, "summary_df")`. Default `FALSE`.
+#' @param overwrite Logical. If `TRUE` (default), removes existing
+#'   output directory for the selected set before exporting. This
+#'   prevents "database is locked" errors when re-exporting SQLite
+#'   tile overlays.
+#' @param quiet Logical. If `TRUE`, suppress progress messages.
+#'   Default `FALSE`.
 #' @return Invisibly, a tibble of exported file paths with columns:
 #'   `community`, `set`, `batch`, `type`, `format`, `path`. When
 #'   `print_table = TRUE`, carries `summary_table`, `summary_df`, and
@@ -472,18 +486,34 @@ export_points <- function(
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
   set = c("primary", "secondary"),
-  print_table = FALSE
+  print_table = FALSE,
+  overwrite = TRUE,
+  quiet = FALSE
 ) {
   set <- match.arg(set)
   checkmate::assert_list(samples_list, min.len = 1L)
   checkmate::assert_character(formats, min.len = 1L)
   checkmate::assert_flag(include_buffers)
   checkmate::assert_flag(print_table)
+  checkmate::assert_flag(overwrite)
+  checkmate::assert_flag(quiet)
+
+  set_dir <- fs::path(out_dir, set)
+  if (overwrite && fs::dir_exists(set_dir)) {
+    if (!quiet) {
+      cli::cli_inform(
+        "Overwriting existing directory {.path {set_dir}}..."
+      )
+    }
+    unlink(as.character(set_dir), recursive = TRUE, force = TRUE)
+  }
 
   n_communities <- length(samples_list)
-  cli::cli_inform(
-    "Exporting {set} points for {n_communities} communit{?y/ies} to {.path {out_dir}}..."
-  )
+  if (!quiet) {
+    cli::cli_inform(
+      "Exporting {set} points for {n_communities} communit{?y/ies} to {.path {out_dir}}..."
+    )
+  }
 
   manifest <- tibble::tibble(
     community = character(),
@@ -518,7 +548,9 @@ export_points <- function(
 
     community_dir <- fs::path(out_dir, set, nm)
     fs::dir_create(community_dir, recurse = TRUE)
-    cli::cli_inform("  {.val {nm}}: {nrow(pts)} point{?s}...")
+    if (!quiet) {
+      cli::cli_inform("  {.val {nm}}: {nrow(pts)} point{?s}...")
+    }
 
     # Write all points
     for (fmt in formats) {
@@ -588,7 +620,7 @@ export_points <- function(
         community_dir,
         glue::glue("{nm}_buffers_{buf_int}m_all.sqlitedb")
       )
-      create_buffer_tiles(buffers, as.character(tiles_path))
+      create_buffer_tiles(buffers, as.character(tiles_path), quiet = quiet)
       manifest <- tibble::add_row(
         manifest,
         community = nm,
@@ -625,7 +657,11 @@ export_points <- function(
             community_dir,
             glue::glue("{nm}_buffers_{buf_int}m_batch_{b}.sqlitedb")
           )
-          create_buffer_tiles(batch_buffers, as.character(btiles_path))
+          create_buffer_tiles(
+            batch_buffers,
+            as.character(btiles_path),
+            quiet = quiet
+          )
           manifest <- tibble::add_row(
             manifest,
             community = nm,
@@ -681,9 +717,11 @@ export_points <- function(
     }
   }
 
-  cli::cli_inform(
-    "Exported {nrow(manifest)} files to {.path {out_dir}}"
-  )
+  if (!quiet) {
+    cli::cli_inform(
+      "Exported {nrow(manifest)} files to {.path {out_dir}}"
+    )
+  }
 
   # --- Summary table ---
   if (print_table && length(summary_rows) > 0L) {
