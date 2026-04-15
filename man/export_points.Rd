@@ -36,8 +36,11 @@ underlying data frame as \code{attr(, "summary_df")}. Default \code{FALSE}.}
 \value{
 Invisibly, a tibble of exported file paths with columns:
 \code{community}, \code{set}, \code{batch}, \code{type}, \code{format}, \code{path}. When
-\code{print_table = TRUE}, carries \code{summary_table} and \code{summary_df}
-attributes.
+\code{print_table = TRUE}, carries \code{summary_table}, \code{summary_df}, and
+\code{buffer_details} attributes. \code{buffer_details} is a data frame with
+per-buffer building counts (\code{community}, \code{buffer_idx},
+\code{n_buildings}, \code{buffer_radius_m}) suitable for
+\code{\link[=plot_buffer_distribution]{plot_buffer_distribution()}}.
 }
 \description{
 Saves points in multiple formats, optionally generates buffer polygons

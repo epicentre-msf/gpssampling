@@ -641,14 +641,14 @@ buffers_one <- create_buffers(samples$community_one$primary, radius = 50)
 SQLite tile overlays to a structured directory.
 
 ```{r export}
-# Export primary points
+# Export primary points (with buffer stats for distribution plotting)
 manifest_pri <- export_points(
   primary_batches,
   out_dir = "output",
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
-  set = "primary"
+  set = "primary",
+  print_table = TRUE
 )
 
 # Export secondary points
@@ -657,7 +657,6 @@ manifest_sec <- export_points(
   out_dir = "output",
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
-  buffer_radius = 50,
   set = "secondary"
 )
 ```
@@ -716,6 +715,31 @@ The `.sqlitedb` files are tile overlays that show buffer zones on OsmAnd
 
 The overlay shows semi-transparent green circles around each sampled point,
 helping field workers identify which buildings to visit.
+
+## Buffer building distribution
+
+When `export_points()` is called with `print_table = TRUE`, it attaches
+per-buffer building counts to the manifest. Use `plot_buffer_distribution()`
+to visualise how buildings are distributed across buffers — useful for
+assessing sampling density uniformity.
+
+```{r buffer-distribution, fig.width=8, fig.height=5}
+# Plot the distribution of buildings per buffer
+plot_buffer_distribution(manifest_pri)
+```
+
+The histogram is faceted by community. Dashed red lines show the mean
+and dotted green lines the median. Customise appearance with
+`fill_color`, `binwidth`, and `free_y` parameters:
+
+```{r buffer-distribution-custom, fig.width=8, fig.height=5}
+plot_buffer_distribution(
+  manifest_pri,
+  binwidth = 2,
+  fill_color = "#6A8E7F",
+  title = "Building density in buffer zones"
+)
+```
 
 ## Supported export formats
 
@@ -1218,6 +1242,7 @@ leaflet_communities(
 | `map_overview()` | Zoomed-out static overview of all communities |
 | `map_all_communities()` | Generate and optionally save all static maps |
 | `leaflet_communities()` | Interactive leaflet map with layer controls and navigation |
+| `plot_buffer_distribution()` | Histogram of buildings per buffer from export results |
 
 
 # Troubleshooting

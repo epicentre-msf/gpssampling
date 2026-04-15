@@ -456,8 +456,11 @@ render_tile <- function(buffers_sf, merc_bb, fill_color, boundary_color) {
 #'   underlying data frame as `attr(, "summary_df")`. Default `FALSE`.
 #' @return Invisibly, a tibble of exported file paths with columns:
 #'   `community`, `set`, `batch`, `type`, `format`, `path`. When
-#'   `print_table = TRUE`, carries `summary_table` and `summary_df`
-#'   attributes.
+#'   `print_table = TRUE`, carries `summary_table`, `summary_df`, and
+#'   `buffer_details` attributes. `buffer_details` is a data frame with
+#'   per-buffer building counts (`community`, `buffer_idx`,
+#'   `n_buildings`, `buffer_radius_m`) suitable for
+#'   [plot_buffer_distribution()].
 #' @export
 #' @examples
 #' \dontrun{
@@ -493,6 +496,7 @@ export_points <- function(
 
   # Collect per-community info for summary
   summary_rows <- list()
+  detail_rows <- list()
 
   for (nm in names(samples_list)) {
     entry <- samples_list[[nm]]
@@ -661,6 +665,17 @@ export_points <- function(
               stringsAsFactors = FALSE
             ))
           )
+          # Raw per-buffer counts for distribution plotting
+          detail_rows <- c(
+            detail_rows,
+            list(data.frame(
+              community = nm,
+              buffer_idx = seq_along(bldgs_per_buf),
+              n_buildings = bldgs_per_buf,
+              buffer_radius_m = buf_radius,
+              stringsAsFactors = FALSE
+            ))
+          )
         }
       }
     }
@@ -690,6 +705,9 @@ export_points <- function(
 
     attr(manifest, "summary_table") <- ft
     attr(manifest, "summary_df") <- summary_df
+    if (length(detail_rows) > 0L) {
+      attr(manifest, "buffer_details") <- do.call(rbind, detail_rows)
+    }
   }
 
   invisible(manifest)

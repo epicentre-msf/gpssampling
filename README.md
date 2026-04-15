@@ -90,7 +90,8 @@ samples <- sample_communities(
 # Use a single integer for uniform batches, or a named vector per community:
 batched <- split_batches(samples, n_batches = 5L, set = "primary")
 # batched <- split_batches(samples, n_batches = c(community_1 = 5, community_2 = 3), set = "primary")
-export_points(batched, out_dir = "output", set = "primary")
+manifest <- export_points(batched, out_dir = "output", set = "primary", print_table = TRUE)
+plot_buffer_distribution(manifest)  # histogram of buildings per buffer
 map_all_communities(samples, communities, out_dir = "output/maps")
 
 # Interactive leaflet map with buildings, roads, and navigation

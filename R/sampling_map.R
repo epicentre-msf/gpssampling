@@ -2,6 +2,7 @@
 #
 # Publication-quality static maps showing communities, sampled points,
 # and buffers. Uses ggplot2 + maptiles + ggspatial (all in Suggests).
+# Also includes distribution plots for buffer-level statistics.
 
 #' Compute minimum pairwise distance (meters) for a set of points
 #' @noRd
@@ -1289,4 +1290,157 @@ leaflet_communities <- function(
 
   cli::cli_inform("Interactive map ready.")
   m
+}
+
+
+# Buffer Distribution Plots
+# ............................................................................
+
+#' Plot the distribution of buildings per buffer
+#'
+#' Creates a ggplot histogram showing how many buildings fall within
+#' each buffer zone, faceted by community. Useful for assessing
+#' sampling density uniformity across communities. Vertical dashed
+#' lines indicate the median and mean per community.
+#'
+#' Requires `ggplot2` (in Suggests).
+#'
+#' @param export_result The manifest returned by [export_points()] when
+#'   called with `print_table = TRUE`. Must carry a `buffer_details`
+#'   attribute (data frame with columns `community`, `buffer_idx`,
+#'   `n_buildings`, `buffer_radius_m`).
+#' @param fill_color Bar fill color. Default `"#5B9BD5"`.
+#' @param mean_color Color for the mean line. Default `"#D94F4F"`.
+#' @param median_color Color for the median line. Default `"#2E8B57"`.
+#' @param binwidth Histogram bin width. If `NULL` (default), ggplot2
+#'   picks an automatic value.
+#' @param title Plot title. Default `"Buildings per Buffer"`.
+#' @param subtitle Plot subtitle. If `NULL` (default), auto-generated
+#'   from community count and total buffer count.
+#' @param free_y Logical. If `TRUE` (default), facet y-axes are free
+#'   (communities with different buffer counts get their own scale).
+#' @return A `ggplot` object.
+#' @export
+#' @examples
+#' \dontrun{
+#' manifest <- export_points(batched, "output", print_table = TRUE)
+#' plot_buffer_distribution(manifest)
+#' }
+plot_buffer_distribution <- function(
+  export_result,
+  fill_color = "#5B9BD5",
+  mean_color = "#D94F4F",
+  median_color = "#2E8B57",
+  binwidth = NULL,
+  title = "Buildings per Buffer",
+  subtitle = NULL,
+  free_y = TRUE
+) {
+  rlang::check_installed("ggplot2", reason = "for distribution plots")
+
+  buffer_details <- attr(export_result, "buffer_details")
+  if (is.null(buffer_details) || nrow(buffer_details) == 0L) {
+    cli::cli_abort(c(
+      "No {.field buffer_details} attribute found on {.arg export_result}.",
+      "i" = "Run {.fn export_points} with {.code print_table = TRUE}."
+    ))
+  }
+
+  checkmate::assert_data_frame(buffer_details, min.rows = 1L)
+  checkmate::assert_string(fill_color)
+  checkmate::assert_string(mean_color)
+  checkmate::assert_string(median_color)
+  checkmate::assert_number(binwidth, lower = 0.1, null.ok = TRUE)
+  checkmate::assert_string(title)
+  checkmate::assert_string(subtitle, null.ok = TRUE)
+  checkmate::assert_flag(free_y)
+
+  n_communities <- length(unique(buffer_details$community))
+  n_buffers <- nrow(buffer_details)
+
+  if (is.null(subtitle)) {
+    subtitle <- glue::glue(
+      "{n_buffers} buffer{if (n_buffers != 1L) 's' else ''} across ",
+      "{n_communities} communit{if (n_communities != 1L) 'ies' else 'y'}"
+    )
+  }
+
+  # Per-community summary stats for annotation lines
+  stats_df <- buffer_details |>
+    dplyr::group_by(.data$community) |>
+    dplyr::summarise(
+      mean_bldgs = mean(.data$n_buildings),
+      median_bldgs = stats::median(.data$n_buildings),
+      .groups = "drop"
+    )
+
+  facet_scales <- if (free_y) "free_y" else "fixed"
+
+  p <- ggplot2::ggplot(
+    buffer_details,
+    ggplot2::aes(x = .data$n_buildings)
+  )
+
+  if (is.null(binwidth)) {
+    p <- p +
+      ggplot2::geom_histogram(
+        fill = fill_color,
+        color = "white",
+        linewidth = 0.3
+      )
+  } else {
+    p <- p +
+      ggplot2::geom_histogram(
+        binwidth = binwidth,
+        fill = fill_color,
+        color = "white",
+        linewidth = 0.3
+      )
+  }
+
+  p <- p +
+    ggplot2::geom_vline(
+      data = stats_df,
+      ggplot2::aes(xintercept = .data$mean_bldgs),
+      linetype = "dashed",
+      color = mean_color,
+      linewidth = 0.7
+    ) +
+    ggplot2::geom_vline(
+      data = stats_df,
+      ggplot2::aes(xintercept = .data$median_bldgs),
+      linetype = "dotted",
+      color = median_color,
+      linewidth = 0.7
+    )
+
+  if (n_communities > 1L) {
+    p <- p +
+      ggplot2::facet_wrap(
+        ggplot2::vars(.data$community),
+        scales = facet_scales
+      )
+  }
+
+  p <- p +
+    ggplot2::labs(
+      title = title,
+      subtitle = subtitle,
+      x = "Number of buildings per buffer",
+      y = "Count",
+      caption = paste0(
+        "Dashed line = mean | ",
+        "Dotted line = median"
+      )
+    ) +
+    ggplot2::theme_light() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", size = 14),
+      plot.subtitle = ggplot2::element_text(size = 10, color = "grey40"),
+      plot.caption = ggplot2::element_text(size = 8, color = "grey50"),
+      strip.text = ggplot2::element_text(face = "bold", size = 11),
+      panel.grid.minor = ggplot2::element_blank()
+    )
+
+  p
 }
