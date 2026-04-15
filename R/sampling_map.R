@@ -893,13 +893,6 @@ leaflet_communities <- function(
     function(el, x) {
       var map = this;
 
-      // Custom panes for z-ordering
-      map.createPane('communities'); map.getPane('communities').style.zIndex = 410;
-      map.createPane('roads');       map.getPane('roads').style.zIndex = 415;
-      map.createPane('buildings');   map.getPane('buildings').style.zIndex = 420;
-      map.createPane('buffers');     map.getPane('buffers').style.zIndex = 425;
-      map.createPane('points');      map.getPane('points').style.zIndex = 430;
-
       // Community navigation panel
       var communityBounds = %s;
       var nav = L.control({position: 'topleft'});
@@ -940,7 +933,15 @@ leaflet_communities <- function(
     leaflet::addTiles(group = "OpenStreetMap") |>
     leaflet::addProviderTiles("CartoDB.Positron", group = "Light") |>
     leaflet::addProviderTiles("Esri.WorldImagery", group = "Satellite") |>
-    leaflet::addProviderTiles("OpenStreetMap.HOT", group = "OSM Humanitarian")
+    leaflet::addProviderTiles(
+      "OpenStreetMap.HOT",
+      group = "OSM Humanitarian"
+    ) |>
+    leaflet::addMapPane("communities", zIndex = 410) |>
+    leaflet::addMapPane("roads", zIndex = 415) |>
+    leaflet::addMapPane("buildings", zIndex = 420) |>
+    leaflet::addMapPane("buffers", zIndex = 425) |>
+    leaflet::addMapPane("points", zIndex = 430)
 
   # --- Communities layer (pane: communities) ---
   m <- m |>
