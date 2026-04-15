@@ -15,7 +15,9 @@ sample_communities(
   print_table = TRUE,
   road_types = c("primary", "secondary", "tertiary", "residential", "trunk",
     "unclassified"),
-  road_dir = NULL
+  road_dir = NULL,
+  starting_point = 1L,
+  buffer_overlap = TRUE
 )
 }
 \arguments{
@@ -70,6 +72,20 @@ for the post-selection proximity ordering.}
 provided, roads are read from / saved to
 \verb{road_dir/\{community_name\}.gpkg}. Use \code{\link[=fetch_community_roads]{fetch_community_roads()}}
 to pre-download roads. Default \code{NULL} (no caching).}
+
+\item{starting_point}{Integer. Starting number for \code{point_id} assignment.
+Useful when combining results from multiple survey rounds where IDs must
+not restart at 1. Default \code{1L}.}
+
+\item{buffer_overlap}{Logical. Controls whether the circular buffers of
+radius \code{min_distance} around any two selected points are allowed to
+overlap. If \code{TRUE} (default), the standard \code{min_distance} exclusion
+radius is used.
+If \code{FALSE}, the exclusion radius is doubled to \code{2 * min_distance},
+preventing any two buffers from touching or overlapping. Set to \code{FALSE}
+when field workers are instructed to sample any valid building inside the
+buffer if the original point is invalid, and you need to guarantee that
+no replacement building could fall within another point's buffer.}
 }
 \value{
 A named list. Each community element contains:
@@ -133,6 +149,26 @@ samples <- sample_communities(
   min_distance = 50,
   seed = 12345L,
   joint = TRUE
+)
+
+# Shift point IDs to start at 300 (e.g., continuing from a prior round)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = 50,
+  seed = 12345L,
+  starting_point = 300L
+)
+samples$community_one$primary$point_id # starts at 300
+
+# No buffer overlap: any two buffers of radius 50m never touch
+# (effective exclusion radius becomes 100m = 2 * 50)
+samples <- sample_communities(
+  buildings_list,
+  n_required = c(community_one = 30, community_two = 80),
+  min_distance = 50,
+  seed = 12345L,
+  buffer_overlap = FALSE
 )
 }
 }

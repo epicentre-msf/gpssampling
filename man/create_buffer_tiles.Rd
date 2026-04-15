@@ -10,7 +10,8 @@ create_buffer_tiles(
   min_zoom = 8L,
   max_zoom = 14L,
   fill_color = "#90EE9066",
-  boundary_color = "#228B22CC"
+  boundary_color = "#228B22CC",
+  quiet = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ create_buffer_tiles(
 
 \item{boundary_color}{Boundary color in \verb{#RRGGBBAA} format. Default
 \code{"#228B22CC"} (forest green, 80\% opacity).}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress progress messages. Default
+\code{FALSE}.}
 }
 \value{
 Invisibly, the path to the created \code{.sqlitedb} file.

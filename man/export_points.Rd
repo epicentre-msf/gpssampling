@@ -10,7 +10,9 @@ export_points(
   formats = c("gpkg", "gpx"),
   include_buffers = TRUE,
   set = c("primary", "secondary"),
-  print_table = FALSE
+  print_table = FALSE,
+  overwrite = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -32,6 +34,14 @@ and SQLite tile overlays. Default \code{TRUE}.}
 statistics (buildings per buffer) and attaches a
 \code{\link[flextable:flextable]{flextable::flextable()}} as \code{attr(, "summary_table")} and the
 underlying data frame as \code{attr(, "summary_df")}. Default \code{FALSE}.}
+
+\item{overwrite}{Logical. If \code{TRUE} (default), removes existing
+output directory for the selected set before exporting. This
+prevents "database is locked" errors when re-exporting SQLite
+tile overlays.}
+
+\item{quiet}{Logical. If \code{TRUE}, suppress progress messages.
+Default \code{FALSE}.}
 }
 \value{
 Invisibly, a tibble of exported file paths with columns:
