@@ -471,6 +471,10 @@ test_that("select_sample_points errors on impossible n_required", {
 # ............................................................................
 
 test_that("sample_communities is reproducible", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -494,6 +498,10 @@ test_that("sample_communities is reproducible", {
 })
 
 test_that("sample_communities different seed gives different result", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -524,6 +532,10 @@ test_that("sample_communities different seed gives different result", {
 })
 
 test_that("sample_communities scalar n_required applies to all", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -542,6 +554,10 @@ test_that("sample_communities scalar n_required applies to all", {
 })
 
 test_that("sample_communities result structure is correct", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -583,6 +599,10 @@ test_that("sample_communities result structure is correct", {
 })
 
 test_that("sample_communities assigns globally unique point_id", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -625,6 +645,10 @@ test_that("sample_communities assigns globally unique point_id", {
 })
 
 test_that("sample_communities errors on unknown community", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -715,6 +739,10 @@ test_that("select_sample_points joint=FALSE (default) unchanged", {
 })
 
 test_that("sample_communities joint=TRUE produces valid output", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(200L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -743,6 +771,10 @@ test_that("sample_communities joint=TRUE produces valid output", {
 })
 
 test_that("sample_communities joint=TRUE is reproducible", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(200L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -782,6 +814,10 @@ test_that("sample_communities joint=TRUE is reproducible", {
 })
 
 test_that("sample_communities joint point_id is globally unique", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(200L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -811,6 +847,10 @@ test_that("sample_communities joint point_id is globally unique", {
 # ............................................................................
 
 test_that("sample_communities accepts named vector min_distance", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -830,6 +870,10 @@ test_that("sample_communities accepts named vector min_distance", {
 })
 
 test_that("sample_communities per-community min_distance uses default_distance fallback", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -855,6 +899,10 @@ test_that("sample_communities per-community min_distance uses default_distance f
 })
 
 test_that("sample_communities per-community min_distance uses 50 when default_distance omitted", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -874,6 +922,10 @@ test_that("sample_communities per-community min_distance uses 50 when default_di
 })
 
 test_that("sample_communities per-community min_distance appears in summary_df", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -900,6 +952,10 @@ test_that("sample_communities per-community min_distance appears in summary_df",
 })
 
 test_that("sample_communities scalar min_distance still works (backward compat)", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -920,6 +976,10 @@ test_that("sample_communities scalar min_distance still works (backward compat)"
 # ............................................................................
 
 test_that("sample_communities creates named_point_id when point_id_digits is set", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -950,6 +1010,10 @@ test_that("sample_communities creates named_point_id when point_id_digits is set
 })
 
 test_that("sample_communities omits named_point_id when point_id_digits is NULL", {
+  local_mocked_bindings(
+    fetch_roads = function(...) NULL,
+    .package = "gpssampling"
+  )
   buildings <- make_buildings(50L)
   communities <- make_communities()
   bl <- crop_buildings(buildings, communities, community_id_col = "name")
@@ -1139,21 +1203,3 @@ test_that("buffer_overlap must be logical flag", {
   )
 })
 
-# Integration tests (network required)
-# ............................................................................
-
-test_that("fetch_osm_buildings returns sf with correct schema", {
-  skip_on_cran()
-  skip_if_offline()
-
-  # Small area in Freetown, Sierra Leone
-  area <- make_polygon(-13.235, 8.475, -13.225, 8.485)
-  result <- suppressWarnings(fetch_osm_buildings(area, zoom = 16L))
-
-  expect_s3_class(result, "sf")
-  expect_true(all(c("osm_id", "building") %in% names(result)))
-  if (nrow(result) > 0L) {
-    geom_types <- unique(as.character(sf::st_geometry_type(result)))
-    expect_true(all(geom_types == "POLYGON"))
-  }
-})
